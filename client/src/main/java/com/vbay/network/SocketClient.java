@@ -36,7 +36,7 @@ public class SocketClient {
     }
 
     public void sendMessage(String message) throws IOException {
-        if (out == null || in == null) {
+        if (out == null || in == null || socket == null || socket.isClosed()) {
             throw new IllegalStateException("Client is not connected to the server.");
         }
 
@@ -49,6 +49,16 @@ public class SocketClient {
         }
     }
 
+    public synchronized void disconnect() throws IOException {
+        if (in != null) in.close();
+        if (out != null) out.close();
+        if (socket != null && !socket.isClosed()) socket.close();
+
+        in = null;
+        out = null;
+        socket = null;
+    }
+    
     public void start() {
         // Reserved for future background client work.
     }

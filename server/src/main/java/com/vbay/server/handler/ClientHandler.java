@@ -18,8 +18,6 @@ public class ClientHandler implements Runnable {
     public void run() {
         try (
             Socket clientSocket = socket;
-            //
-
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // client gui request
             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true) // client nhan response
         ) {
