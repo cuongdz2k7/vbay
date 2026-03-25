@@ -25,15 +25,16 @@ public class ClientHandler implements Runnable {
             while ((line = in.readLine()) != null) {
                 if (line.trim().isEmpty()){
                     System.out.println("Empty request");
+                    continue;
                 }
                 else if ("exit".equalsIgnoreCase(line)){
                     out.println("Exit current socket");
                     break;
                 }
-                else {
-                    System.out.println("Received line: " + line);
-                    out.println("Echo: " + line);
-                }
+
+                System.out.println("Received line: " + line);
+                out.println("Echo: " + line);
+                
             }
         } catch (IOException exception) {
             System.err.println("Client connection error: " + exception.getMessage());
