@@ -2,6 +2,7 @@ package com.vbay.server.Model;
 import com.vbay.shared.UserStatus;
 import com.vbay.shared.Func;
 import java.time.LocalDate;
+
 public class User {
     // Base 
     private long id;
