@@ -12,10 +12,11 @@ public class MainApp {
             client.connect("localhost", 3618);
             client.sendMessage("Hello, server!");
             System.out.println("Connected to VBay server.");
-        } catch (IOException e) {
-            System.err.println("Could not connect to server: " + e.getMessage());
+        }catch (IOException e) {
+            System.err.println("Could not connect to server");
             e.printStackTrace();
-        } finally {
+        }
+ finally {
             try {
                 client.disconnect();
             } catch (IOException e) {

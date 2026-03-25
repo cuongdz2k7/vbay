@@ -25,7 +25,6 @@ public class ClientHandler implements Runnable {
             while ((line = in.readLine()) != null) {
                 if (line.trim().isEmpty()){
                     System.out.println("Empty request");
-                    continue;
                 }
                 else if ("exit".equalsIgnoreCase(line)){
                     out.println("Exit current socket");
