@@ -1,1 +1,2 @@
 com\vbay\server\ServerApplication.class
+com\vbay\server\handler\ClientHandler.class
