@@ -27,6 +27,9 @@ public class Product {
 
     //Getter
     //a, Base:
+    public long getId(){
+        return this.id;
+    }
     public String getProductName(){
         return this.product_name;
     }
@@ -52,6 +55,9 @@ public class Product {
 
     //Setter (Change data)
     //a, Base:
+    public void setId(long new_id){
+        this.id = new_id;
+    }
     public void setProductName(String new_product_name){
         this.product_name = new_product_name;
     }

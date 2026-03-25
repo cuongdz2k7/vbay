@@ -29,6 +29,9 @@ public class Payment {
 
     //Getter
     //a, Base:
+    public long getId(){
+        return this.id;
+    }
     public long getAuctionId(){
         return this.auction_id;
     }
@@ -55,6 +58,9 @@ public class Payment {
 
     //Setter (Change data)
     //a, Base:
+    public void setId(long new_id){
+        this.id = new_id;
+    }
     public void setAuctionId(long new_auction_id){
         this.auction_id = new_auction_id;
     }

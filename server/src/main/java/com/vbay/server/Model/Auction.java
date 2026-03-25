@@ -31,6 +31,9 @@ public class Auction {
 
     //Getter
     //a, Base:
+    public long getId(){
+        return this.id;
+    }
     public long getProductId(){
         return this.product_id;
     }
@@ -60,6 +63,9 @@ public class Auction {
 
     //Setter (Change data)
     //a, Base:
+    public void setId(long new_id){
+        this.id = new_id;
+    }
     public void setProductId(long new_product_id){
         this.product_id = new_product_id;
     }

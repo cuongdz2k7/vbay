@@ -4,11 +4,12 @@ import com.vbay.shared.Func;
 import java.time.LocalDate;
 public class User {
     // Base 
+    private long id;
     private final String timeinit; // thoi gian bat dau tao account
     private String username;
     private String email;
     private String passwordHash;
-    private String phone_number;;
+    private String phone_number;
     // Role + Status
     private Func position; //User , ADMIN
     private UserStatus status;
@@ -44,6 +45,12 @@ public class User {
                 }
     //Getter
     //a,Base:
+    public long getId(){
+        return this.id;
+    }
+    public String getTimeinit(){
+        return this.timeinit;
+    }
     public String getUserName(){
         return this.username;
     }
@@ -70,6 +77,9 @@ public class User {
 
     //Setter (Change data)
     //a, Base:
+    public void setId(long new_id){
+        this.id = new_id;
+    }
     public void setUserName(String new_username){
         this.username = new_username;
     }
