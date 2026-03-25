@@ -1,13 +1,13 @@
 package com.vbay.server;
-
-import java.net.ServerSocket; // tao server + lang nghe ket noi tu client
+import com.vbay.server.handler.ClientHandler;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
-import java.sql.DatabaseMetaData;
+
 
 public class ServerApplication {
-    
+    private static final int PORT = 3618;
     public static void main(String[] args) {
-        public static final int PORT = 3618;
 
         //Shut down hook ( Truong trinh chuan bi tat)
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -30,7 +30,10 @@ public class ServerApplication {
 
             }
         }
-
-
+        catch (IOException exception) {
+            System.err.println("Server failed to start : " + exception.getMessage());
+            exception.printStackTrace();
+        }
+        //Bao loi I/O -> hien day du thong tin loi
     }
 }

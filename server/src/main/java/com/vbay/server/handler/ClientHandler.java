@@ -7,8 +7,9 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable {
-    private final Socket socket;
+    private final Socket socket; 
 
+    //Constructor
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
@@ -17,8 +18,10 @@ public class ClientHandler implements Runnable {
     public void run() {
         try (
             Socket clientSocket = socket;
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+            //
+
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // client gui request
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true) // client nhan response
         ) {
             String line;
             while ((line = in.readLine()) != null) {
