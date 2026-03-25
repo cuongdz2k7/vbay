@@ -1,8 +1,9 @@
 package com.vbay.server;
-import com.vbay.server.handler.ClientHandler;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import com.vbay.server.handler.ClientHandler;
 
 
 public class ServerApplication {
@@ -19,7 +20,7 @@ public class ServerApplication {
             //ServerSocker : dung o phia server -> mo cong + ket noi voi client ( cua chinh cua server)
             System.out.println("Port: " + PORT);
             // DatabaseInitilizer.init() : giao tiep voi database
-
+            System.out.println("waiting for clients...");
             while(true){
                 Socket socket = serverSocket.accept();
                 // socket = dai dien ket noi giua client + server
