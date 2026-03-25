@@ -2,13 +2,14 @@ package com.vbay.server.Model;
 import com.vbay.shared.UserStatus;
 import com.vbay.shared.Func;
 import java.time.LocalDate;
+
 public class User {
     // Base 
     private final String timeinit; // thoi gian bat dau tao account
     private String username;
     private String email;
     private String passwordHash;
-    private String phone_number;;
+    private String phone_number;
     // Role + Status
     private Func position; //User , ADMIN
     private UserStatus status;
