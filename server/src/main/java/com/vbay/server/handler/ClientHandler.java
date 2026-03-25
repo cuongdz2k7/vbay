@@ -7,42 +7,39 @@ import java.io.PrintWriter;
 import java.net.Socket;
 
 public class ClientHandler implements Runnable {
-    private final Socket socket;
+    private final Socket socket; 
 
-    // Constructor
+    //Constructor
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
-
     @Override
     public void run() {
-        System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
-
+        System.out.println("Client connected: " +socket.getInetAddress().getHostAddress());
         try (
             Socket clientSocket = socket;
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // client gui request
+            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true) // client nhan response
         ) {
             String line;
-
             while ((line = in.readLine()) != null) {
-                if (line.trim().isEmpty()) {
+                if (line.trim().isEmpty()){
                     System.out.println("Empty request");
-                    continue;
                 }
-
-                if ("exit".equalsIgnoreCase(line)) {
+                else if ("exit".equalsIgnoreCase(line)){
                     out.println("Exit current socket");
                     break;
                 }
-
-                System.out.println("Received line: " + line);
-                out.println("Echo: " + line);
+                else {
+                    System.out.println("Received line: " + line);
+                    out.println("Echo: " + line);
+                }
             }
         } catch (IOException exception) {
             System.err.println("Client connection error: " + exception.getMessage());
-        } finally {
-            System.out.println("Client disconnected: " + socket.getInetAddress().getHostAddress());
+        }
+        finally{
+            System.out.println("Client disconnected: " +socket.getInetAddress().getHostAddress());
         }
     }
 }
