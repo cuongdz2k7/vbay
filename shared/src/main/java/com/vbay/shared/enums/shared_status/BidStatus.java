@@ -1,4 +1,4 @@
-package com.vbay.shared.ENUMS_Define.shared_status;
+package com.vbay.shared.enums.shared_status;
 
 public enum BidStatus {
     PENDING,
