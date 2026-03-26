@@ -18,7 +18,7 @@ public class SocketClient {
     }
 
     public static SocketClient getClient() {
-        if (Client.socket != null) {
+        if (Client.socket == null) {
             Client = new SocketClient();
         }
         return Client;
