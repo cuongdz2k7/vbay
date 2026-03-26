@@ -9,6 +9,7 @@
 target/
 client/target/
 server/target/
+.m2/
 
 # Compiled class files
 *.class

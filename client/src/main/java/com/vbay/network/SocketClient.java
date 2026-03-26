@@ -39,7 +39,7 @@ public class SocketClient {
         System.out.println("Connected to server at " + host + ":" + port);
     }
 
-    public synchronized Respond sendMessage (Request message) throws IOException {
+    public synchronized Respond<?> sendMessage (Request<?> message) throws IOException {
         if (socket == null || socket.isClosed()) {
             throw new IOException("Not connected to server");
         }
