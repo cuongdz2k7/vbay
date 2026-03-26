@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Request;
+import com.vbay.shared.protocol.Respond;
 
 public class SocketClient {
     // Keep one shared client instance so the app reuses the same socket connection.
@@ -35,6 +38,16 @@ public class SocketClient {
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(socket.getOutputStream(), true);
         System.out.println("Connected to server at " + host + ":" + port);
+    }
+
+    public synchronized Respond sendMessage (Request message) throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Not connected to server");
+        }
+        String jsonMessage = JsonUtils.toJson(message);
+        out.println(jsonMessage);
+        String jsonResponse = in.readLine();
+        return JsonUtils.fromJson(jsonResponse, Respond.class);
     }
 
 
