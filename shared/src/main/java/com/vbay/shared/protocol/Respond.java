@@ -1,4 +1,4 @@
-package com.vbay.protocol;
+package com.vbay.shared.protocol;
 
 public class Respond<T> {
     String requestId; // ID của yêu cầu mà phản hồi này trả về

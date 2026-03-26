@@ -1,6 +1,6 @@
-package com.vbay.protocol;
+package com.vbay.shared.protocol;
 
-import com.vbay.Utils.IDGenerator;
+import com.vbay.shared.Utils.IDGenerator;
 import com.vbay.shared.enums.RequestType;
 
 public class Request<T> {

@@ -1,0 +1,7 @@
+com\vbay\server\Model\Bid.class
+com\vbay\server\Model\User.class
+com\vbay\server\Model\Auction.class
+com\vbay\server\handler\ClientHandler.class
+com\vbay\server\ServerApplication.class
+com\vbay\server\Model\Product.class
+com\vbay\server\Model\Payment.class

@@ -1,12 +1,12 @@
-package com.vbay.dto;
+package com.vbay.shared.dto;
 
-public class RegisterRequest {
-    public String username;
-    public String email;
-    public String password;
-    public String phone_number;
+public abstract class LoginRequest {
+    private String username;
+    private String email;
+    private String password;
+    private String phone_number;
 
-    public RegisterRequest(String username, String email, String password, String phone_number) {
+    public LoginRequest(String username, String email, String password, String phone_number) {
         this.username = username;
         this.email = email;
         this.password = password;
@@ -24,4 +24,5 @@ public class RegisterRequest {
     public String getPhone_number() {
         return phone_number;
     }
+    
 }

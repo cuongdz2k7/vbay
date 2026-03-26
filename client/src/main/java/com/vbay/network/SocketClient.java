@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+
 public class SocketClient {
     // Keep one shared client instance so the app reuses the same socket connection.
     private static SocketClient Client = new SocketClient();
@@ -36,19 +37,7 @@ public class SocketClient {
         System.out.println("Connected to server at " + host + ":" + port);
     }
 
-    public void sendMessage(String message) throws IOException {
-        if (out == null || in == null || socket == null || socket.isClosed()) {
-            throw new IllegalStateException("Client is not connected to the server.");
-        }
 
-        out.println(message);
-        System.out.println("Sent message: " + message);
-
-        String response = in.readLine();
-        if (response != null) {
-            System.out.println(response);
-        }
-    }
 
     public synchronized void disconnect() throws IOException {
         if (in != null) in.close();

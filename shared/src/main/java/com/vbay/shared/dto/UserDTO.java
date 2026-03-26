@@ -1,4 +1,4 @@
-package com.vbay.dto;
+package com.vbay.shared.dto;
 
 
 public class UserDTO {
