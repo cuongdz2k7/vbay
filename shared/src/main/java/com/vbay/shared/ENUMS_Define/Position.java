@@ -1,5 +1,6 @@
-package com.vbay.shared;
-public enum Position{
+package com.vbay.shared.ENUMS_Define;
+
+public enum Position {
     USER, // nguoi dung
     Seller,
     Bidder,

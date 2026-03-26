@@ -1,4 +1,4 @@
-package com.vbay.shared.shared_status;
+package com.vbay.shared.ENUMS_Define.shared_status;
 
 public enum UserStatus {
     PENDING, // chua xac thuc 
@@ -6,3 +6,4 @@ public enum UserStatus {
     SUSPENDED, // nghi ngo , rat la sú
     BANNED, // bi ban <(")
 }
+

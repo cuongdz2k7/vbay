@@ -1,4 +1,4 @@
-package com.vbay.shared.shared_request_type;
+package com.vbay.shared.ENUMS_Define.shared_request_type;
 
 public enum SellerActionRequestType {
     CREATE_AUCTION,
@@ -7,3 +7,4 @@ public enum SellerActionRequestType {
     SET_AUCTION_TIME,
     CANCEL_AUCTION
 }
+

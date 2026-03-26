@@ -1,4 +1,4 @@
-package com.vbay.shared.shared_request_type;
+package com.vbay.shared.ENUMS_Define.shared_request_type;
 
 public enum BidderActionRequestType {
     JOIN_AUCTION,
@@ -8,3 +8,4 @@ public enum BidderActionRequestType {
     WATCH_AUCTION,
     QUIT_AUCTION
 }
+

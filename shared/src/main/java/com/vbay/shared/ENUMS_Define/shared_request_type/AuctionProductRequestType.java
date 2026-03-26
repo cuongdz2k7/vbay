@@ -1,4 +1,4 @@
-package com.vbay.shared.shared_request_type;
+package com.vbay.shared.ENUMS_Define.shared_request_type;
 
 public enum AuctionProductRequestType {
     GET_AUCTION_LIST,
@@ -6,3 +6,4 @@ public enum AuctionProductRequestType {
     SEARCH_AUCTION,
     FILTER_AUCTION
 }
+

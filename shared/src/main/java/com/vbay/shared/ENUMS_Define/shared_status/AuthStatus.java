@@ -1,4 +1,4 @@
-package com.vbay.shared.shared_status;
+package com.vbay.shared.ENUMS_Define.shared_status;
 
 public enum AuthStatus {
     PENDING,
@@ -9,3 +9,4 @@ public enum AuthStatus {
     EXPIRED_OTP,
     FAILED
 }
+

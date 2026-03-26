@@ -1,6 +1,6 @@
 package com.vbay.server.Model;
-import com.vbay.shared.Position;
-import com.vbay.shared.shared_status.UserStatus;
+import com.vbay.shared.ENUMS_Define.Position;
+import com.vbay.shared.ENUMS_Define.shared_status.UserStatus;
 
 import java.time.LocalDate;
 
@@ -108,3 +108,5 @@ public class User {
 
 
 }
+
+
