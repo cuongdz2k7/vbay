@@ -2,7 +2,7 @@ package com.vbay.shared.enums.shared_status;
 
 public enum AuctionStatus {
     DRAFT,
-    PENDING_APPROVAL,
+    PENDING,
     APPROVED,
     REJECTED,
     PUBLISHED,

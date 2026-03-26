@@ -1,6 +1,5 @@
 package com.vbay.shared.dto;
 
-
 public class UserDTO {
     private String id;
     private String username;
@@ -13,18 +12,30 @@ public class UserDTO {
         this.email = email;
         this.phone_number = phone_number;
     }
+
     public String getId() {
         return id;
     }
+
     public String getUsername() {
         return username;
     }
+
     public String getEmail() {
         return email;
     }
+
     public String getPhone_number() {
         return phone_number;
     }
-    
 
+    @Override
+    public String toString() {
+        return "UserDTO{" +
+            "id='" + this.getId() + '\'' +
+            ", username='" + this.getUsername() + '\'' +
+            ", email='" + this.getEmail() + '\'' +
+            ", phone_number='" + this.getPhone_number() + '\'' +
+            '}';
+    }
 }
