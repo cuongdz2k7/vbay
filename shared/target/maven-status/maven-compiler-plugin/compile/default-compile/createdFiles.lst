@@ -1,0 +1,9 @@
+com\vbay\dto\RegisterRequest.class
+com\vbay\shared\enums\RequestType.class
+com\vbay\dto\LoginRequest.class
+com\vbay\shared\Position.class
+com\vbay\dto\UserDTO.class
+com\vbay\protocol\Request.class
+com\vbay\Utils\JsonUtils.class
+com\vbay\protocol\Respond.class
+com\vbay\Utils\IDGenerator.class

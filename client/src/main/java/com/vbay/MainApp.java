@@ -16,7 +16,7 @@ public class MainApp {
             System.err.println("Could not connect to server");
             e.printStackTrace();
         }
- finally {
+        finally {
             try {
                 client.disconnect();
             } catch (IOException e) {

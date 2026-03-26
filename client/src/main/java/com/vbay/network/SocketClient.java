@@ -14,6 +14,7 @@ public class SocketClient {
     private BufferedReader in;
     private PrintWriter out;
 
+
     private SocketClient() {
     }
 
@@ -57,9 +58,5 @@ public class SocketClient {
         in = null;
         out = null;
         socket = null;
-    }
-    
-    public void start() {
-        // Reserved for future background client work.
     }
 }
