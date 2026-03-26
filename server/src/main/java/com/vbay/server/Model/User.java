@@ -1,6 +1,6 @@
 package com.vbay.server.Model;
-import com.vbay.shared.UserStatus;
-import com.vbay.shared.Func;
+import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.shared.enums.Position;
 import java.time.LocalDate;
 
 public class User {
@@ -12,7 +12,7 @@ public class User {
     private String passwordHash;
     private String phone_number;
     // Role + Status
-    private Func position; //User , ADMIN
+    private Position position; //User , ADMIN
     private UserStatus status;
     // Auction
     private double balance;
@@ -25,7 +25,7 @@ public class User {
                     this.passwordHash = passwordHash;
                     this.phone_number = phone_number;
                     //Role + Status 
-                    this.position = Func.USER;
+                    this.position = Position.USER;
                     this.status  = UserStatus.ACTIVE;
                     //Auction
                     this.balance=balance;
@@ -33,7 +33,7 @@ public class User {
                 }
     //Constructor_2 (Getting account back)
     public User(String username , String email, String passwordHash, String phone_number,
-                Func position,UserStatus status, double balance, String timeinit){
+                Position position,UserStatus status, double balance, String timeinit){
                     this.username= username;
                     this.email = email;
                     this.passwordHash = passwordHash;
@@ -65,7 +65,7 @@ public class User {
         return this.phone_number;
     }
     //b, Role + Status:
-    public Func getPosition(){
+    public Position getPosition(){
         return this.position;
     }
     public UserStatus getUserStatus(){
@@ -94,7 +94,7 @@ public class User {
         this.phone_number = new_phonenumber;
     }
     //b, Role + Status :
-    public void setPosition(Func new_position){
+    public void setPosition(Position new_position){
         this.position = new_position;
     }
     public void setStatus(UserStatus new_status){
