@@ -1,5 +1,7 @@
 package com.vbay.ui;
 
+import atlantafx.base.theme.PrimerDark;
+import atlantafx.base.theme.PrimerLight;
 import com.vbay.MainApp;
 import java.util.Objects;
 import javafx.application.Application;
@@ -16,10 +18,11 @@ public class JavaFXApplication extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Parent loader = FXMLLoader.load(
             Objects.requireNonNull(getClass().getResource("/jfx/scene/Authentication.fxml")));
-        Scene stage = new Scene(loader, 350, 500);
-        primaryStage.setScene(stage);
+        Scene scene = new Scene(loader);
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 
