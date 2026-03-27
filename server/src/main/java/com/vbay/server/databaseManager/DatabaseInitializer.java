@@ -2,7 +2,8 @@ package com.vbay.server.databaseManager;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;;
+import java.nio.file.Path;
+
 
 public class DatabaseInitializer {
 
@@ -41,7 +42,6 @@ public class DatabaseInitializer {
     }
     ///khởi tạo bảng trong database nếu chưa tồn tại
     private static void createTables() {
-        ///dùng var vì mình không biết connection là object nào nhé
         try (var Connection = DatabaseConnection.getConnection();
             ///tạo object để gửi lệnh sql đến database
              var Statement = Connection.createStatement()) {

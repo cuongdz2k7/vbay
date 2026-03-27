@@ -4,12 +4,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import com.vbay.server.Network_connection.ClientHandler;
-
+import com.vbay.server.databaseManager.DatabaseInitilizer;
 
 public class ServerApplication {
     private static final int PORT = 3618;
     public static void main(String[] args) {
-
+        
+       ///DatabaseInitilizer.init();
         //Shut down hook ( Truong trinh chuan bi tat)
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Server's on the edge of offline, Saving current data into database");
@@ -19,7 +20,6 @@ public class ServerApplication {
         try(ServerSocket serverSocket = new ServerSocket(PORT)){ 
             //ServerSocker : dung o phia server -> mo cong + ket noi voi client ( cua chinh cua server)
             System.out.println("Port: " + PORT);
-            // DatabaseInitilizer.init() : giao tiep voi database
             System.out.println("waiting for clients...");
             while(true){
                 Socket socket = serverSocket.accept();

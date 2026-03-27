@@ -3,6 +3,7 @@ package com.vbay.server.databaseManager;
 import java.nio.file.Path;
 
 public class DatabaseConfig {
+    ///class này để lưu path đến DB để tiện sử dụng
     private static final Path DB_URL = Path.of("server", "data", "vbay.db");
     private static final String JDBC_URL = "jdbc:sqlite:" + DB_URL.toString();
     
