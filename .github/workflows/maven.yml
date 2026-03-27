@@ -26,7 +26,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven on Windows
-      run: mvn -B package --file pom.xml && mvn -Bpl server && mvn -Bpl client
+      run: mvn -B package --file pom.xml
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -38,7 +38,7 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven on Ubuntu
-      run: mvn -B package --file pom.xml && mvn -Bpl server && mvn -Bpl client
+      run: mvn -B package --file pom.xml
   build-macos:
     runs-on: macos-latest
     steps:
