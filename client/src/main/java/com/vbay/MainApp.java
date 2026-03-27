@@ -16,7 +16,7 @@ public class MainApp {
             client.sendMessage(request);    
             System.out.println("Connected to VBay server.");
         }catch (IOException e) {
-            System.err.println("Could not connect to server");
+            System.err.println("Could not connex`ct to server");
             e.printStackTrace();
         }
         finally {
