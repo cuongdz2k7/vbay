@@ -4,8 +4,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import com.vbay.server.Network_connection.ClientHandler;
-import com.vbay.server.databaseManager.DatabaseInitilizer;
-
+///import com.vbay.sẻrver.databaseManager.DatabaseInitilizer;
 public class ServerApplication {
     private static final int PORT = 3618;
     public static void main(String[] args) {
