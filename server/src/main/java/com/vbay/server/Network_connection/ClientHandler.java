@@ -1,4 +1,4 @@
-package com.vbay.server.handler;
+package com.vbay.server.Network_connection;
 //Import
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+// Listening
 public class ClientHandler implements Runnable {
     private final Socket socket; 
 
@@ -13,6 +14,7 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket socket) {
         this.socket = socket;
     }
+
     @Override
     public void run() {
         System.out.println("Client connected: " +socket.getInetAddress().getHostAddress());
@@ -33,7 +35,9 @@ public class ClientHandler implements Runnable {
                 }
 
                 System.out.println("Received line: " + line);
+
                 out.println("Echo: " + line);
+
                 
             }
         } catch (IOException exception) {

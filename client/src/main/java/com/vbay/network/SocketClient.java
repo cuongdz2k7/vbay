@@ -40,6 +40,7 @@ public class SocketClient {
     }
 
     public synchronized Respond<?> sendMessage (Request<?> message) throws IOException {
+        // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {
             throw new IOException("Not connected to server");
         }
