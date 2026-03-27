@@ -87,10 +87,33 @@ public class SocketClient {
     public void startListening(){
         if (threadlistener != null && threadlistener.isAlive()){
             return;
+        
         } // KHONG tao nhieu thread nghe cung luc , neu da ton tai listeningThread thi thoat luong
         // neu chua co thi tao 1 listeningthead 
         threadlistener = new Thread(() -> {
-                    
-        })
+                try { 
+                    String line;
+                    while (socket != null && !socket.isClosed() && (line = in.readLine()) != null) {
+                        Respond<?> respond =  JsonUtils.fromJson(line, Respond.class);
+
+                        if ( respond == null){
+                            System.out.println("Invalid response: "  + line);
+                            continue;
+                        }
+                        BlockingQueue<Respond<?>> queue = pendingResponse.remove(respond.getRequestId());
+                        if (queue != null){
+                            queue.offer(respond);
+                        }
+                        else { 
+                            System.out.println("No pending request for requestId: " + respond.getRequestId());
+                        }
+                    }
+                } catch (IOException IOE){
+                    System.out.println("Listener has stopped: " +IOE.getMessage());
+                }
+        });
+    
+    threadlistener.setDaemon(true);
+    threadlistener.start();
     }
 }
