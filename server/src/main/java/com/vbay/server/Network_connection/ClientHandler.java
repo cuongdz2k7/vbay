@@ -11,7 +11,7 @@ public class ClientHandler implements Runnable {
     private final Socket socket; 
 
     //Constructor
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket) { // tham so truyen vao la socket tu client
         this.socket = socket;
     }
 
@@ -19,9 +19,9 @@ public class ClientHandler implements Runnable {
     public void run() {
         System.out.println("Client connected: " +socket.getInetAddress().getHostAddress());
         try (
-            Socket clientSocket = socket;
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // client gui request
-            PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true) // client nhan response
+            Socket Serversocket = socket;
+            BufferedReader in = new BufferedReader(new InputStreamReader(Serversocket.getInputStream())); // client gui request
+            PrintWriter out = new PrintWriter(Serversocket.getOutputStream(), true) // client nhan response
         ) {
             String line;
             while ((line = in.readLine()) != null) {

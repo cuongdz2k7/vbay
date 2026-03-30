@@ -31,12 +31,16 @@ public class SocketClient {
     private final Map<String, BlockingQueue<Respond<?>>> pendingResponse = new ConcurrentHashMap<>();
 
     //get client ( duy nhất)
-    public static SocketClient getClient() {
-        if (Client.socket == null) {
+    public static synchronized SocketClient getClient() {
+        if (Client == null) { // checking client == null 
             Client = new SocketClient();
         }
         return Client;
-    }   
+    }
+
+    public synchronized boolean isConnected() {
+        return socket != null && socket.isConnected() && !socket.isClosed();
+    }
 
     // connect to server
     public synchronized void connect(String host, int port) throws IOException {
@@ -58,7 +62,7 @@ public class SocketClient {
 
 
 
-    public synchronized Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
+   public synchronized Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
         // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {
             throw new IOException("Not connected to server");

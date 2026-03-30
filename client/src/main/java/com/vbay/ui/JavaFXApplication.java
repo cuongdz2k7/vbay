@@ -1,9 +1,9 @@
 package com.vbay.ui;
-
-import atlantafx.base.theme.PrimerDark;
 import atlantafx.base.theme.PrimerLight;
-import com.vbay.MainApp;
 import java.util.Objects;
+
+import com.vbay.ui.scene.SceneManager;
+
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -24,6 +24,7 @@ public class JavaFXApplication extends Application {
         Scene scene = new Scene(loader);
         primaryStage.setScene(scene);
         primaryStage.show();
-    }
 
+        SceneManager.setStage(primaryStage);
+    }
 }
