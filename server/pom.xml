@@ -26,8 +26,12 @@
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.43.0.0</version>
         </dependency>
+            <dependency>
+                <groupId>de.mkammerer</groupId>
+                <artifactId>argon2-jvm</artifactId>
+                <version>2.11</version>
+            </dependency>
     </dependencies>
 
     <build>

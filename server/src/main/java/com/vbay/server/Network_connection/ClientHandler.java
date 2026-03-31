@@ -6,18 +6,24 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import com.vbay.shared.protocol.*;
+import com.vbay.server.dispatcher.RequestDispatcher;
+import com.vbay.shared.Utils.JsonUtils;
+
 // Listening
 public class ClientHandler implements Runnable {
     private final Socket socket; 
+    private final RequestDispatcher requestDispatcher;
 
     //Constructor
-    public ClientHandler(Socket socket) {
+    public ClientHandler(Socket socket, RequestDispatcher requestDispatcher) {
         this.socket = socket;
+        this.requestDispatcher = requestDispatcher;
     }
 
     @Override
     public void run() {
-        System.out.println("Client connected: " +socket.getInetAddress().getHostAddress());
+        System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
         try (
             Socket clientSocket = socket;
             BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream())); // client gui request
@@ -33,12 +39,9 @@ public class ClientHandler implements Runnable {
                     out.println("Exit current socket");
                     break;
                 }
-
-                System.out.println("Received line: " + line);
-
-                out.println("Echo: " + line);
-
-                
+                Respond<?> response = RequestDispatcher.dispatch(line);
+                String jsonResponse = JsonUtils.toJson(response);
+                out.println(jsonResponse);
             }
         } catch (IOException exception) {
             System.err.println("Client connection error: " + exception.getMessage());

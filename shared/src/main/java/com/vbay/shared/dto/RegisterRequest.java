@@ -3,10 +3,10 @@ package com.vbay.shared.dto;
 public class RegisterRequest {
     private String username;
     private String email;
-    private String password;
+    private char[] password;
     private String phone_number;
 
-    public RegisterRequest(String username, String email, String password, String phone_number) {
+    public RegisterRequest(String username, String email, char[] password, String phone_number) {
         this.username = username;
         this.email = email;
         this.password = password;
@@ -21,11 +21,11 @@ public class RegisterRequest {
         return email;
     }
 
-    public String getPassword() {
+    public char[] getPassword() {
         return password;
     }
 
-    public String getPhone_Number() {
+    public String getPhoneNumber() {
         return phone_number;
     }
 
@@ -35,7 +35,7 @@ public class RegisterRequest {
             "username='" + this.getUsername() + '\'' +
             ", email='" + this.getEmail() + '\'' +
             ", password='" + (this.getPassword() == null ? null : "***") + '\'' +
-            ", phone_number='" + this.getPhone_Number() + '\'' +
+            ", phone_number='" + this.getPhoneNumber() + '\'' +
             '}';
     }
 }

@@ -3,10 +3,10 @@ package com.vbay.shared.dto;
 public class LoginRequest {
     private String username;
     private String email;
-    private String password;
+    private char[] password;
     private String phone_number;
 
-    public LoginRequest(String username, String email, String password, String phone_number) {
+    public LoginRequest(String username, String email, char[] password, String phone_number) {
         this.username = username;
         this.email = email;
         this.password = password;
@@ -21,7 +21,7 @@ public class LoginRequest {
         return email;
     }
 
-    public String getPassword() {
+    public char[] getPassword() {
         return password;
     }
 

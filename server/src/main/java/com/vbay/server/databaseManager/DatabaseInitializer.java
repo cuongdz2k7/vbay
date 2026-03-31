@@ -10,7 +10,7 @@ public class DatabaseInitializer {
     private DatabaseInitializer() {
     }
     ///tạo thư mục lưu database
-    public static void initialize() { 
+    public static void init() { 
         createDbfolder();
         createEmptyDbFileIfMissing();
         createTables();
@@ -46,7 +46,8 @@ public class DatabaseInitializer {
             ///tạo object để gửi lệnh sql đến database
              var Statement = Connection.createStatement()) {
             
-            String sql = Files.readString(Path.of("server", "src", "main", "java", "com", "vbay", "resources", "data_init.sql"));
+            String sql = Files.readString(Path.of("server", 
+                                                "src", "main", "resources", "data_init.sql"));
             Statement.execute(sql);
             /*
             🧠 1. Có 3 kiểu execute
