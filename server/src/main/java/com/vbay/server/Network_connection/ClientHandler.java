@@ -6,19 +6,19 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import com.vbay.shared.protocol.*;
-import com.vbay.server.dispatcher.RequestDispatcher;
+import com.vbay.server.distributor.RequestDistributor;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
 
 // Listening
 public class ClientHandler implements Runnable {
     private final Socket socket; 
-    private final RequestDispatcher requestDispatcher;
+    private final RequestDistributor Distributor;
 
     //Constructor
-    public ClientHandler(Socket socket, RequestDispatcher requestDispatcher) {
+    public ClientHandler(Socket socket, RequestDistributor Distributor) {
         this.socket = socket;
-        this.requestDispatcher = requestDispatcher;
+        this.Distributor = Distributor;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class ClientHandler implements Runnable {
                     out.println("Exit current socket");
                     break;
                 }
-                Respond<?> response = RequestDispatcher.dispatch(line);
+                Respond<?> response = Distributor.dispatch(line);
                 String jsonResponse = JsonUtils.toJson(response);
                 out.println(jsonResponse);
             }

@@ -13,12 +13,30 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.shared.dto.LoginRequest;
 import com.vbay.shared.dto.LoginResponse;
 import com.vbay.shared.dto.RegisterRequest;
+/*
+Vấn đề chính
+Flow hiện tại thường là:
+
+check existsByUsername(...)
+check existsByEmail(...)
+save(user)
+Nếu có 2 thread chạy cùng lúc với cùng username hoặc email, cả hai đều có thể:
+
+cùng thấy exists = false
+rồi cùng chui vào save(...)
+Đây là lỗi classic check-then-act.
+
+Dù AuthService nhìn có vẻ đúng, nhưng dưới tải đồng thời vẫn có thể đụng nhau.
+
+
+
+*/
 
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
     ///add object to check wheather the passwork is weak/strong : PasswordPolicy
-
+    
     public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
@@ -27,6 +45,18 @@ public class AuthService {
     private static boolean isBlank (String str) {
         return str == null || str.isBlank();
     }
+
+    private boolean isUniqueConstraintViolation(SQLException e) {
+        String message = e.getMessage();
+        if (message == null) {
+            return false;
+        }
+
+        String lower = message.toLowerCase();
+        return lower.contains("unique constraint failed")
+            || lower.contains("sqlite_constraint_unique");
+    }
+
    
     private void validateLoginRequest (LoginRequest request) {
         if (request == null) {
@@ -77,18 +107,18 @@ public class AuthService {
         }
         if (request.getPassword() == null || request.getPassword().length == 0) {
             throw new ValidationException("Password is required");
-     }
+        }
     }
-    public void register(RegisterRequest request) throws SQLException, AuthenticationException {
+    public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
 
         try {
             if (userRepository.existsByUsername(request.getUsername().trim())) {
-                throw new AuthenticationException("Username already exists");
+                throw new ValidationException("Username already exists");
             }
 
             if (userRepository.existsByEmail(request.getEmail().trim())) {
-                throw new AuthenticationException("Email already exists");
+                throw new ValidationException("Email already exists");
             }
 
             User newUser = new User(
@@ -98,14 +128,19 @@ public class AuthService {
                 request.getPhoneNumber(),
                 0
             );
-
             userRepository.save(newUser);
+        } catch (SQLException e) {
+                if (isUniqueConstraintViolation(e)) {
+                    throw new ValidationException("Username or email already exists");
+                }
+                throw e;
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');
             }
         }
     }
+
 
 
 

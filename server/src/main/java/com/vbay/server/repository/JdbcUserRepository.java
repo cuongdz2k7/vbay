@@ -13,6 +13,7 @@ import com.vbay.shared.enums.shared_status.UserStatus;
 
 
 public class JdbcUserRepository implements UserRepository {
+
     @Override  
     public Optional<User> findByUsername (String username) throws SQLException { 
         String sql = """

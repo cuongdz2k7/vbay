@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-
 public class DatabaseInitializer {
 
     private DatabaseInitializer() {
@@ -44,10 +43,14 @@ public class DatabaseInitializer {
     private static void createTables() {
         try (var Connection = DatabaseConnection.getConnection();
             ///tạo object để gửi lệnh sql đến database
-             var Statement = Connection.createStatement()) {
+            var Statement = Connection.createStatement();
+            var inputStream = DatabaseInitializer.class.
+                                getClassLoader().getResourceAsStream("com/vbay/server/resources/data_init.sql")) {
             
-            String sql = Files.readString(Path.of("server", 
-                                                "src", "main", "resources", "data_init.sql"));
+            if (inputStream == null) {
+                throw new IllegalStateException("Cannot find SQL init file");
+            }
+            String sql = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
             Statement.execute(sql);
             /*
             🧠 1. Có 3 kiểu execute
