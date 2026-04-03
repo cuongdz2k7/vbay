@@ -76,7 +76,7 @@ public class AuthService {
                 throw new AuthenticationException("Invalid username or password");
             }
             User user = userOptional.get();
-            if (passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+            if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 throw new AuthenticationException("Invalid username or password");
             }
             return new LoginResponse(String.valueOf(user.getId()),

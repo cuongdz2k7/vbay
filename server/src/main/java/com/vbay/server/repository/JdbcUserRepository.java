@@ -17,7 +17,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override  
     public Optional<User> findByUsername (String username) throws SQLException { 
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, balance, created_at
+            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
             FROM users
             WHERE username = ?
             """;
@@ -36,7 +36,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, balance, created_at
+            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
             FROM users
             WHERE email = ?
             LIMIT 1
@@ -88,7 +88,7 @@ public class JdbcUserRepository implements UserRepository {
     public void save (User user) throws SQLException {
         String sql = """
             INSERT INTO users (username, email, passwordHash, phone_number, position, status, balance, timeinit)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
         try (Connection connection = DatabaseConnection.getConnection();
             PreparedStatement statement = connection.prepareStatement(sql)) {

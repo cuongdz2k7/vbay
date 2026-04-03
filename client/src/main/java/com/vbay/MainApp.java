@@ -1,11 +1,12 @@
 package com.vbay;
 
-import com.vbay.ui.JavaFXApplication;
 import java.io.IOException;
 
 import com.vbay.network.SocketClient;
+import com.vbay.shared.dto.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
-import com.vbay.shared.protocol.*;
+import com.vbay.shared.protocol.Request;
+import com.vbay.ui.JavaFXApplication;
 
 public class MainApp {
 
@@ -21,10 +22,14 @@ public class MainApp {
         try {
             System.out.println("Connecting to VBay server...");
             client.connect("localhost", 3618);
-
-            Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
-            client.sendMessage(request);
             System.out.println("Connected to VBay server.");
+            Request<RegisterRequest> request = new Request<> (
+                                    RequestType.REGISTER,
+                                    new RegisterRequest("cuongdz2k7", "cuongscp049@gmail.com",
+                                                    "cuonglc123".toCharArray(), "0123456789"));
+            
+            var response = client.sendMessage(request);
+            System.out.println(response.getMessage());
         } catch (IOException e) {
             System.err.println("Could not connect to server");
             e.printStackTrace();
@@ -38,8 +43,8 @@ public class MainApp {
     }
 
     public static void main(String[] args) {
-//        initSocketClient();
-        initUserInterface(args);
+        initSocketClient();
+       // initUserInterface(args);
     }
 
 }

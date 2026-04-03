@@ -59,10 +59,13 @@ public class RequestDistributor {
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
+            e.printStackTrace();
             return new Respond<>(requestId, false, e.getMessage(), null);
         } catch (SQLException e) {
+            e.printStackTrace();
             return new Respond<>(requestId, false, "DataBase error", null);
         } catch (Exception e) {
+            e.printStackTrace();
             return new Respond<>(requestId, false, "Unexpected error", null);
         }
     }

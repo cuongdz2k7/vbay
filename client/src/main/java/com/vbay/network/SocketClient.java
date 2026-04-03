@@ -32,7 +32,7 @@ public class SocketClient {
 
     //get client ( duy nhất)
     public static SocketClient getClient() {
-        if (Client.socket == null) {
+        if (Client == null) {
             Client = new SocketClient();
         }
         return Client;
@@ -49,7 +49,7 @@ public class SocketClient {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
             System.out.println("Connected to server at " + host + ":" + port);
-            startListening();
+            //startListening();
         }
         catch (ConnectException ce){
             System.out.println("Server is not running , checking _host_ and _port_");
@@ -84,7 +84,7 @@ public class SocketClient {
         socket = null;
         threadlistener = null;
     }
-
+/*
     // Lang nghe server ( lien tuc )
     public void startListening(){
         if (threadlistener != null && threadlistener.isAlive()){
@@ -118,4 +118,6 @@ public class SocketClient {
     threadlistener.setDaemon(true);
     threadlistener.start();
     }
+
+    */
 }
