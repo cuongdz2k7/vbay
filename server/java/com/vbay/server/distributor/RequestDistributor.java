@@ -1,4 +1,4 @@
-﻿package com.vbay.server.distributor;
+package com.vbay.server.distributor;
 
 import java.sql.SQLException;
 
@@ -31,21 +31,14 @@ public class RequestDistributor {
         } catch (Exception e) {
             return new Respond<>(null, false, "Invalid request format", null);
         }
-
-        if (root == null) {
-            return new Respond<>(null, false, "Invalid request format", null);
-        }
-
+        
         JsonElement requestIdElement = root.get("requestId");
         JsonElement typeElement = root.get("type");
 
-        String requestId = (requestIdElement != null && !requestIdElement.isJsonNull())
-            ? requestIdElement.getAsString()
-            : null;
+        String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
+                            ? requestIdElement.getAsString() : null;
 
-        String typeRaw = (typeElement != null && !typeElement.isJsonNull())
-            ? typeElement.getAsString()
-            : null;
+        String typeRaw = (typeElement != null && !typeElement.isJsonNull()) ? typeElement.getAsString() : null;
 
         if (typeRaw == null || typeRaw.isBlank()) {
             return new Respond<>(requestId, false, "Invalid request type", null);

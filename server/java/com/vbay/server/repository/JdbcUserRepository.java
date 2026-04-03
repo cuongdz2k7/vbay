@@ -51,6 +51,7 @@ public class JdbcUserRepository implements UserRepository {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
+
                 return Optional.of(mapUser(rs));
             }
         }

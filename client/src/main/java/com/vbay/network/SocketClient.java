@@ -37,9 +37,12 @@ public class SocketClient {
         }
         return Client;
     }
+
     public synchronized boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
+
+
     // connect to server
     public void connect(String host, int port) throws IOException {
         if (socket != null) {
@@ -59,6 +62,8 @@ public class SocketClient {
         }
     }
 
+
+    
     public Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
         // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {

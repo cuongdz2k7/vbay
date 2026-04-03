@@ -1,5 +1,6 @@
 ﻿package com.vbay.server.service;
 
+
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -62,7 +63,6 @@ public class AuthService {
             throw new ValidationException("Username is required");
         }
         if (request.getPassword() == null || request.getPassword().length == 0) {
-
             throw new ValidationException("Password is required");
         }
     }
