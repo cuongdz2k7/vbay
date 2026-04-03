@@ -1,4 +1,4 @@
-﻿package com.vbay.server.distributor;
+package com.vbay.server.distributor;
 
 import java.sql.SQLException;
 

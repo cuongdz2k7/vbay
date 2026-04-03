@@ -1,4 +1,4 @@
-﻿package com.vbay.server.service;
+package com.vbay.server.service;
 
 import java.sql.SQLException;
 import java.util.Arrays;

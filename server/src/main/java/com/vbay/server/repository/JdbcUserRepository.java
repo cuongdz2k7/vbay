@@ -1,4 +1,4 @@
-﻿package com.vbay.server.repository;
+package com.vbay.server.repository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

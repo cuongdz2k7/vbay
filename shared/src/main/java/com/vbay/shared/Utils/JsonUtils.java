@@ -1,4 +1,4 @@
-﻿package com.vbay.shared.Utils;
+package com.vbay.shared.Utils;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
