@@ -3,7 +3,7 @@ package com.vbay.shared.dto;
 public class LoginRequest {
     private String username;
     private String email;
-    private char[] password;
+    private char[] password ;
     private String phone_number;
 
     public LoginRequest(String username, String email, char[] password, String phone_number) {
