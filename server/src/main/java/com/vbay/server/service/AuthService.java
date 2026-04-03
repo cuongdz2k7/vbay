@@ -1,4 +1,4 @@
-package com.vbay.server.service;
+﻿package com.vbay.server.service;
 
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -12,17 +12,33 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.shared.dto.LoginRequest;
 import com.vbay.shared.dto.LoginResponse;
 import com.vbay.shared.dto.RegisterRequest;
+/*
+Vấn đề chính
+Flow hiện tại thường là:
+
+check existsByUsername(...)
+check existsByEmail(...)
+save(user)
+Nếu có 2 thread chạy cùng lúc với cùng username hoặc email, cả hai đều có thể:
+
+cùng thấy exists = false
+rồi cùng chui vào save(...)
+Đây là lỗi classic check-then-act.
+
+Dù AuthService nhìn có vẻ đúng, nhưng dưới tải đồng thời vẫn có thể đụng nhau.
+*/
 
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordHasher passwordHasher;
-
+    ///add object to check wheather the passwork is weak/strong : PasswordPolicy
+    
     public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
     }
 
-    private static boolean isBlank(String str) {
+    private static boolean isBlank (String str) {
         return str == null || str.isBlank();
     }
 
@@ -37,64 +53,51 @@ public class AuthService {
             || lower.contains("sqlite_constraint_unique");
     }
 
-    private void validateLoginRequest(LoginRequest request) {
+   
+    private void validateLoginRequest (LoginRequest request) {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        if (isBlank(request.getUsername()) && isBlank(request.getEmail()) && isBlank(request.getPhoneNumber())) {
-            throw new ValidationException("Username, email, or phone number is required");
+        if (isBlank(request.getUsername())) {
+            throw new ValidationException("Username is required");
         }
         if (request.getPassword() == null || request.getPassword().length == 0) {
+
             throw new ValidationException("Password is required");
         }
     }
 
-    private Optional<User> findUserForLogin(LoginRequest request) throws SQLException {
-        if (!isBlank(request.getUsername())) {
-            return userRepository.findByUsername(request.getUsername().trim());
-        }
-        if (!isBlank(request.getEmail())) {
-            return userRepository.findByEmail(request.getEmail().trim());
-        }
-        if (!isBlank(request.getPhoneNumber())) {
-            return userRepository.findByPhoneNumber(request.getPhoneNumber().trim());
-        }
-        return Optional.empty();
-    }
-
-    public LoginResponse login(LoginRequest request) throws SQLException, AuthenticationException {
+    public LoginResponse login (LoginRequest request) throws SQLException, AuthenticationException {
         validateLoginRequest(request);
 
         try {
-            Optional<User> userOptional = findUserForLogin(request);
-            if (userOptional.isEmpty()) {
+            Optional<User> userOptional = userRepository.findByUsername(request.getUsername().trim());
+            if (userOptional.isEmpty()) { 
                 throw new AuthenticationException("Invalid username or password");
             }
-
             User user = userOptional.get();
-            if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+            if (passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 throw new AuthenticationException("Invalid username or password");
             }
-
-            return new LoginResponse(
-                String.valueOf(user.getId()),
-                user.getUserName(),
-                user.getEmail(),
-                user.getPosition()
-            );
-        } finally {
+            return new LoginResponse(String.valueOf(user.getId()),
+                                    user.getUserName(),
+                                    user.getEmail(),
+                                    user.getPosition());
+        }
+        finally {
+            ///xóa pass trong request để tránh leak, bị attacker dump từ RAM
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');
             }
         }
     }
 
-    private void validateRegisterRequest(RegisterRequest request) {
+    private void validateRegisterRequest (RegisterRequest request) {
         if (request == null) {
             throw new ValidationException("Register request is required");
         }
-        if (isBlank(request.getUsername())) {
-            throw new ValidationException("Username is required");
+        if (isBlank(request.getUsername())) { 
+            throw new ValidationException("Register request is required"); 
         }
         if (isBlank(request.getEmail())) {
             throw new ValidationException("Email is required");
@@ -103,7 +106,6 @@ public class AuthService {
             throw new ValidationException("Password is required");
         }
     }
-
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
 
@@ -125,14 +127,19 @@ public class AuthService {
             );
             userRepository.save(newUser);
         } catch (SQLException e) {
-            if (isUniqueConstraintViolation(e)) {
-                throw new ValidationException("Username or email already exists");
-            }
-            throw e;
+                if (isUniqueConstraintViolation(e)) {
+                    throw new ValidationException("Username or email already exists");
+                }
+                throw e;
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');
             }
         }
     }
+
+
+
+
+    
 }

@@ -45,7 +45,7 @@ public class CreateAuctionRequest {
         return this.StartingTime;
     }
 
-    public String ggetEndingTime() {
+    public String getEndingTime() {
         return this.EndingTime;
     }
 
@@ -61,7 +61,7 @@ public class CreateAuctionRequest {
             ", InitialPrice=" + this.getInitialPrice() +
             ", StepPrice=" + this.getStepPrice() +
             ", StartingTime='" + this.getStartingTime() + '\'' +
-            ", EndingTime='" + this.ggetEndingTime() + '\'' +
+            ", EndingTime='" + this.getEndingTime() + '\'' +
             ", DepositAmount=" + this.getDepositAmount() +
             '}';
     }

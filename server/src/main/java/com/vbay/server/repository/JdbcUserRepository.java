@@ -11,19 +11,19 @@ import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.shared.enums.Position;
 import com.vbay.shared.enums.shared_status.UserStatus;
 
+
 public class JdbcUserRepository implements UserRepository {
 
-    @Override
-    public Optional<User> findByUsername(String username) throws SQLException {
+    @Override  
+    public Optional<User> findByUsername (String username) throws SQLException { 
         String sql = """
             SELECT id, username, email, password_hash, phone_number, position, status, balance, created_at
             FROM users
             WHERE username = ?
-            LIMIT 1
             """;
-
+        ///tự động close
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, username);
             try (ResultSet rs = statement.executeQuery()) {
                 if (!rs.next()) {
@@ -33,7 +33,6 @@ public class JdbcUserRepository implements UserRepository {
             }
         }
     }
-
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
@@ -45,7 +44,9 @@ public class JdbcUserRepository implements UserRepository {
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
+
             statement.setString(1, email);
+
             try (ResultSet rs = statement.executeQuery()) {
                 if (!rs.next()) {
                     return Optional.empty();
@@ -54,63 +55,44 @@ public class JdbcUserRepository implements UserRepository {
             }
         }
     }
-
+    
     @Override
-    public Optional<User> findByPhoneNumber(String phoneNumber) throws SQLException {
-        String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, balance, created_at
-            FROM users
-            WHERE phone_number = ?
-            LIMIT 1
-            """;
-
-        try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, phoneNumber);
-            try (ResultSet rs = statement.executeQuery()) {
-                if (!rs.next()) {
-                    return Optional.empty();
-                }
-                return Optional.of(mapUser(rs));
-            }
-        }
-    }
-
-    @Override
-    public boolean existsByUsername(String username) throws SQLException {
+    public boolean existsByUsername (String username) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, username);
+            ///rs.next di chuyển con trỏ và trả về boolean
             try (ResultSet rs = statement.executeQuery()) {
                 return rs.next();
             }
         }
     }
-
     @Override
     public boolean existsByEmail(String email) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE email = ? LIMIT 1";
+
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
+
             statement.setString(1, email);
+
             try (ResultSet rs = statement.executeQuery()) {
                 return rs.next();
             }
         }
     }
-
+    
     @Override
-    public void save(User user) throws SQLException {
+    public void save (User user) throws SQLException {
         String sql = """
-            INSERT INTO users (username, email, password_hash, phone_number, position, status, balance, created_at, updated_at)
+            INSERT INTO users (username, email, passwordHash, phone_number, position, status, balance, timeinit)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
-
         try (Connection connection = DatabaseConnection.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+            PreparedStatement statement = connection.prepareStatement(sql)) {
             String now = java.time.LocalDateTime.now().toString();
-
+            
             statement.setString(1, user.getUserName());
             statement.setString(2, user.getEmail());
             statement.setString(3, user.getPasswordHash());
@@ -119,23 +101,22 @@ public class JdbcUserRepository implements UserRepository {
             statement.setString(6, user.getUserStatus().name());
             statement.setDouble(7, user.getBalance());
             statement.setString(8, now);
-            statement.setString(9, now);
             statement.executeUpdate();
         }
     }
 
     private User mapUser(ResultSet rs) throws SQLException {
-        User user = new User(
-            rs.getString("username"),
-            rs.getString("email"),
-            rs.getString("password_hash"),
-            rs.getString("phone_number"),
-            Position.valueOf(rs.getString("position")),
-            UserStatus.valueOf(rs.getString("status")),
-            rs.getDouble("balance"),
-            rs.getString("created_at")
-        );
+        User user = new User(rs.getString("username"),
+                        rs.getString("email"),
+                        rs.getString("passwordHash"), 
+                        rs.getString("phone_number"),
+                        Position.valueOf(rs.getString("position")),
+                        UserStatus.valueOf(rs.getString("status")),
+                        rs.getDouble("balance"),
+                        rs.getString("timeinit"));
         user.setId(rs.getLong("id"));
         return user;
     }
+
+
 }

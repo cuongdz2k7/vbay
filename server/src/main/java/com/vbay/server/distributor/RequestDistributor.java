@@ -1,4 +1,4 @@
-package com.vbay.server.distributor;
+﻿package com.vbay.server.distributor;
 
 import java.sql.SQLException;
 
@@ -14,14 +14,17 @@ import com.vbay.shared.dto.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
+
+
 public class RequestDistributor {
     private final AuthService authService;
 
-    public RequestDistributor(AuthService authService) {
+    public RequestDistributor (AuthService authService) {
         this.authService = authService;
     }
 
-    public Respond<?> dispatch(String rawRequest) {
+    ///dispatch
+    public Respond<?> dispatch (String rawRequest) {
         JsonObject root;
         try {
             root = JsonUtils.fromJson(rawRequest, JsonObject.class);
@@ -71,8 +74,11 @@ public class RequestDistributor {
         }
     }
 
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload)
-        throws SQLException, AuthenticationException {
+    
+
+    
+    ///handler
+    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload) throws SQLException, AuthenticationException {
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
@@ -89,4 +95,5 @@ public class RequestDistributor {
         authService.register(registerRequest);
         return new Respond<>(requestId, true, "Register successful", null);
     }
+    
 }
