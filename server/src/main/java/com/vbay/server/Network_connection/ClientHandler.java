@@ -16,15 +16,7 @@ public class ClientHandler implements Runnable {
     private final RequestDistributor Distributor;
     
     //Constructor
-<<<<<<< HEAD
-<<<<<<< HEAD
-    public ClientHandler(Socket socket) { // tham so truyen vao la socket tu client
-=======
     public ClientHandler(Socket socket, RequestDistributor Distributor) {
->>>>>>> f58302a8af90f2613b97ce6517053645eeb0abd9
-=======
-    public ClientHandler(Socket socket, RequestDistributor Distributor) {
->>>>>>> 78d200fa82fbf250c23665dc34bcf25218197fb0
         this.socket = socket;
         this.Distributor = Distributor;
     }

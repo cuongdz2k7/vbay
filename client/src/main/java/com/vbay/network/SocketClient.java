@@ -37,12 +37,9 @@ public class SocketClient {
         }
         return Client;
     }
-<<<<<<< HEAD
     public synchronized boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
-=======
->>>>>>> 78d200fa82fbf250c23665dc34bcf25218197fb0
 
     // connect to server
     public void connect(String host, int port) throws IOException {
@@ -63,12 +60,6 @@ public class SocketClient {
         }
     }
 
-
-<<<<<<< HEAD
-  
-=======
-    
->>>>>>> 78d200fa82fbf250c23665dc34bcf25218197fb0
     public Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
         // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {
