@@ -1,7 +1,8 @@
 package com.vbay.server.Model;
+import java.time.LocalDate;
+
 import com.vbay.shared.enums.Position;
 import com.vbay.shared.enums.shared_status.UserStatus;
-import java.time.LocalDate;
 
 public class User {
     // Base 

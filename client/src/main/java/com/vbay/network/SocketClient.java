@@ -37,22 +37,22 @@ public class SocketClient {
         }
         return Client;
     }
-
     public synchronized boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
     // connect to server
-    public synchronized void connect(String host, int port) throws IOException {
+    public void connect(String host, int port) throws IOException {
         if (socket != null) {
             System.out.println("Already connected");
             return;
         }
         try{
-        socket = new Socket(host, port);
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(socket.getOutputStream(), true);
-        System.out.println("Connected to server at " + host + ":" + port);
+            socket = new Socket(host, port);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            out = new PrintWriter(socket.getOutputStream(), true);
+            System.out.println("Connected to server at " + host + ":" + port);
+            startListening();
         }
         catch (ConnectException ce){
             System.out.println("Server is not running , checking _host_ and _port_");
@@ -61,8 +61,8 @@ public class SocketClient {
     }
 
 
-
-   public synchronized Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
+  
+    public Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
         // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {
             throw new IOException("Not connected to server");
@@ -71,7 +71,7 @@ public class SocketClient {
         out.println(jsonMessage);
         String jsonResponse = in.readLine();
         return JsonUtils.fromJson(jsonResponse, Respond.class);
-    }
+    }    
 
 
 
