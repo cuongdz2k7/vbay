@@ -14,7 +14,7 @@ import com.vbay.shared.protocol.Respond;
 public class ClientHandler implements Runnable {
     private final Socket socket; 
     private final RequestDistributor Distributor;
-
+    
     //Constructor
     public ClientHandler(Socket socket, RequestDistributor Distributor) {
         this.socket = socket;

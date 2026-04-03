@@ -33,11 +33,10 @@ import com.vbay.server.service.AuthService;
                 AuthService authService = new AuthService(userRepository, passwordHasher);
                 RequestDistributor distributor = new RequestDistributor(authService);
                 
-
                 //ServerSocker : dung o phia server -> mo cong + ket noi voi client ( cua chinh cua server)
                 System.out.println("Port: " + PORT);
                 System.out.println("waiting for clients...");
-                while(true){
+                while(true) {
                     Socket socket = serverSocket.accept();
                     // socket = dai dien ket noi giua client + server
                     System.out.println("Client connected");
