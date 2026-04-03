@@ -1,0 +1,263 @@
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.login-screen {
+    -fx-background-color: #0d0d0d;
+}
+
+.brand-wordmark {
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+    -fx-text-fill: white;
+}
+
+.login-title {
+    -fx-font-size: 32px;
+    -fx-font-weight: 700;
+    -fx-text-fill: white;
+}
+
+.form-container {
+    -fx-background-color: rgba(15, 15, 15, 0.45);
+    -fx-background-radius: 4;
+    -fx-border-color: #1a1a1a;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+}
+
+.field-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #666666;
+}
+
+.auth-input {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent transparent rgba(255, 255, 255, 0.08) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 8 0;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: rgba(102, 102, 102, 0.55);
+    -fx-font-size: 18px;
+    -fx-highlight-fill: #ff5722;
+    -fx-highlight-text-fill: white;
+}
+
+.auth-input:focused {
+    -fx-border-color: transparent transparent #ff5722 transparent;
+}
+
+.overlay-input {
+    -fx-max-width: 1.7976931348623157E308;
+}
+
+.primary-button {
+    -fx-background-color: #ff5722;
+    -fx-background-radius: 0;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #ff6a3d;
+}
+
+.primary-button:pressed {
+    -fx-background-color: #e64b1b;
+}
+
+.muted-copy {
+    -fx-font-size: 13px;
+    -fx-text-fill: #666666;
+}
+
+.muted-link {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+    -fx-text-fill: #666666;
+    -fx-cursor: hand;
+}
+
+.muted-link:hover {
+    -fx-text-fill: white;
+    -fx-underline: true;
+}
+
+.small-link {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+}
+
+.primary-link {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.primary-link:hover {
+    -fx-underline: true;
+}
+
+.icon-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+}
+
+.eye-icon {
+    -fx-fill: #666666;
+}
+
+.icon-button:hover .eye-icon {
+    -fx-fill: white;
+}
+
+.footer-bar {
+    -fx-border-color: rgba(255, 255, 255, 0.05) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.footer-copy {
+    -fx-font-size: 10px;
+    -fx-text-fill: #666666;
+}
+
+.footer-link {
+    -fx-font-size: 10px;
+}
+
+.register-screen {
+    -fx-background-color: #0a0a0a;
+}
+
+.register-logo {
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #ff8c6d;
+}
+
+.header-link {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+    -fx-text-fill: #9a9a9a;
+    -fx-font-size: 10px;
+    -fx-font-weight: 600;
+    -fx-cursor: hand;
+}
+
+.header-link:hover {
+    -fx-text-fill: white;
+}
+
+.register-card {
+    -fx-background-color: #0d0d0d;
+    -fx-border-color: #1a1a1a;
+    -fx-border-width: 1;
+}
+
+.access-tag {
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #ff8c6d;
+}
+
+.register-title {
+    -fx-font-size: 44px;
+    -fx-font-weight: 800;
+    -fx-text-fill: white;
+}
+
+.register-label {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #8d8d8d;
+}
+
+.register-input {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent transparent #2a2a2a transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 9 0;
+    -fx-text-fill: white;
+    -fx-prompt-text-fill: #444444;
+    -fx-font-size: 13px;
+    -fx-highlight-fill: #ff5e2b;
+    -fx-highlight-text-fill: white;
+}
+
+.register-input:focused {
+    -fx-border-color: transparent transparent #ff5e2b transparent;
+}
+
+.register-password-input {
+    -fx-font-size: 18px;
+}
+
+.register-submit-button {
+    -fx-background-color: #ff5e2b;
+    -fx-background-radius: 0;
+    -fx-text-fill: black;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-cursor: hand;
+}
+
+.register-submit-button:hover {
+    -fx-background-color: #ff7a52;
+}
+
+.register-submit-button:pressed {
+    -fx-background-color: #e65524;
+}
+
+.register-card-footer {
+    -fx-border-color: #1a1a1a transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+}
+
+.register-footer-copy {
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #8d8d8d;
+}
+
+.register-footer-link {
+    -fx-padding: 0;
+    -fx-border-width: 0;
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+    -fx-cursor: hand;
+}
+
+.register-footer-link:hover {
+    -fx-underline: true;
+}
+
+.register-footer-arrow {
+    -fx-font-size: 12px;
+    -fx-text-fill: white;
+}
+
+.register-page-footer {
+    -fx-opacity: 0.3;
+}
+
+.register-footer-strip {
+    -fx-font-size: 9px;
+    -fx-text-fill: white;
+}

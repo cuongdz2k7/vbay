@@ -12,7 +12,6 @@ import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 public class MainApp extends Application{
@@ -43,22 +42,18 @@ public class MainApp extends Application{
     public void start(Stage primaryStage) throws Exception {
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Parent loader = FXMLLoader.load(
-            Objects.requireNonNull(getClass().getResource("/jfx/scene/Authentication.fxml")));
-        Scene scene = new Scene(loader);
-        scene.getStylesheets().add(
-            Objects.requireNonNull(getClass().getResource("/jfx/css/app.css")).toExternalForm()
-        );
+            Objects.requireNonNull(getClass().getResource("/jfx/scene/login.fxml")));
+        SceneManager.setStage(primaryStage);
+        var scene = SceneManager.createStyledScene(loader);
         primaryStage.setScene(scene);
         primaryStage.setTitle("VBay");
         primaryStage.setMinWidth(430);
         primaryStage.setMinHeight(720);
         primaryStage.show();
-
-        SceneManager.setStage(primaryStage);
     }
 
     public static void main(String[] args) {
-//        initSocketClient();
+//        initSocketClient(); // connect to server before launching program
         launch(args);
     }
 

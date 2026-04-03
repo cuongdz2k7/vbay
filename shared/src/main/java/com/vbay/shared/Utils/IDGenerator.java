@@ -6,4 +6,7 @@ public class IDGenerator {
     public static String generateID () {
         return java.util.UUID.randomUUID().toString();
     }
+    /// gen auction id
+    /// gen request id = respond id
+    /// user --> disting
 }
