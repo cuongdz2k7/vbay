@@ -62,7 +62,11 @@ public class AuthService {
         if (isBlank(request.getUsername())) {
             throw new ValidationException("Username is required");
         }
+<<<<<<< HEAD
         if (request.getPassword() == null || request.getPassword().length() == 0) {
+=======
+        if (request.getPassword() == null || request.getPassword().length == 0) {
+>>>>>>> 78d200fa82fbf250c23665dc34bcf25218197fb0
             throw new ValidationException("Password is required");
         }
     }
