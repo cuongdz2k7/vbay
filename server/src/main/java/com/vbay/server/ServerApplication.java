@@ -16,15 +16,16 @@ import com.vbay.server.service.AuthService;
         private static final int PORT = 3618;
         public static void main(String[] args) {
             
-            DatabaseInitializer.init();
-
+            
             //Shut down hook ( Truong trinh chuan bi tat)
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 System.out.println("Server's on the edge of offline, Saving current data into database");
                 //RealtimeDatabase.saveAll();
             }));
-
+            
             try(ServerSocket serverSocket = new ServerSocket(PORT)){ 
+                DatabaseInitializer.init();
+
                 ///server là chỗ khởi tạo tất cả các Class cần dùng
                 UserRepository userRepository = new JdbcUserRepository();
                 PasswordHasher passwordHasher = new Argon2PasswordHasher();
@@ -43,7 +44,6 @@ import com.vbay.server.service.AuthService;
                     Thread new_Thread = new Thread(new ClientHandler(socket, distributor));
                     // Tao Thread moi , Thread(<T extend Runnable>) giao cho thread moi phan cong viec la T
                     new_Thread.start();
-
                 }
             }
             catch (IOException exception) {

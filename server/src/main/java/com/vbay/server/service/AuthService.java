@@ -27,9 +27,6 @@ rồi cùng chui vào save(...)
 Đây là lỗi classic check-then-act.
 
 Dù AuthService nhìn có vẻ đúng, nhưng dưới tải đồng thời vẫn có thể đụng nhau.
-
-
-
 */
 
 public class AuthService {
