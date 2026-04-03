@@ -17,7 +17,6 @@ public class ClientHandler implements Runnable {
     
     //Constructor
     public ClientHandler(Socket socket, RequestDistributor Distributor) {
-
         this.socket = socket;
         this.Distributor = Distributor;
     }

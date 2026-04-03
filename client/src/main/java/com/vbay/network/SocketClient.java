@@ -60,8 +60,6 @@ public class SocketClient {
         }
     }
 
-
-    
     public Respond<?> sendMessage (Request<?> message) throws IOException { // send Request to Server --> receive Response
         // Respond<?> --> giúp đa dạng message trả về ( Tuỳ thuộc trường hợp nó ở dạng nào)
         if (socket == null || socket.isClosed()) {
