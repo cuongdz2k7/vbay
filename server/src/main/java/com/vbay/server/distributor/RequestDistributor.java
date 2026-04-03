@@ -1,4 +1,4 @@
-package com.vbay.server.distributor;
+﻿package com.vbay.server.distributor;
 
 import java.sql.SQLException;
 
@@ -14,31 +14,35 @@ import com.vbay.shared.dto.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
-
-
 public class RequestDistributor {
     private final AuthService authService;
 
-    public RequestDistributor (AuthService authService) {
+    public RequestDistributor(AuthService authService) {
         this.authService = authService;
     }
 
-    ///dispatch
-    public Respond<?> dispatch (String rawRequest) {
+    public Respond<?> dispatch(String rawRequest) {
         JsonObject root;
         try {
             root = JsonUtils.fromJson(rawRequest, JsonObject.class);
         } catch (Exception e) {
             return new Respond<>(null, false, "Invalid request format", null);
         }
-        
+
+        if (root == null) {
+            return new Respond<>(null, false, "Invalid request format", null);
+        }
+
         JsonElement requestIdElement = root.get("requestId");
         JsonElement typeElement = root.get("type");
 
-        String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
-                            ? requestIdElement.getAsString() : null;
+        String requestId = (requestIdElement != null && !requestIdElement.isJsonNull())
+            ? requestIdElement.getAsString()
+            : null;
 
-        String typeRaw = (typeElement != null && !typeElement.isJsonNull()) ? typeElement.getAsString() : null;
+        String typeRaw = (typeElement != null && !typeElement.isJsonNull())
+            ? typeElement.getAsString()
+            : null;
 
         if (typeRaw == null || typeRaw.isBlank()) {
             return new Respond<>(requestId, false, "Invalid request type", null);
@@ -67,11 +71,8 @@ public class RequestDistributor {
         }
     }
 
-    
-
-    
-    ///handler
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload) throws SQLException, AuthenticationException {
+    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload)
+        throws SQLException, AuthenticationException {
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
@@ -88,5 +89,4 @@ public class RequestDistributor {
         authService.register(registerRequest);
         return new Respond<>(requestId, true, "Register successful", null);
     }
-    
 }

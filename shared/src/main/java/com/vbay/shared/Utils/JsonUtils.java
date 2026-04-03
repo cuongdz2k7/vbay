@@ -1,9 +1,10 @@
-package com.vbay.shared.Utils;
+﻿package com.vbay.shared.Utils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 
-public class JsonUtils { 
+public class JsonUtils {
     private static final Gson gson = new Gson();
 
     public static String toJson(Object obj) {
@@ -24,6 +25,12 @@ public class JsonUtils {
         }
     }
 
-    
+    public static <T> T fromJson(JsonElement jsonElement, Class<T> clazz) {
+        try {
+            return gson.fromJson(jsonElement, clazz);
+        } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
-
