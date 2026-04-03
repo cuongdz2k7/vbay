@@ -12,10 +12,11 @@ public class Distribution {
     public Respond<?> distribute(Request<?> request){
         switch (request.getType()) {
             case REGISTER , LOGIN,LOGOUT,FORGOT_PASSWORD ,VERIFY,UPDATE_PROFILE:
-                //return authservice.solve(request)
+                return AuthService.solve(request);
                 break;
             case    CLOSE_AUCTION,DECLARE_WINNER,NOTIFY_WINNER: 
-                //return auctionservice.solve(request)
+                return AuctionService.solve(request);
+                break;
 
             // case . v.v
             default:
