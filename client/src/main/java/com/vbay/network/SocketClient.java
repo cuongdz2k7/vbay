@@ -37,11 +37,9 @@ public class SocketClient {
         }
         return Client;
     }
-
     public synchronized boolean isConnected() {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
-
 
     // connect to server
     public void connect(String host, int port) throws IOException {
