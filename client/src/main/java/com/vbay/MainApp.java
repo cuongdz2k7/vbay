@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.vbay.network.SocketClient;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
+import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene.SceneManager;
 
 import atlantafx.base.theme.PrimerLight;
@@ -14,8 +15,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
 
-public class MainApp extends Application{
-
+public class MainApp extends Application {
 
     public static void initSocketClient() {
         SocketClient client = SocketClient.getClient();
@@ -24,22 +24,23 @@ public class MainApp extends Application{
             client.connect("localhost", 3618);
 
             Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
-            client.sendMessage(request);
-            System.out.println("Connected to VBay server.");
-        } catch (IOException e) {
-            System.err.println("Could not connect to server");
-            e.printStackTrace();
-        } finally {
-            try {
-                client.disconnect();
-            } catch (IOException e) {
-                System.err.println("Error while disconnecting: " + e.getMessage());
+            Respond<?> response = client.sendMessage(request);
+            if (response != null && response.isStatus()) {
+                System.out.println("Connected to VBay server.");
+            } else if (response != null) {
+                System.err.println("Server verification failed: " + response.getMessage());
+            } else {
+                System.err.println("Server verification failed: empty response");
             }
+        } catch (IOException exception) {
+            System.err.println("Could not connect to server");
+            exception.printStackTrace();
         }
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        initSocketClient();
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Parent loader = FXMLLoader.load(
             Objects.requireNonNull(getClass().getResource("/jfx/scene/login.fxml")));
@@ -52,9 +53,17 @@ public class MainApp extends Application{
         primaryStage.show();
     }
 
-    public static void main(String[] args) {
-//        initSocketClient(); // connect to server before launching program
-        launch(args);
+    @Override
+    public void stop() throws Exception {
+        try {
+            SocketClient.getClient().disconnect();
+        } catch (IOException exception) {
+            System.err.println("Error while disconnecting: " + exception.getMessage());
+        }
+        super.stop();
     }
 
+    public static void main(String[] args) {
+        launch(args);
+    }
 }
