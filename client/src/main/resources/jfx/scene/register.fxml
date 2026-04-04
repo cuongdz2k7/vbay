@@ -26,7 +26,7 @@
                     </padding>
 
                     <children>
-                        <Label styleClass="register-brand" text="OBSIDIAN" />
+                        <Label styleClass="register-brand" text="VBAY" />
                         <Region HBox.hgrow="ALWAYS" />
                         <Hyperlink focusTraversable="false" onAction="#handleBackToHome" styleClass="header-link" text="BACK TO HOME" />
                     </children>
@@ -37,6 +37,21 @@
                 <StackPane styleClass="register-stage" BorderPane.alignment="CENTER">
                     <children>
                         <Region styleClass="register-stage-glow" />
+
+                        <VBox alignment="TOP_RIGHT" mouseTransparent="true" pickOnBounds="false">
+                            <padding>
+                                <Insets right="44.0" top="58.0" />
+                            </padding>
+                            <children>
+                                <Region minHeight="180.0" VBox.vgrow="ALWAYS" />
+                                <StackPane prefHeight="220.0" prefWidth="120.0">
+                                    <children>
+                                        <Line endX="0.0" endY="200.0" startX="0.0" startY="0.0" stroke="#5b4039" strokeLineCap="BUTT" strokeWidth="1.0" translateX="118.0" />
+                                        <Line endX="110.0" endY="0.0" startX="0.0" startY="0.0" stroke="#5b4039" strokeLineCap="BUTT" strokeWidth="1.0" translateY="200.0" />
+                                    </children>
+                                </StackPane>
+                            </children>
+                        </VBox>
 
                         <VBox alignment="CENTER" fillWidth="true">
                             <padding>
@@ -130,20 +145,6 @@
                             </children>
                         </VBox>
 
-                        <VBox alignment="TOP_RIGHT" mouseTransparent="true" pickOnBounds="false">
-                            <padding>
-                                <Insets right="44.0" top="58.0" />
-                            </padding>
-                            <children>
-                                <Region minHeight="180.0" VBox.vgrow="ALWAYS" />
-                                <StackPane prefHeight="220.0" prefWidth="120.0">
-                                    <children>
-                                        <Line endX="0.0" endY="200.0" startX="0.0" startY="0.0" stroke="#5b4039" strokeLineCap="BUTT" strokeWidth="1.0" translateX="118.0" />
-                                        <Line endX="110.0" endY="0.0" startX="0.0" startY="0.0" stroke="#5b4039" strokeLineCap="BUTT" strokeWidth="1.0" translateY="200.0" />
-                                    </children>
-                                </StackPane>
-                            </children>
-                        </VBox>
                     </children>
                 </StackPane>
             </center>

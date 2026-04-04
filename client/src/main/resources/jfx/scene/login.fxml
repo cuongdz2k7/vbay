@@ -39,7 +39,7 @@
                                             </children>
                                         </HBox>
 
-                                        <Label styleClass="login-title" text="Welcome back">
+                                        <Label styleClass="login-title" text="Welcome Back">
                                             <VBox.margin>
                                                 <Insets top="6.0" />
                                             </VBox.margin>
@@ -74,9 +74,9 @@
 
                                                         <StackPane>
                                                             <children>
-                                                                <PasswordField fx:id="passwordField" maxWidth="1.7976931348623157E308" onAction="#handleLogin" promptText="........" styleClass="auth-input password-input" />
-                                                                <TextField fx:id="visiblePasswordField" managed="false" maxWidth="1.7976931348623157E308" onAction="#handleLogin" promptText="........" styleClass="auth-input password-input" visible="false" />
-                                                                <Button focusTraversable="false" mnemonicParsing="false" onAction="#togglePasswordVisibility" prefHeight="28.0" prefWidth="32.0" styleClass="icon-button" StackPane.alignment="CENTER_RIGHT">
+                                                                <PasswordField fx:id="passwordField" maxWidth="1.7976931348623157E308" onAction="#handleLogin" promptText="........" styleClass="register-input password-input" />
+                                                                <TextField fx:id="visiblePasswordField" managed="false" maxWidth="1.7976931348623157E308" onAction="#handleLogin" promptText="........" styleClass="register-input password-input" visible="false" />
+                                                                <Button focusTraversable="false" mnemonicParsing="false" onAction="#togglePasswordVisibility" prefHeight="28.0" prefWidth="32.0" styleClass="icon-button password-toggle-button" StackPane.alignment="CENTER_RIGHT">
                                                                     <graphic>
                                                                         <SVGPath fx:id="passwordToggleIcon" content="M1.5 0C0.6716 0 0 0.6716 0 1.5v9.002C0.6314 11.4642 1.6154 12.2766 2.8147 12.8393C4.1372 13.4602 5.9548 13.998 8 13.998s3.8628-0.5378 5.1853-1.1587C14.3846 12.2766 15.3686 11.4642 16 10.502V1.5C16 0.6716 15.3284 0 14.5 0H1.5ZM8 3.5a3.5 3.5 0 1 1 0 7.001A3.5 3.5 0 0 1 8 3.5Zm0 1.5a2 2 0 1 0 0 4.001A2 2 0 0 0 8 5Z" styleClass="eye-icon" />
                                                                     </graphic>

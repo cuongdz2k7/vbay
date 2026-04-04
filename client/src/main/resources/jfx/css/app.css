@@ -55,6 +55,26 @@
     -fx-highlight-text-fill: #e5e2e1;
 }
 
+.auth-input.text-field,
+.auth-input.password-field,
+.register-input.text-field,
+.register-input.password-field {
+    -fx-background-color: #0e0e0e, #0e0e0e, #0e0e0e;
+    -fx-control-inner-background: #0e0e0e;
+    -color-input-bg: #0e0e0e;
+    -color-input-bg-focused: #0e0e0e;
+    -color-input-border: transparent;
+    -color-input-border-focused: transparent;
+}
+
+.auth-input.text-field:focused,
+.auth-input.password-field:focused,
+.register-input.text-field:focused,
+.register-input.password-field:focused {
+    -fx-background-color: #0e0e0e, #0e0e0e, #0e0e0e;
+    -fx-control-inner-background: #0e0e0e;
+}
+
 .auth-input:focused {
     -fx-border-color: transparent transparent #ffb5a0 transparent;
 }
@@ -120,11 +140,29 @@
 }
 
 .icon-button {
-    -fx-background-color: transparent;
+    -fx-background-color: transparent, transparent, transparent;
+    -fx-background-insets: 0;
     -fx-background-radius: 0;
+    -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-padding: 0;
     -fx-cursor: hand;
+}
+
+.password-toggle-button {
+    -fx-background-color: #0e0e0e;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+}
+
+.password-toggle-button:hover,
+.password-toggle-button:focused,
+.password-toggle-button:pressed {
+    -fx-background-color: #0e0e0e;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
 }
 
 .eye-icon {
