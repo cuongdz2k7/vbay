@@ -28,8 +28,7 @@ import com.vbay.server.service.AuthService;
 
                 ///server là chỗ khởi tạo tất cả các Class cần dùng
                 UserRepository userRepository = new JdbcUserRepository();
-                PasswordHasher passwordHasher = new Argon2PasswordHasher();
-
+                PasswordHasher passwordHasher = new Argon2PasswordHasher();///sửa static
                 AuthService authService = new AuthService(userRepository, passwordHasher);
                 RequestDistributor distributor = new RequestDistributor(authService);
                 
