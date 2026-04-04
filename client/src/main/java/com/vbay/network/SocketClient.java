@@ -71,8 +71,6 @@ public class SocketClient {
     }    
 
 
-
-
     // đóng kết nối     
     public synchronized void disconnect() throws IOException {
         if (in != null) in.close();
@@ -85,6 +83,7 @@ public class SocketClient {
         threadlistener = null;
     }
 /*
+
     // Lang nghe server ( lien tuc )
     public void startListening(){
         if (threadlistener != null && threadlistener.isAlive()){
@@ -119,5 +118,5 @@ public class SocketClient {
     threadlistener.start();
     }
 
-    */
+*/
 }

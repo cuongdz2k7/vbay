@@ -73,7 +73,7 @@ public class RequestDistributor {
     
 
     
-    ///handler
+    ///bỏ chuyển rawString sang authservice
     private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload) throws SQLException, AuthenticationException {
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
