@@ -59,9 +59,9 @@ public class AuthService {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        if (isBlank(request.getUsername())) {
-            throw new ValidationException("Username is required");
-        }
+            if (isBlank(request.getUsername())) {
+                throw new ValidationException("Username is required");
+            }
         if (request.getPassword() == null || request.getPassword().length == 0) {
             throw new ValidationException("Password is required");
         }

@@ -68,7 +68,7 @@
                                         <VBox spacing="8.0">
                                             <children>
                                                 <Label styleClass="access-tag" text="ACCESS PORTAL" />
-                                                <Label styleClass="register-title" text="Create account" />
+                                                <Label styleClass="register-title" text="Create Account" />
                                             </children>
                                         </VBox>
 
