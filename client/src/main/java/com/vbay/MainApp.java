@@ -5,7 +5,6 @@ import java.io.IOException;
 import com.vbay.network.SocketClient;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
-import com.vbay.ui.JavaFXApplication;
 
 public class MainApp {
 

@@ -1,0 +1,121 @@
+package com.vbay.ui.scene.controller;
+
+import java.util.regex.Pattern;
+
+import com.vbay.ui.scene.SceneManager;
+
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.TextField;
+
+public class registercontroller {
+
+    private static final Pattern EMAIL_PATTERN =
+        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    @FXML
+    private TextField fullNameField;
+
+    @FXML
+    private TextField emailField;
+
+    @FXML
+    private PasswordField passwordField;
+
+    @FXML
+    private PasswordField confirmPasswordField;
+
+    @FXML
+    private void handleRegister(ActionEvent event) {
+        String fullName = fullNameField.getText().trim();
+        String email = emailField.getText().trim();
+        String password = passwordField.getText();
+        String confirmPassword = confirmPasswordField.getText();
+
+        if (fullName.isBlank()) {
+            showMessage(Alert.AlertType.WARNING, "Missing full name", "Please enter your full name.");
+            fullNameField.requestFocus();
+            return;
+        }
+
+        if (fullName.length() < 2) {
+            showMessage(Alert.AlertType.WARNING, "Invalid full name", "Full name must be at least 2 characters.");
+            fullNameField.requestFocus();
+            return;
+        }
+
+        if (email.isBlank()) {
+            showMessage(Alert.AlertType.WARNING, "Missing email", "Please enter your email address.");
+            emailField.requestFocus();
+            return;
+        }
+
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
+            showMessage(Alert.AlertType.WARNING, "Invalid email", "Please enter a valid email address.");
+            emailField.requestFocus();
+            return;
+        }
+
+        if (password.isBlank()) {
+            showMessage(Alert.AlertType.WARNING, "Missing password", "Please create a password.");
+            passwordField.requestFocus();
+            return;
+        }
+
+        if (password.length() < 8) {
+            showMessage(Alert.AlertType.WARNING, "Weak password", "Password must be at least 8 characters.");
+            passwordField.requestFocus();
+            return;
+        }
+
+        if (confirmPassword.isBlank()) {
+            showMessage(Alert.AlertType.WARNING, "Missing confirmation", "Please confirm your password.");
+            confirmPasswordField.requestFocus();
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            showMessage(Alert.AlertType.WARNING, "Password mismatch", "Password and confirmation do not match.");
+            confirmPasswordField.requestFocus();
+            return;
+        }
+
+        showMessage(
+            Alert.AlertType.INFORMATION,
+            "Register button clicked",
+            "Basic registration validation passed for: " + email
+        );
+    }
+
+    @FXML
+    private void handleBackToHome(ActionEvent event) {
+        goToLogin();
+    }
+
+    @FXML
+    private void handleBackToLogin(ActionEvent event) {
+        goToLogin();
+    }
+
+    private void goToLogin() {
+        try {
+            SceneManager.switchScene("/jfx/scene/login.fxml");
+        } catch (Exception exception) {
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Navigation failed",
+                "Could not open the login screen."
+            );
+        }
+    }
+
+    private void showMessage(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle("VBay");
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+}
