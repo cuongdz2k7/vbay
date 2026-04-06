@@ -8,16 +8,18 @@ import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.ui.JavaFXApplication;
 
+
 public class MainApp {
 
     /**
      * Set up JavaFX Application and enable window rendering.
      */
+
     public static void initUserInterface(String[] args) {
         JavaFXApplication.launchApplication(args);
     }
 
-    public static void initSocketClient() {
+    public static void initSocketClitent() {
         SocketClient client = SocketClient.getClient();
         try {
             System.out.println("Connecting to VBay server...");
@@ -43,8 +45,8 @@ public class MainApp {
     }
 
     public static void main(String[] args) {
-        initSocketClient();
-       // initUserInterface(args);
+        //initSocketClient();
+        initUserInterface(args);
     }
 
 }
