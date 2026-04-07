@@ -94,6 +94,7 @@ public class SocketClient {
             in.close();
         }
         if (out != null) {
+            out.print("exit");
             out.close();
         }
         if (socket != null && !socket.isClosed()) {
@@ -107,6 +108,7 @@ public class SocketClient {
         out = null;
         socket = null;
         threadlistener = null;
+        System.out.println("Disconnected from the server");
     }
 
     public void startListening() {
