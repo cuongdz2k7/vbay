@@ -1,10 +1,8 @@
 package com.vbay;
 
 import java.io.IOException;
-import java.util.Objects;
 
 import com.vbay.network.SocketClient;
-import com.vbay.shared.dto.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -12,20 +10,20 @@ import com.vbay.ui.scene.SceneManager;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
 import javafx.stage.Stage;
 
 public class MainApp extends Application {
 
     public static void initSocketClient() {
         SocketClient client = SocketClient.getClient();
+
         try {
             System.out.println("Connecting to VBay server...");
             client.connect("localhost", 3618);
 
             Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
             Respond<?> response = client.sendMessage(request);
+
             if (response != null && response.isStatus()) {
                 System.out.println("Connected to VBay server.");
             } else if (response != null) {
@@ -43,11 +41,9 @@ public class MainApp extends Application {
     public void start(Stage primaryStage) throws Exception {
         initSocketClient();
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-        Parent loader = FXMLLoader.load(
-            Objects.requireNonNull(getClass().getResource("/jfx/scene/login.fxml")));
+
         SceneManager.setStage(primaryStage);
-        var scene = SceneManager.createStyledScene(loader);
-        primaryStage.setScene(scene);
+        primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/login.fxml"));
         primaryStage.setTitle("VBay");
         primaryStage.setMinWidth(430);
         primaryStage.setMinHeight(720);

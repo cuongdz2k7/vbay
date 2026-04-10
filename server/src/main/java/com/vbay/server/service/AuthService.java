@@ -55,7 +55,7 @@ public class AuthService {
         try {
             Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
             if (userOptional.isEmpty()) { 
-                throw new AuthenticationException("Invalid password");
+                throw new AuthenticationException("Invalid email or password");
             }
             User user = userOptional.get(); 
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
