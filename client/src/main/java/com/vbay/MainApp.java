@@ -56,7 +56,7 @@ public class MainApp extends Application {
     //Stop
     @Override
     public void stop() throws Exception {
-        System.out.println("VBAY SHUT DOWN");
+        System.out.println("VBAY shut down ");
         try {
             SocketClient.getClient().disconnect();
         } catch (IOException exception) {

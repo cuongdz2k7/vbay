@@ -50,7 +50,7 @@ public class SocketClient {
             socket = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-            System.out.println("Connected to server at " + host + ":" + port);
+            System.out.println("Connected to server at " + host + ": " + port);
             startListening();
         } catch (ConnectException exception) {
             socket = null;
@@ -90,12 +90,13 @@ public class SocketClient {
     }
 
     public synchronized void disconnect() throws IOException {
-        if (in != null) {
-            in.close();
-        }
         if (out != null) {
             out.println("exit");
             out.flush();
+            out.close();
+        }
+        if (in != null) {
+            in.close();
         }
         if (socket != null && !socket.isClosed()) {
             socket.close();
