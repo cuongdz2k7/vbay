@@ -94,8 +94,8 @@ public class SocketClient {
             in.close();
         }
         if (out != null) {
-            out.print("exit");
-            out.close();
+            out.println("exit");
+            out.flush();
         }
         if (socket != null && !socket.isClosed()) {
             socket.close();

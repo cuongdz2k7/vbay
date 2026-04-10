@@ -41,6 +41,7 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         initSocketClient();
+        //default theme -> Light
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Parent loader = FXMLLoader.load(
             Objects.requireNonNull(getClass().getResource("/jfx/scene/login.fxml")));
@@ -52,9 +53,10 @@ public class MainApp extends Application {
         primaryStage.setMinHeight(720);
         primaryStage.show();
     }
-
+    //Stop
     @Override
     public void stop() throws Exception {
+        System.out.println("VBAY SHUT DOWN");
         try {
             SocketClient.getClient().disconnect();
         } catch (IOException exception) {
@@ -64,6 +66,19 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
+        // Add shutdown hook for sudden termination
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("App Shutting Down - Emergency shutdown detected");
+            try {
+                SocketClient client = SocketClient.getClient();
+                if (client.isConnected()) {
+                    client.disconnect();
+                }
+            } catch (Exception e) {
+                System.err.println("Error during emergency shutdown: " + e.getMessage());
+            }
+        }));
+
         launch(args);
     }
 }
