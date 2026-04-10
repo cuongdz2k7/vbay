@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
     private final Socket socket; 
     private final RequestDistributor Distributor;
     
+    ///ClientSession 
     //Constructor
     public ClientHandler(Socket socket, RequestDistributor Distributor) {
         this.socket = socket;

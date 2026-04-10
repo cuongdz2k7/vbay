@@ -111,6 +111,7 @@ public class SocketClient {
         threadlistener = null;
         System.out.println("Disconnected from the server");
     }
+/*
 
     public void startListening() {
         if (threadlistener != null && threadlistener.isAlive()) {
@@ -144,4 +145,6 @@ public class SocketClient {
         threadlistener.setDaemon(true);
         threadlistener.start();
     }
+
+*/
 }

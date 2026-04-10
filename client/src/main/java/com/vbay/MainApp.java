@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 import com.vbay.network.SocketClient;
+import com.vbay.shared.dto.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -17,7 +18,7 @@ import javafx.stage.Stage;
 
 public class MainApp extends Application {
 
-    public static void initSocketClient() {
+    public static void initSocketClitent() {
         SocketClient client = SocketClient.getClient();
         try {
             System.out.println("Connecting to VBay server...");
