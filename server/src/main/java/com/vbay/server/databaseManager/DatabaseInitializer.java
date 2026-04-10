@@ -53,7 +53,7 @@ public class DatabaseInitializer {
             String sql = new String(inputStream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
             Statement.execute(sql);
             /*
-            🧠 1. Có 3 kiểu execute
+             1. Có 3 kiểu execute
             Method	            Dùng khi	                Trả về
             executeQuery()	    SELECT              	    ResultSet
             executeUpdate()	    INSERT / UPDATE / DELETE	số dòng bị ảnh hưởng
