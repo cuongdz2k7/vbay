@@ -16,7 +16,7 @@ public class SceneManager {
         currentStage = new_stage;
     }
 
-    public static void switchScene(String fxmlPath) throws Exception { // Path tuyệt đối, ví dụ: "/jfx/scene/login.fxml"
+    public static void switchScene(String fxmlPath) throws Exception {
         Parent root = FXMLLoader.load(Objects.requireNonNull(SceneManager.class.getResource(fxmlPath)));
         currentStage.setScene(createStyledScene(root));
         currentStage.show();

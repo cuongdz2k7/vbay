@@ -18,7 +18,7 @@ import javafx.stage.Stage;
 
 public class MainApp extends Application {
 
-    public static void initSocketClitent() {
+    public static void initSocketClient() {
         SocketClient client = SocketClient.getClient();
         try {
             System.out.println("Connecting to VBay server...");
@@ -42,7 +42,6 @@ public class MainApp extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         initSocketClient();
-        //default theme -> Light
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
         Parent loader = FXMLLoader.load(
             Objects.requireNonNull(getClass().getResource("/jfx/scene/login.fxml")));
@@ -54,7 +53,7 @@ public class MainApp extends Application {
         primaryStage.setMinHeight(720);
         primaryStage.show();
     }
-    //Stop
+
     @Override
     public void stop() throws Exception {
         System.out.println("VBAY shut down ");
@@ -67,7 +66,6 @@ public class MainApp extends Application {
     }
 
     public static void main(String[] args) {
-        // Add shutdown hook for sudden termination
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("App Shutting Down - Emergency shutdown detected");
             try {
