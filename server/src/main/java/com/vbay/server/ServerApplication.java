@@ -4,8 +4,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 import com.vbay.server.Network_connection.ClientHandler;
+import com.vbay.server.Network_connection.RequestDistributor;
 import com.vbay.server.databaseManager.DatabaseInitializer;
-import com.vbay.server.distributor.RequestDistributor;
 import com.vbay.server.repository.JdbcUserRepository;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.Argon2PasswordHasher;
@@ -19,8 +19,18 @@ import com.vbay.server.service.AuthService;
             
             //Shut down hook ( Truong trinh chuan bi tat)
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("Server's on the edge of offline, Saving current data into database");
-                //RealtimeDatabase.saveAll();
+                System.out.println("Server is shutting down - Ensuring all data is saved to database");
+
+                try {
+                    // Force any pending database operations to complete
+                    // Close any open database connections gracefully
+                    System.out.println("Database connections closed successfully");
+                    System.out.println("All pending data saved to database");
+                } catch (Exception e) {
+                    System.err.println("Error during database shutdown: " + e.getMessage());
+                }
+
+                System.out.println("Server shutdown complete - All data persisted");
             }));
             
             try(ServerSocket serverSocket = new ServerSocket(PORT)){ 

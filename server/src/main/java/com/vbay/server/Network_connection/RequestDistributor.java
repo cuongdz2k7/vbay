@@ -1,4 +1,4 @@
-package com.vbay.server.distributor;
+package com.vbay.server.Network_connection;
 
 import java.sql.SQLException;
 
@@ -54,6 +54,7 @@ public class RequestDistributor {
         JsonElement payload = root.get("payload");
         try {
             return switch (type) {
+                case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
                 case LOGIN -> handleLogin(requestId, payload);
                 case REGISTER -> handleRegister(requestId, payload);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);

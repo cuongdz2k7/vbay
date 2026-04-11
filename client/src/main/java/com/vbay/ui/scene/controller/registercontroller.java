@@ -1,7 +1,13 @@
 package com.vbay.ui.scene.controller;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
 
+import com.vbay.network.SocketClient;
+import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.protocol.Request;
+import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene.SceneManager;
 
 import javafx.event.ActionEvent;
@@ -82,11 +88,36 @@ public class registercontroller {
             return;
         }
 
-        showMessage(
-            Alert.AlertType.INFORMATION,
-            "Register button clicked",
-            "Basic registration validation passed for: " + email
+        try {
+            registerUser(fullName, email, password);
+            showMessage(
+                Alert.AlertType.INFORMATION,
+                "Registration complete",
+                "Your account has been created. Please log in."
+            );
+            goToLogin();
+        } catch (IOException exception) {
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Register failed",
+                exception.getMessage()
+            );
+        }
+    }
+
+    private void registerUser(String fullName, String email, String password) throws IOException {
+        Request<RegisterRequest> request = new Request<>(
+            RequestType.REGISTER,
+            new RegisterRequest(fullName, email, password, "")
         );
+
+        Respond<?> response = SocketClient.getClient().sendMessage(request);
+        if (response == null) {
+            throw new IOException("No response from server.");
+        }
+        if (!response.isStatus()) {
+            throw new IOException(response.getMessage() != null ? response.getMessage() : "Registration failed.");
+        }
     }
 
     @FXML

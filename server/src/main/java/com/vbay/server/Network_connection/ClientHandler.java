@@ -6,7 +6,6 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import com.vbay.server.distributor.RequestDistributor;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.protocol.Respond;
 
@@ -26,9 +25,9 @@ public class ClientHandler implements Runnable {
     public void run() {
         System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
         try (
-            Socket Serversocket = socket;
-            BufferedReader in = new BufferedReader(new InputStreamReader(Serversocket.getInputStream())); // client gui request
-            PrintWriter out = new PrintWriter(Serversocket.getOutputStream(), true) // client nhan response
+            Socket clientsocket = socket;
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream())); // client gui request
+            PrintWriter out = new PrintWriter(clientsocket.getOutputStream(), true) // client nhan response
         ) {
             String line;
             while ((line = in.readLine()) != null) {

@@ -1,7 +1,13 @@
 package com.vbay.ui.scene.controller;
 
+import java.io.IOException;
 import java.util.regex.Pattern;
 
+import com.vbay.network.SocketClient;
+import com.vbay.shared.dto.LoginRequest;
+import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.protocol.Request;
+import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene.SceneManager;
 
 import javafx.event.ActionEvent;
@@ -65,11 +71,31 @@ public class logincontroller {
             return;
         }
 
-        showMessage(
-            Alert.AlertType.INFORMATION,
-            "Login button clicked",
-            "Basic login validation passed for: " + email
+        try {
+            loginUser(email, password);
+            SceneManager.switchScene("/jfx/scene/app.fxml");
+        } catch (Exception exception) {
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Login failed",
+                exception.getMessage()
+            );
+        }
+    }
+
+    private void loginUser(String email, String password) throws IOException {
+        Request<LoginRequest> request = new Request<>(
+            RequestType.LOGIN,
+            new LoginRequest("", email, password, "")
         );
+
+        Respond<?> response = SocketClient.getClient().sendMessage(request);
+        if (response == null) {
+            throw new IOException("No response from server.");
+        }
+        if (!response.isStatus()) {
+            throw new IOException(response.getMessage() != null ? response. getMessage() : "Login failed.");
+        }
     }
 
     @FXML
