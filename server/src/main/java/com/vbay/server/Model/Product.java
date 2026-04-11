@@ -1,9 +1,12 @@
 package com.vbay.server.Model;
 
+import com.vbay.shared.enums.ProductType;
+
 public class Product {
     // Base
     private long id;
-    private String product_name;
+    private String name;
+    private ProductType type;
     private String description;
     private String category;
     // Owner + Auction
@@ -13,9 +16,10 @@ public class Product {
     private int stock_quantity;
 
     //Constructor (Create new product)
-    public Product(String product_name, String description, String category, long seller_id, double starting_price, double buy_now_price, int stock_quantity){
+    public Product(String name, ProductType type, String description, String category, long seller_id, double starting_price, double buy_now_price, int stock_quantity){
         //Base:
-        this.product_name = product_name;
+        this.name = name;
+        this.type = type;
         this.description = description;
         this.category = category;
         //Owner + Auction:
@@ -28,10 +32,13 @@ public class Product {
     //Getter
     //a, Base:
     public long getId(){
-        return this.id;
+        return id;
+    }
+    public ProductType getProductType(){
+        return this.type;
     }
     public String getProductName(){
-        return this.product_name;
+        return this.name;
     }
     public String getDescription(){
         return this.description;
@@ -59,7 +66,10 @@ public class Product {
         this.id = new_id;
     }
     public void setProductName(String new_product_name){
-        this.product_name = new_product_name;
+        this.name = new_product_name;
+    }
+    public void setProductType(ProductType new_type){
+        this.type = new_type;
     }
     public void setDescription(String new_description){
         this.description = new_description;

@@ -16,7 +16,7 @@ public final class DatabaseConnection {
     // và mỗi driver để connect là 1 class, nên nó 
 
     public static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(DatabaseConfig.getJdbcUrl());
+        return DriverManager.getConnection(DatabaseConfig.getJdbcUrl(), DatabaseConfig.getUsername(), DatabaseConfig.getPassword());
     }
     
 }

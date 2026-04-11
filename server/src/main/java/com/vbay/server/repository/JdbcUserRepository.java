@@ -17,7 +17,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override  
     public Optional<User> findByUsername (String username) throws SQLException { 
         String sql = """
-            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
+            SELECT id, username, email, password_hash, phone_number, position, status, balance, time_init
             FROM users
             WHERE username = ?
             """;
@@ -36,7 +36,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
-            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
+            SELECT id, username, email, password_hash, phone_number, position, status, balance, time_init
             FROM users
             WHERE email = ?
             LIMIT 1
@@ -87,7 +87,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public void save (User user) throws SQLException {
         String sql = """
-            INSERT INTO users (username, email, passwordHash, phone_number, position, status, balance, timeinit)
+            INSERT INTO users (username, email, password_hash, phone_number, position, status, balance, time_init)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
         try (Connection connection = DatabaseConnection.getConnection();
@@ -107,12 +107,12 @@ public class JdbcUserRepository implements UserRepository {
     private User mapUser(ResultSet rs) throws SQLException {
         User user = new User(rs.getString("username"),
                         rs.getString("email"),
-                        rs.getString("passwordHash"), 
+                        rs.getString("password_hash"), 
                         rs.getString("phone_number"),
                         Position.valueOf(rs.getString("position")),
                         UserStatus.valueOf(rs.getString("status")),
                         rs.getDouble("balance"),
-                        rs.getString("timeinit"));
+                        rs.getString("time_init"));
         user.setId(rs.getLong("id"));
         return user;
     }

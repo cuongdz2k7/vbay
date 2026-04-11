@@ -27,18 +27,6 @@ public class AuthService {
     private static boolean isBlank (String str) {
         return str == null || str.isBlank();
     }
-
-    private boolean isUniqueConstraintViolation(SQLException e) {
-        String message = e.getMessage();
-        if (message == null) {
-            return false;
-        }
-
-        String lower = message.toLowerCase();
-        return lower.contains("unique constraint failed")
-            || lower.contains("sqlite_constraint_unique");
-    }
-
    
     private void validateLoginRequest (LoginRequest request) {
         if (request == null) {
@@ -88,6 +76,12 @@ public class AuthService {
             throw new ValidationException("Password is required");
         }
     }
+
+    ///lỗi trùng username
+    private boolean isUniqueConstraintViolation(SQLException e) {
+        return "23000".equals(e.getSQLState()) && e.getErrorCode() == 1062;
+    }
+
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
 
@@ -109,10 +103,10 @@ public class AuthService {
             );
             userRepository.save(newUser);
         } catch (SQLException e) {
-                if (isUniqueConstraintViolation(e)) {
-                    throw new ValidationException("Username or email already exists");
-                }
-                throw e;
+            if (isUniqueConstraintViolation(e)) {
+                throw new ValidationException("Username or email already exists");
+            }   
+            throw e;
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');
