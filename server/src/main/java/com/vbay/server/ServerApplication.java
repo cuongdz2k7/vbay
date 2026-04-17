@@ -3,9 +3,9 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import com.vbay.server.Network_connection.ClientHandler;
-import com.vbay.server.Network_connection.RequestDistributor;
-import com.vbay.server.databaseManager.DatabaseInitializer;
+import com.vbay.server.network.ClientHandler;
+import com.vbay.server.network.RequestDistributor;
+import com.vbay.server.database.DatabaseInitializer;
 import com.vbay.server.repository.JdbcUserRepository;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.Argon2PasswordHasher;

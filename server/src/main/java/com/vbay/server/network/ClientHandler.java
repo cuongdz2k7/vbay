@@ -1,4 +1,4 @@
-package com.vbay.server.Network_connection;
+package com.vbay.server.network;
 //Import
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.utils.JsonUtils;
 import com.vbay.shared.protocol.Respond;
 
 // Listening

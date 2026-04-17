@@ -1,6 +1,6 @@
-package com.vbay.server.Model;
+package com.vbay.server.model;
 
-import com.vbay.shared.enums.ProductType;
+import com.vbay.shared.status.ProductType;
 
 public class Product {
     // Base
