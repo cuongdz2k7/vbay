@@ -1,4 +1,4 @@
-package com.vbay.shared.enums.shared_status;
+package com.vbay.shared.status.shared_status;
 
 public enum UserStatus {
     PENDING, // chua xac thuc 

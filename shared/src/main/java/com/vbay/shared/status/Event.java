@@ -1,4 +1,4 @@
-package com.vbay.shared.enums;
+package com.vbay.shared.status;
 
 public enum Event {
     //AUCTION

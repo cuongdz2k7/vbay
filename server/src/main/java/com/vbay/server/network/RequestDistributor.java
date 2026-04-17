@@ -1,4 +1,4 @@
-package com.vbay.server.Network_connection;
+package com.vbay.server.network;
 
 import java.sql.SQLException;
 
@@ -7,11 +7,11 @@ import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.service.AuthService;
-import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.utils.JsonUtils;
 import com.vbay.shared.dto.LoginRequest;
 import com.vbay.shared.dto.LoginResponse;
 import com.vbay.shared.dto.RegisterRequest;
-import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.status.RequestType;
 import com.vbay.shared.protocol.Respond;
 
 

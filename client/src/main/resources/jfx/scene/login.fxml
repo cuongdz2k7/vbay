@@ -14,7 +14,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<AnchorPane prefHeight="720.0" prefWidth="430.0" styleClass="login-screen" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vbay.ui.scene.controller.logincontroller">
+<AnchorPane prefHeight="720.0" prefWidth="430.0" styleClass="login-screen" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vbay.ui.scene.controller.LoginController">
     <children>
         <BorderPane prefHeight="720.0" prefWidth="430.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <center>

@@ -1,4 +1,4 @@
-package com.vbay.server.databaseManager;
+package com.vbay.server.database;
 
 public class DatabaseConfig {
     private static final String HOST = "localhost";

@@ -1,6 +1,6 @@
 package com.vbay.shared.dto;
 
-import com.vbay.shared.enums.Position;
+import com.vbay.shared.status.Position;
 
 public class LoginResponse {
     private String userId;

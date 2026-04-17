@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 import com.vbay.network.SocketClient;
 import com.vbay.shared.dto.LoginRequest;
-import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.status.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene.SceneManager;
@@ -17,7 +17,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.shape.SVGPath;
 
-public class logincontroller {
+public class LoginController {
 
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");

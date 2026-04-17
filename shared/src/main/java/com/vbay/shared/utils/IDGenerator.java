@@ -1,4 +1,4 @@
-package com.vbay.shared.Utils;
+package com.vbay.shared.utils;
 
 public class IDGenerator {
     ///Để tạo ID duy nhất, chúng ta có thể sử dụng UUID (Universally Unique Identifier) trong Java. 
