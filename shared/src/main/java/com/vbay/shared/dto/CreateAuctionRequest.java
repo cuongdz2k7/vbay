@@ -1,68 +1,74 @@
 package com.vbay.shared.dto;
 
+import java.time.LocalDateTime;
+
 public class CreateAuctionRequest {
-    private String Tile;
-    private String Description;
-    private double InitialPrice, StepPrice;
-    private String StartingTime, EndingTime;
-    private double DepositAmount;
+    private String title;
+    private String description;
+    private long productId;
+    private long sellerId;
+    private double minimumBidStep;
+    private double buyNowPrice;
+    private double reservePrice;
+    private double startingPrice;
+    private LocalDateTime startingTime, endingTime;
 
-    // Constructor
-    public CreateAuctionRequest(
-        String Tile,
-        String Description,
-        double InitialPrice, double StepPrice,
-        String StartingTime, String EndingTime,
-        double DepositAmount
-    ) {
-        this.Tile = Tile;
-        this.Description = Description;
-        this.InitialPrice = InitialPrice;
-        this.StepPrice = StepPrice;
-        this.StartingTime = StartingTime;
-        this.EndingTime = EndingTime;
-        this.DepositAmount = DepositAmount;
+    public CreateAuctionRequest(String title, String description, Long productId, long sellerId, double minimumBidStep, double buyNowPrice, double reservePrice, double startingPrice, LocalDateTime startingTime, LocalDateTime endingTime) {
+        this.title = title;
+        this.description = description;
+        this.productId = productId;
+        this.sellerId = sellerId;
+        this.minimumBidStep = minimumBidStep;
+        this.buyNowPrice = buyNowPrice;
+        this.reservePrice = reservePrice;
+        this.startingPrice = startingPrice;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
     }
-
-    // Getter
-    public String getTile() {
-        return this.Tile;
+    public String getTitle() {
+        return title;
     }
-
     public String getDescription() {
-        return this.Description;
+        return description;
     }
-
-    public double getInitialPrice() {
-        return this.InitialPrice;
+    public long getProductId() {
+        return productId;
     }
-
-    public double getStepPrice() {
-        return this.StepPrice;
+    public long getSellerId() {
+        return sellerId;
     }
-
-    public String getStartingTime() {
-        return this.StartingTime;
+    public double getMinimumBidStep() {
+        return minimumBidStep;
     }
-
-    public String getEndingTime() {
-        return this.EndingTime;
+    public double getBuyNowPrice() {
+        return buyNowPrice;
     }
-
-    public double getDepositAmount() {
-        return this.DepositAmount;
+    public double getReservePrice() {
+        return reservePrice;
     }
-
+    public double getStartingPrice() {
+        return startingPrice;
+    }
+    public LocalDateTime getStartingTime() {
+        return startingTime;
+    }
+    public LocalDateTime getEndingTime() {
+        return endingTime;
+    }
     @Override
     public String toString() {
         return "CreateAuctionRequest{" +
-            "Tile='" + this.getTile() + '\'' +
-            ", Description='" + this.getDescription() + '\'' +
-            ", InitialPrice=" + this.getInitialPrice() +
-            ", StepPrice=" + this.getStepPrice() +
-            ", StartingTime='" + this.getStartingTime() + '\'' +
-            ", EndingTime='" + this.getEndingTime() + '\'' +
-            ", DepositAmount=" + this.getDepositAmount() +
-            '}';
+                "title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                "productId=" + productId +
+                ", sellerId=" + sellerId +
+                ", minimumBidStep=" + minimumBidStep +
+                ", buyNowPrice=" + buyNowPrice +
+                ", reservePrice=" + reservePrice +
+                ", startingPrice=" + startingPrice +
+                ", startingTime='" + startingTime.toString() + '\'' +
+                ", endingTime='" + endingTime.toString() + '\'' +
+                '}';
     }
+    
 }

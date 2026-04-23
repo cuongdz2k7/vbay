@@ -3,5 +3,34 @@
     "**/target": true,
     "**/*.class": true
   },
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "dbcode.connections": [
+    {
+      "connectionId": "KNu2mLRdV1lR9uxMo-ebj",
+      "name": "vbay-local",
+      "driver": "mysql",
+      "color": "#00A6FF",
+      "connectionType": "host",
+      "host": "localhost",
+      "port": 1638,
+      "ssl": false,
+      "authMethod": "password",
+      "username": "root",
+      "password": "",
+      "savePassword": "secretStorage",
+      "database": "vbay",
+      "readOnly": false,
+      "postConnectionSqlType": "inline",
+      "connectionTimeout": 30,
+      "pinnedConnectionTimeout": "0",
+      "driverOptions": {
+        "retrievePublickey": true,
+        "disableMultiStatements": false,
+        "permitLocalInfile": false
+      },
+      "introspection": {
+        "progressive": false
+      }
+    }
+  ]
 }
