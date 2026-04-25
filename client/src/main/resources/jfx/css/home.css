@@ -12,10 +12,21 @@
     -fx-border-width: 0 0 1 0;
 }
 
-.logo {
-    -fx-font-size: 28px;
-    -fx-font-weight: 900;
-    -fx-text-fill: #ffb5a0;
+.logo-link {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-underline: false;
+}
+
+.logo-link:hover {
+    -fx-opacity: 0.92;
+}
+
+.logo-link:focused,
+.logo-link:visited {
+    -fx-border-color: transparent;
 }
 
 .search-bar {
@@ -93,6 +104,26 @@
     -fx-border-width: 0 1 0 0;
 }
 
+.sidebar-scroll {
+    -fx-background-color: rgba(12, 12, 12, 0.92);
+    -fx-background: rgba(12, 12, 12, 0.92);
+    -fx-border-color: transparent #2d241f transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+
+.sidebar-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.sidebar-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.sidebar-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #3e312b;
+    -fx-background-radius: 999;
+}
+
 .sidebar-title {
     -fx-text-fill: #f4e9e4;
     -fx-font-size: 18px;
@@ -124,6 +155,37 @@
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff6f3d 0%, #c73e12 100%);
     -fx-background-radius: 12;
     -fx-text-fill: #2b110a;
+}
+
+.category-submenu {
+    -fx-background-color: rgba(24, 20, 18, 0.95);
+    -fx-background-radius: 16;
+    -fx-border-color: #3e312b;
+    -fx-border-radius: 16;
+    -fx-padding: 8;
+}
+
+.nav-sub-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 10;
+    -fx-border-color: transparent;
+    -fx-text-fill: #cbb4ad;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 12 10 18;
+    -fx-cursor: hand;
+}
+
+.nav-sub-item:hover {
+    -fx-background-color: #221c19;
+}
+
+.nav-sub-item.active-sub {
+    -fx-background-color: rgba(255, 111, 61, 0.18);
+    -fx-border-color: #a84725;
+    -fx-border-radius: 10;
+    -fx-text-fill: #ffd9cc;
 }
 
 .selling-card {
@@ -161,6 +223,18 @@
 
 .main-content {
     -fx-background-color: transparent;
+}
+
+.catalog-title {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 28px;
+    -fx-font-weight: 900;
+}
+
+.catalog-subtitle {
+    -fx-text-fill: #bfa097;
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
 }
 
 .filters-bar {

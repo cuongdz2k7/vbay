@@ -73,7 +73,7 @@ public class logincontroller {
 
         try {
             loginUser(email, password);
-            SceneManager.switchScene("/jfx/scene/app.fxml");
+            SceneManager.switchScene("/jfx/scene/home.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,

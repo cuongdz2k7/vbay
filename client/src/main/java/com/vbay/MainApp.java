@@ -11,7 +11,6 @@ import com.vbay.ui.scene.SceneManager;
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.stage.Stage;
-
 public class MainApp extends Application {
 
     public static void initSocketClient() {

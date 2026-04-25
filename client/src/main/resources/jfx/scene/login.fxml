@@ -6,6 +6,8 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
@@ -30,11 +32,19 @@
                                     <children>
                                         <HBox alignment="CENTER_LEFT" spacing="8.0">
                                             <children>
-                                                <StackPane prefHeight="30.0" prefWidth="30.0" styleClass="brand-icon-badge">
-                                                    <children>
-                                                        <SVGPath content="M12 4L4 18h16L12 4zm0 3.4L17 16H7l5-8.6z" scaleX="0.9" scaleY="0.9" styleClass="brand-icon-shape" />
-                                                    </children>
-                                                </StackPane>
+
+                                                <Hyperlink focusTraversable="false" styleClass="logo-link">
+                                                        <graphic>
+                                                            <ImageView fitWidth="160" fitHeight="48" pickOnBounds="true" preserveRatio="true">
+                                                                <image>
+                                                                    <Image url="@../image/logo_Hust.png"/>
+                                                                </image>
+                                                            </ImageView>
+                                                        </graphic>
+                                                    </Hyperlink>            
+
+
+
                                                 <Label styleClass="brand-wordmark" text="Vbay" />
                                             </children>
                                         </HBox>
