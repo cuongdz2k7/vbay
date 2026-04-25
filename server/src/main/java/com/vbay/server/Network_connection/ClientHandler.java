@@ -13,8 +13,11 @@ import com.vbay.shared.protocol.Respond;
 public class ClientHandler implements Runnable {
     private final Socket socket; 
     private final RequestDistributor Distributor;
+
+    private final ClientSession session = new ClientSession();
     
-    ///ClientSession 
+    ///ClientSession
+    
     //Constructor
     public ClientHandler(Socket socket, RequestDistributor Distributor) {
         this.socket = socket;
@@ -39,7 +42,7 @@ public class ClientHandler implements Runnable {
                     out.println("Exit current socket");
                     break;
                 }
-                Respond<?> response = Distributor.dispatch(line);
+                Respond<?> response = Distributor.dispatch(line, session);
                 String jsonResponse = JsonUtils.toJson(response);
                 out.println(jsonResponse);
             }

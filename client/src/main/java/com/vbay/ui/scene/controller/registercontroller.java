@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import com.vbay.network.SocketClient;
-import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;

@@ -1,5 +1,7 @@
 package com.vbay.server.service.validation;
 
+import java.util.List;
+
 import com.vbay.server.exception.ValidationException;
 
 public class ValidationUtils {
@@ -9,8 +11,19 @@ public class ValidationUtils {
         }
     }
 
+    public static void requireNotEmpty(List<?> value, String message) {
+    if (value == null || value.isEmpty()) {
+        throw new ValidationException(message);
+    }
+}
+
     public static void requireNotBlank(String value, String message) {
         if (value == null || value.isBlank()) {
+            throw new ValidationException(message);
+        }
+    }
+    public static void requireNotBlank(char[] value, String message) {
+        if (value == null || value.length == 0) {
             throw new ValidationException(message);
         }
     }

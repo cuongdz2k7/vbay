@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS users (
     time_init DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-
 CREATE TABLE IF NOT EXISTS products (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     seller_id BIGINT NOT NULL,
@@ -23,6 +22,18 @@ CREATE TABLE IF NOT EXISTS products (
 
     CONSTRAINT fk_products_seller
         FOREIGN KEY (seller_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS product_images (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    is_thumbnail BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_product_images_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 );
@@ -77,5 +88,3 @@ CREATE TABLE IF NOT EXISTS bids (
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 );
-
-

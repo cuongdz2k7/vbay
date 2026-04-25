@@ -10,9 +10,11 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
-import com.vbay.shared.dto.LoginRequest;
-import com.vbay.shared.dto.LoginResponse;
-import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.server.service.validation.ValidationUtils;
+import com.vbay.shared.dto.authDTO.LoginRequest;
+import com.vbay.shared.dto.authDTO.LoginResponse;
+import com.vbay.shared.dto.authDTO.RegisterRequest;
+
 
 public class AuthService {
     private final UserRepository userRepository;
@@ -23,21 +25,19 @@ public class AuthService {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
     }
-
-    private static boolean isBlank (String str) {
-        return str == null || str.isBlank();
-    }
-   
+   /*
+    ValidationException là unchecked exception, có thể throw ở bất cứ đâu trong code mà không cần khai báo throws. 
+    Nó sẽ bubble lên cho đến khi được catch hoặc crash server nếu không được catch.
+   */
     private void validateLoginRequest (LoginRequest request) {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
+        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
 
-    public LoginResponse login (LoginRequest request) throws SQLException, AuthenticationException {
+    public LoginResponse login (LoginRequest request) throws SQLException {
         validateLoginRequest(request);
 
         try {
@@ -49,7 +49,7 @@ public class AuthService {
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 throw new AuthenticationException("Invalid username or password");
             }
-            return new LoginResponse(String.valueOf(user.getId()),
+            return new LoginResponse(user.getId(),
                                     user.getUserName(),
                                     user.getEmail(),
                                     user.getPosition());
@@ -66,34 +66,16 @@ public class AuthService {
         if (request == null) {
             throw new ValidationException("Register request is required");
         }
-        if (isBlank(request.getUsername())) { 
-            throw new ValidationException("Register request is required"); 
-        }
-        if (isBlank(request.getEmail())) {
-            throw new ValidationException("Email is required");
-        }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
-    }
-
-    ///lỗi trùng username
-    private boolean isUniqueConstraintViolation(SQLException e) {
-        return "23000".equals(e.getSQLState()) && e.getErrorCode() == 1062;
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
+        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
+        ///có thể thêm validate password mạnh yếu ở đây sau khi có PasswordPolicy
     }
 
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
 
         try {
-            if (userRepository.existsByUsername(request.getUsername().trim())) {
-                throw new ValidationException("Username already exists");
-            }
-
-            if (userRepository.existsByEmail(request.getEmail().trim())) {
-                throw new ValidationException("Email already exists");
-            }
-
             User newUser = new User(
                 request.getUsername().trim(),
                 request.getEmail().trim(),
@@ -102,11 +84,6 @@ public class AuthService {
                 0
             );
             userRepository.save(newUser);
-        } catch (SQLException e) {
-            if (isUniqueConstraintViolation(e)) {
-                throw new ValidationException("Username or email already exists");
-            }   
-            throw e;
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');

@@ -8,13 +8,34 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.service.AuthService;
 import com.vbay.shared.Utils.JsonUtils;
-import com.vbay.shared.dto.LoginRequest;
-import com.vbay.shared.dto.LoginResponse;
-import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.shared.dto.authDTO.LoginRequest;
+import com.vbay.shared.dto.authDTO.LoginResponse;
+import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
+/*
+Auth flow detail: 
+1. Handler/service làm việc bình thường
+    validate
+    gọi repository
+xử lý business
+2. Nếu có lỗi:
+    throw ValidationException
+    throw AuthenticationException
+    throw SQLException
+hoặc exception khác
+3. Exception sẽ bubble lên dispatch()
+4. dispatch() catch theo từng loại và convert thành Respond<>(..., false, ...)
+5. Nếu không có exception nào bị throw:
+    code chạy hết xuống cuối method
+    return Respond<>(..., true, ...)
 
+Tại sao distributor lại thread-safe ? 
+- vì các local variable trong method dispatch là bản riêng của từng thread, ở trong các call stack khác nhau, nên không có sự chia sẻ dữ liệu nào giữa các thread.
+- AuthService được thiết kế để thread-safe.
+
+*/
 
 public class RequestDistributor {
     private final AuthService authService;
@@ -24,7 +45,9 @@ public class RequestDistributor {
     }
 
     ///dispatch
-    public Respond<?> dispatch (String rawRequest) {
+    public Respond<?> dispatch (String rawRequest, ClientSession session) {
+        ///refactoring lại cái chỗ này, tách riêng phần parse requestId và type ra, sau đó mới switch-case theo type để gọi handler tương ứng
+        ///code smell ở chỗ này.
         JsonObject root;
         try {
             root = JsonUtils.fromJson(rawRequest, JsonObject.class);
@@ -55,7 +78,7 @@ public class RequestDistributor {
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
-                case LOGIN -> handleLogin(requestId, payload);
+                case LOGIN -> handleLogin(requestId, payload, session);
                 case REGISTER -> handleRegister(requestId, payload);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
@@ -75,12 +98,15 @@ public class RequestDistributor {
 
     
     ///bỏ chuyển rawString sang authservice
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload) throws SQLException, AuthenticationException {
+    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
         }
-        LoginResponse loginResponse = authService.login(loginRequest);
+        LoginResponse loginResponse = authService.login(loginRequest); ///nếu catch được exception thì dừng luôn ở đây
+        session.setSession(loginResponse.getUserId(), 
+                            loginResponse.getUsername(), 
+                            loginResponse.getPosition());
         return new Respond<>(requestId, true, "Login successful", loginResponse);
     }
 

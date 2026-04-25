@@ -1,12 +1,14 @@
-package com.vbay.shared.dto;
+package com.vbay.shared.dto.auctionDTO;
 
-public class EndAuctionRequest {
+public class CancelAuctionRequest {
     private String auctionId;
     private String sellerId;
+    private String reason;
 
-    public EndAuctionRequest(String auctionId, String sellerId) {
+    public CancelAuctionRequest(String auctionId, String sellerId, String reason) {
         this.auctionId = auctionId;
         this.sellerId = sellerId;
+        this.reason = reason;
     }
 
     public String getAuctionId() {
@@ -17,11 +19,16 @@ public class EndAuctionRequest {
         return sellerId;
     }
 
+    public String getReason() {
+        return reason;
+    }
+
     @Override
     public String toString() {
-        return "EndAuctionRequest{" +
+        return "CancelAuctionRequest{" +
             "auctionId='" + this.getAuctionId() + '\'' +
             ", sellerId='" + this.getSellerId() + '\'' +
+            ", reason='" + this.getReason() + '\'' +
             '}';
     }
 }

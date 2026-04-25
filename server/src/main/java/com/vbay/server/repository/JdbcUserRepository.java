@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import com.vbay.server.Model.User;
 import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.exception.ValidationException;
 import com.vbay.shared.enums.Position;
 import com.vbay.shared.enums.shared_status.UserStatus;
 
@@ -101,6 +102,12 @@ public class JdbcUserRepository implements UserRepository {
             statement.setDouble(7, user.getBalance());
             statement.setString(8, user.getTimeinit());
             statement.executeUpdate();
+        } catch (SQLException e) {
+            String sqlState = e.getSQLState();///catch lỗi trùng username hoặc email do ràng buộc unique trong database (race condition)
+            if ("23000".equals(sqlState) && e.getErrorCode() == 1062) {
+                throw new ValidationException("Username or email already exists");
+            }
+            throw e;
         }
     }
 

@@ -1,45 +1,71 @@
 package com.vbay.server.service;
 
+import com.vbay.server.Model.Auction;
+import com.vbay.server.Model.Product;
+import com.vbay.server.Model.ProductImage;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.service.validation.ValidationUtils;
-import com.vbay.shared.dto.CreateAuctionRequest;
-import com.vbay.shared.dto.CreateAuctionRespond;
+import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+
+import com.vbay.shared.dto.productDTO.CreateProductRequest;
+
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+
+import com.mysql.cj.xdevapi.Client;
+
+import com.vbay.server.Network_connection.ClientSession;
+ /*
+* Business rules:
+* 1. Giá tiền phải là số dương
+* 2. Nếu có reserve price thì reserve price phải lớn hơn hoặc bằng starting price
+* 3. Nếu có buy now price thì buy now price phải lớn hơn hoặc bằng reserve price
+* 4. Thời gian bắt đầu phải trước thời gian kết thúc
+* 5. Khi tạo auction, product sẽ được tạo với status là AVAILABLE, sau đó khi auction bắt đầu thì product sẽ được update thành ACTIVE, khi auction kết thúc hoặc bị hủy thì product sẽ được update thành INACTIVE
+* 6. Mỗi ảnh chỉ có 1 thumbnail, nếu có nhiều hơn 1 ảnh được đánh dấu là thumbnail thì sẽ throw validation exception
+* 7. Khi tạo auction, phải có ít nhất 1 ảnh của product, nếu không có ảnh nào là thumbnail thì sẽ tự động đánh dấu ảnh đầu tiên là thumbnail
+
+*/
 
 public class AuctionService {
 
-    private void validateRequiredFields(CreateAuctionRequest request) {
-        ValidationUtils.requireNotNull(request.getProductId(), "Product id is required");
-        ValidationUtils.requireNotNull(request.getSellerId(), "Seller id is required");
-        ValidationUtils.requireNotNull(request.getStartingTime(), "Start time is required");
-        ValidationUtils.requireNotNull(request.getEndingTime(), "End time is required");
-        ValidationUtils.requireNotNull(request.getStartingPrice(), "Starting price is required");
-
-    }
-    
-    private void validateIdFields(CreateAuctionRequest request) {
-        ValidationUtils.requirePositive(request.getSellerId(), "Seller id must be a positive number");
-        ValidationUtils.requirePositive(request.getProductId(), "Product id must be a positive number");
+    private void validateRequiredSections(CreateAuctionRequest request) {
+        ValidationUtils.requireNotNull(request.getProduct(), "Product data is required");
+        ValidationUtils.requireNotNull(request, "Auction data is required");
     }
 
-    private void validateMoneyFields(CreateAuctionRequest request) {
-        ValidationUtils.requirePositive(request.getStartingPrice(), "Starting price must be a positive number");
-        ValidationUtils.requirePositive(request.getReservePrice(), "Reserve price must be a positive number");
-        ValidationUtils.requirePositive(request.getMinimumBidStep(), "Minimum bid step must be a positive number");
+    private void validateProductFields(CreateProductRequest product) {
+        ValidationUtils.requireNotBlank(product.getName(), "Product name is required");
+        ValidationUtils.requireNotNull(product.getImages(), "Product images are required");
+        ValidationUtils.requireNotEmpty(product.getImages(), "At least one product image is required");
     }
 
-    private void validateTimeFields(CreateAuctionRequest request) {
-        if (request.getStartingTime().isAfter(request.getEndingTime())) {
+    private void validateAuctionRequiredFields(CreateAuctionRequest auction) {
+        ValidationUtils.requireNotBlank(auction.getTitle(), "Auction title is required");
+        ValidationUtils.requireNotNull(auction.getStartingTime(), "Start time is required");
+        ValidationUtils.requireNotNull(auction.getEndingTime(), "End time is required");
+    }
+
+    private void validateAuctionMoneyFields(CreateAuctionRequest auction) {
+        ValidationUtils.requirePositive(auction.getStartingPrice(), "Starting price must be a positive number");
+        ValidationUtils.requirePositive(auction.getMinimumBidStep(), "Minimum bid step must be a positive number");
+    }
+
+    private void validateAuctionTimeFields(CreateAuctionRequest auction) {
+        if (!auction.getStartingTime().isBefore(auction.getEndingTime())) {
             throw new ValidationException("Start time must be before end time");
         }
     }
-    private void validateBusinessRules(CreateAuctionRequest request) {
-        if (request.getBuyNowPrice() > 0 && request.getBuyNowPrice() < request.getStartingPrice()) {
+
+    private void validateAuctionBusinessRules(CreateAuctionRequest auction) {
+        if (auction.getBuyNowPrice() != null && auction.getBuyNowPrice() > 0 && auction.getBuyNowPrice() < auction.getStartingPrice()) {
             throw new ValidationException("Buy now price must be greater than or equal to starting price");
         }
-        if (request.getReservePrice() > 0 && request.getReservePrice() < request.getStartingPrice()) {
+        if (auction.getReservePrice() != null && auction.getReservePrice() > 0 && auction.getReservePrice() < auction.getStartingPrice()) {
             throw new ValidationException("Reserve price must be greater than or equal to starting price");
         }
-        if (request.getReservePrice() > 0 && request.getBuyNowPrice() > 0 && request.getReservePrice() < request.getBuyNowPrice()) {
+        if (auction.getReservePrice() != null && auction.getReservePrice() > 0 && auction.getBuyNowPrice() != null && auction.getBuyNowPrice() > 0
+                && auction.getReservePrice() < auction.getBuyNowPrice()) {
             throw new ValidationException("Reserve price must be greater than or equal to buy now price");
         }
     }
@@ -48,15 +74,31 @@ public class AuctionService {
         if (request == null) {
             throw new ValidationException("Request cannot be null");
         }
-        validateRequiredFields(request);
-        validateIdFields(request);
-        validateMoneyFields(request);
-        validateTimeFields(request);
-        validateBusinessRules(request);
+        validateRequiredSections(request);
+        validateProductFields(request.getProduct());
+        validateAuctionRequiredFields(request);
+        validateAuctionMoneyFields(request);
+        validateAuctionTimeFields(request);
+        validateAuctionBusinessRules(request);
     }
-    public CreateAuctionRespond createAuction (CreateAuctionRequest request) {
+
+    public void CreateProduct(CreateProductRequest request, ClientSession session) throws SQLException {
+        
+        Product product = new Product(
+            request.getName(),
+            request.getDescription(),
+            request.getCategoryId(),
+            request.getCondition()
+        );
+        long productId = productRepository.save(product);
+    }
+
+    public void createAuction (CreateAuctionRequest request, ClientSession session) throws SQLException {
         validateCreateAuctionRequest(request);
-        if (request.getProductId() )
+        try { 
+            CreateProduct(request.getProduct(), session);
+         }
+
         
 
 

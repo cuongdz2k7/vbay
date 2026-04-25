@@ -1,19 +1,19 @@
-package com.vbay.shared.dto;
+package com.vbay.shared.dto.authDTO;
 
 public class UserDTO {
-    private String id;
+    private long id;
     private String username;
     private String email;
     private String phone_number;
 
-    public UserDTO(String id, String username, String email, String phone_number) {
+    public UserDTO(long id, String username, String email, String phone_number) {
         this.id = id;
         this.username = username;
         this.email = email;
         this.phone_number = phone_number;
     }
 
-    public String getId() {
+    public long getId() {
         return id;
     }
 
@@ -32,7 +32,7 @@ public class UserDTO {
     @Override
     public String toString() {
         return "UserDTO{" +
-            "id='" + this.getId() + '\'' +
+            "id=" + this.getId() +
             ", username='" + this.getUsername() + '\'' +
             ", email='" + this.getEmail() + '\'' +
             ", phone_number='" + this.getPhone_number() + '\'' +

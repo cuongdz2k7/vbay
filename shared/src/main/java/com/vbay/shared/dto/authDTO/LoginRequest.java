@@ -1,4 +1,4 @@
-package com.vbay.shared.dto;
+package com.vbay.shared.dto.authDTO;
 
 public class LoginRequest {
     private String username;
