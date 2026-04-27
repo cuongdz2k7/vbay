@@ -42,11 +42,12 @@ public class MainApp extends Application {
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         SceneManager.setStage(primaryStage);
-        primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/login.fxml"));
+        primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/account/login.fxml"));
         primaryStage.setTitle("VBay");
         primaryStage.setMinWidth(430);
         primaryStage.setMinHeight(720);
         primaryStage.show();
+        SceneManager.enterImmersiveMode();
     }
 
     @Override

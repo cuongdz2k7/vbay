@@ -1,0 +1,123 @@
+.root {
+    -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.asset-overview-root {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #101010 0%, #171717 60%, #24140f 100%);
+}
+
+.asset-overview-topbar {
+    -fx-background-color: rgba(14, 14, 14, 0.97);
+    -fx-border-color: transparent transparent #2c231f transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.back-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: #56423a;
+    -fx-border-radius: 12;
+    -fx-text-fill: #f5e5df;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-padding: 10 15 10 15;
+    -fx-cursor: hand;
+}
+
+.back-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+}
+
+.page-title {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 20px;
+    -fx-font-weight: 900;
+}
+
+.page-subtitle {
+    -fx-text-fill: #bfa097;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+
+.asset-overview-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+}
+
+.asset-overview-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.asset-overview-content {
+    -fx-background-color: transparent;
+    -fx-min-width: 760;
+}
+
+.asset-sheet {
+    -fx-background-color: rgba(18, 18, 18, 0.95);
+    -fx-background-radius: 24;
+    -fx-border-color: #312621;
+    -fx-border-radius: 24;
+    -fx-padding: 18;
+}
+
+.eyebrow-label {
+    -fx-text-fill: #80716c;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+
+.asset-code {
+    -fx-text-fill: #f6eee9;
+    -fx-font-size: 20px;
+    -fx-font-weight: 900;
+}
+
+.hero-image {
+    -fx-background-radius: 18;
+}
+
+.product-title {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+}
+
+.section-title {
+    -fx-text-fill: #f1e4df;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+}
+
+.summary-label {
+    -fx-text-fill: #c8aca4;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-line-spacing: 2px;
+}
+
+.detail-card {
+    -fx-background-color: rgba(24, 24, 24, 0.92);
+    -fx-background-radius: 16;
+    -fx-border-color: #332823;
+    -fx-border-radius: 16;
+    -fx-padding: 12;
+}
+
+.detail-label {
+    -fx-text-fill: #85756f;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+
+.detail-value {
+    -fx-text-fill: #f2e6df;
+    -fx-font-size: 15px;
+    -fx-font-weight: 900;
+}
+
+.detail-value.accent {
+    -fx-text-fill: #ff8a5f;
+}

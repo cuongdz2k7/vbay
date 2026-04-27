@@ -1,0 +1,278 @@
+.root {
+    -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.place-bid-root {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #101010 0%, #161616 55%, #24140f 100%);
+}
+
+.place-bid-topbar {
+    -fx-background-color: rgba(14, 14, 14, 0.97);
+    -fx-border-color: transparent transparent #2c231f transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.back-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 12;
+    -fx-border-color: #56423a;
+    -fx-border-radius: 12;
+    -fx-text-fill: #f5e5df;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+    -fx-padding: 11 16 11 16;
+    -fx-cursor: hand;
+}
+
+.back-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+}
+
+.page-title {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+}
+
+.page-subtitle {
+    -fx-text-fill: #bfa097;
+    -fx-font-size: 11px;
+    -fx-font-weight: 600;
+}
+
+.live-pill {
+    -fx-background-color: rgba(255, 111, 61, 0.14);
+    -fx-background-radius: 999;
+    -fx-border-color: #8e4127;
+    -fx-border-radius: 999;
+    -fx-padding: 7 12 7 12;
+    -fx-text-fill: #ff9d79;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.place-bid-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+}
+
+.place-bid-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.place-bid-scroll .scroll-bar:vertical,
+.asset-panel-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.place-bid-scroll .scroll-bar:vertical .thumb,
+.asset-panel-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #40312b;
+    -fx-background-radius: 999;
+}
+
+.place-bid-content {
+    -fx-background-color: transparent;
+    -fx-min-width: 980;
+}
+
+.place-bid-shell {
+    -fx-max-width: 1040;
+}
+
+.asset-panel-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-width: 0;
+    -fx-max-width: 660;
+}
+
+.asset-panel-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.visual-panel,
+.bid-panel,
+.quick-actions-panel {
+    -fx-background-color: rgba(18, 18, 18, 0.94);
+    -fx-background-radius: 22;
+    -fx-border-color: #312621;
+    -fx-border-radius: 22;
+    -fx-padding: 16;
+}
+
+.eyebrow-label {
+    -fx-text-fill: #80716c;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+
+.eyebrow-label.accent {
+    -fx-text-fill: #ff8a5f;
+}
+
+.asset-code {
+    -fx-text-fill: #f6eee9;
+    -fx-font-size: 22px;
+    -fx-font-weight: 900;
+}
+
+.asset-name {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+}
+
+.asset-chip-row {
+    -fx-padding: 2 0 0 0;
+}
+
+.asset-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 999;
+    -fx-border-color: #4a352d;
+    -fx-border-radius: 999;
+    -fx-padding: 7 12 7 12;
+    -fx-text-fill: #ead8d1;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.accent-chip {
+    -fx-text-fill: #ff8a5f;
+}
+
+.hero-image {
+    -fx-background-radius: 18;
+}
+
+.section-title {
+    -fx-text-fill: #f1e4df;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
+.description-label {
+    -fx-text-fill: #c8aca4;
+    -fx-font-size: 12px;
+    -fx-font-weight: 600;
+    -fx-line-spacing: 2px;
+}
+
+.product-title {
+    -fx-text-fill: #f8efec;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+}
+
+.stats-grid {
+    -fx-border-color: #312621;
+    -fx-border-width: 1;
+}
+
+.stat-card {
+    -fx-background-color: rgba(22, 22, 22, 0.9);
+    -fx-border-color: #312621;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 12;
+}
+
+.stat-label {
+    -fx-text-fill: #81736d;
+    -fx-font-size: 10px;
+    -fx-font-weight: 800;
+}
+
+.stat-value {
+    -fx-text-fill: #f1e5df;
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+}
+
+.accent-value {
+    -fx-text-fill: #ff8a5f;
+}
+
+.countdown-label {
+    -fx-text-fill: #ff8a5f;
+    -fx-font-size: 17px;
+    -fx-font-weight: 900;
+}
+
+.progress-copy {
+    -fx-text-fill: #9e8a83;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+}
+
+.auction-progress {
+    -fx-accent: #ff5722;
+}
+
+.auction-progress .track {
+    -fx-background-color: #2a211d;
+    -fx-background-radius: 999;
+}
+
+.auction-progress .bar {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff8a5f 0%, #ff5722 100%);
+    -fx-background-radius: 999;
+}
+
+.bid-input {
+    -fx-background-color: #161616;
+    -fx-background-radius: 12;
+    -fx-border-color: #43322c;
+    -fx-border-radius: 12;
+    -fx-text-fill: #f5e5df;
+    -fx-prompt-text-fill: #826e67;
+    -fx-padding: 11 14 11 14;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.bid-input.text-field {
+    -fx-background-color: #161616, #161616, #161616;
+    -fx-control-inner-background: #161616;
+    -color-input-bg: #161616;
+    -color-input-bg-focused: #161616;
+    -color-input-border: transparent;
+    -color-input-border-focused: transparent;
+}
+
+.place-bid-btn {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff7a45 0%, #e04a19 100%);
+    -fx-background-radius: 0;
+    -fx-text-fill: #2f130b;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-padding: 12 16 12 16;
+    -fx-cursor: hand;
+}
+
+.place-bid-btn:hover {
+    -fx-opacity: 0.93;
+}
+
+.footer-copy {
+    -fx-text-fill: #6d605c;
+    -fx-font-size: 10px;
+    -fx-font-weight: 700;
+}
+
+.secondary-action-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: #352a25;
+    -fx-border-width: 1;
+    -fx-text-fill: #f0e1db;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-padding: 10 14 10 14;
+    -fx-cursor: hand;
+}
+
+.secondary-action-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+}
