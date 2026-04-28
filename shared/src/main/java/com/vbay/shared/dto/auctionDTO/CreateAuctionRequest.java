@@ -1,5 +1,6 @@
 package com.vbay.shared.dto.auctionDTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
@@ -10,14 +11,14 @@ public class CreateAuctionRequest {
 
     private String title;
     private String description;
-    private double startingPrice;
-    private Double reservePrice; ///có thể null nếu không có reserve price (nên để nullable)
-    private Double buyNowPrice; ///có thể null nếu không có buy now price
-    private double minimumBidStep;
+    private BigDecimal startingPrice;
+    private BigDecimal reservePrice; ///có thể null nếu không có reserve price (nên để nullable)
+    private BigDecimal buyNowPrice; ///có thể null nếu không có buy now price
+    private BigDecimal minimumBidStep;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
 
-    public CreateAuctionRequest (CreateProductRequest product, String title, String description, double startingPrice, Double reservePrice, Double buyNowPrice, double minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
+    public CreateAuctionRequest (CreateProductRequest product, String title, String description, BigDecimal startingPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
         this.product = product;
         this.title = title;
         this.description = description;
@@ -41,19 +42,19 @@ public class CreateAuctionRequest {
         return description;
     }
 
-    public double getStartingPrice() {
+    public BigDecimal getStartingPrice() {
         return startingPrice;
     }
 
-    public Double getReservePrice() {
+    public BigDecimal getReservePrice() {
         return reservePrice;
     }
 
-    public Double getBuyNowPrice() {
+    public BigDecimal getBuyNowPrice() {
         return buyNowPrice;
     }
 
-    public double getMinimumBidStep() {
+    public BigDecimal getMinimumBidStep() {
         return minimumBidStep;
     }
 

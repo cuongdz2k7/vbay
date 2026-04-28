@@ -1,6 +1,7 @@
 package com.vbay.server.service;
 
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
@@ -81,7 +82,7 @@ public class AuthService {
                 request.getEmail().trim(),
                 passwordHasher.hash(request.getPassword()),
                 request.getPhoneNumber(),
-                0
+                BigDecimal.ZERO
             );
             userRepository.save(newUser);
         } finally {

@@ -4,17 +4,17 @@ import java.util.List;
 
 public class CreateProductRequest {
     private String name;
-    private String description;
-    private String condition;
-    private long categoryId;
     private List<ProductImageDTO> images;
+    private String description;
+    private String condition; ///enum (USED, NEW), 
+    private long categoryId; ///để enum sau này, tạm thời để long
 
-    public CreateProductRequest (String name, String description, String condition, long categoryId, List<ProductImageDTO> images) {
+    public CreateProductRequest (String name, List<ProductImageDTO> images, String description, String condition, long categoryId) {
         this.name = name;
+        this.images = images;
         this.description = description;
         this.condition = condition;
         this.categoryId = categoryId;
-        this.images = images;
     }
     public String getName() {
         return name;

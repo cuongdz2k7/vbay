@@ -1,4 +1,5 @@
 package com.vbay.server.Model;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import com.vbay.shared.enums.Position;
@@ -16,10 +17,10 @@ public class User {
     private Position position; //User , ADMIN
     private UserStatus status;
     // Auction
-    private double balance;
+    private BigDecimal balance;
     //Constructor_init (Sign Up account)
     public User(String username,String email, String passwordHash, 
-                String phone_number,double balance){
+                String phone_number, BigDecimal balance){
                     //Base:
                     this.username = username;
                     this.email = email;
@@ -34,7 +35,7 @@ public class User {
                 }
     //Constructor_2 (Getting account back)
     public User(String username , String email, String passwordHash, String phone_number,
-                Position position,UserStatus status, double balance, String timeinit){
+                Position position,UserStatus status, BigDecimal balance, String timeinit){
                     this.username= username;
                     this.email = email;
                     this.passwordHash = passwordHash;
@@ -73,7 +74,7 @@ public class User {
         return this.status;
     }
     //c, Auction Related: 
-    public double getBalance(){
+    public BigDecimal getBalance(){
         return this.balance;
     }
 
@@ -102,7 +103,7 @@ public class User {
         this.status = new_status;
     }
     //c, Auction:
-    public void setBalance(double new_balance){
+    public void setBalance(BigDecimal new_balance){
         this.balance = new_balance;
     }
 

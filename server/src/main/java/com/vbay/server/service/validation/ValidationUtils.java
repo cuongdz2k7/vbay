@@ -1,5 +1,6 @@
 package com.vbay.server.service.validation;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import com.vbay.server.exception.ValidationException;
@@ -34,8 +35,8 @@ public class ValidationUtils {
         }
     }
 
-    public static void requirePositive(Double value, String message) {
-        if (value == null || value <= 0) {
+    public static void requirePositive(BigDecimal value, String message) {
+        if (value == null || value.compareTo(BigDecimal.ZERO) <= 0) {
             throw new ValidationException(message);
         }
     }

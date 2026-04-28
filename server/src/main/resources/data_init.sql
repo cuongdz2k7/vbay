@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS products (
     seller_id BIGINT NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    product_type VARCHAR(100) NOT NULL,
-    starting_price DECIMAL(15,2) NOT NULL,
+    category_id VARCHAR(100) NOT NULL,
+    product_condition VARCHAR(50) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
 
     CONSTRAINT fk_products_seller
@@ -39,21 +40,24 @@ CREATE TABLE IF NOT EXISTS product_images (
 );
 
 
-CREATE TABLE IF NOT EXISTS Auctions (
+CREATE TABLE IF NOT EXISTS auctions (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     product_id BIGINT NOT NULL,
     seller_id BIGINT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
-    minimumBidStep DECIMAL(15,2) NOT NULL,
+    minimum_bid_step DECIMAL(15,2) NOT NULL,
     starting_price DECIMAL(15,2) NOT NULL,
     current_price DECIMAL(15,2) NOT NULL,
+    reserve_price DECIMAL(15,2),
+    buy_now_price DECIMAL(15,2),
     final_price DECIMAL(15,2),
     starting_time DATETIME NOT NULL,
     ending_time DATETIME NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     winner_user_id BIGINT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_auctions_product
         FOREIGN KEY (product_id) REFERENCES products(id)

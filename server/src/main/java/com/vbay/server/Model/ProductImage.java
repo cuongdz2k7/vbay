@@ -34,5 +34,18 @@ public class ProductImage {
     public boolean isThumbnail() {
         return isThumbnail;
     }
+    public void setProductId(long productId) {
+        this.productId = productId;
+    }
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    public void setThumbnail(boolean thumbnail) {
+        isThumbnail = thumbnail;
+    }
+    public void setId(long id) {
+        this.id = id;
+    }
+    
 
 }

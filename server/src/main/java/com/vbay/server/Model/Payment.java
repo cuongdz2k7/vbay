@@ -1,5 +1,7 @@
 package com.vbay.server.Model;
 
+import java.math.BigDecimal;
+
 public class Payment {
     // Base
     private long id;
@@ -7,14 +9,14 @@ public class Payment {
     private long buyer_id;
     private long seller_id;
     // Payment Detail
-    private double amount;
+    private BigDecimal amount;
     private String payment_method;
     private String payment_time;
     // State
     private boolean is_paid;
 
     //Constructor (Create new payment)
-    public Payment(long auction_id, long buyer_id, long seller_id, double amount, String payment_method, String payment_time){
+    public Payment(long auction_id, long buyer_id, long seller_id, BigDecimal amount, String payment_method, String payment_time){
         //Base:
         this.auction_id = auction_id;
         this.buyer_id = buyer_id;
@@ -42,7 +44,7 @@ public class Payment {
         return this.seller_id;
     }
     //b, Payment Detail:
-    public double getAmount(){
+    public BigDecimal getAmount(){
         return this.amount;
     }
     public String getPaymentMethod(){
@@ -71,7 +73,7 @@ public class Payment {
         this.seller_id = new_seller_id;
     }
     //b, Payment Detail:
-    public void setAmount(double new_amount){
+    public void setAmount(BigDecimal new_amount){
         this.amount = new_amount;
     }
     public void setPaymentMethod(String new_payment_method){

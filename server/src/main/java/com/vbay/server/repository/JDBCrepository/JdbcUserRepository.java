@@ -1,4 +1,4 @@
-package com.vbay.server.repository;
+package com.vbay.server.repository.JDBCrepository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -9,8 +9,8 @@ import java.util.Optional;
 import com.vbay.server.Model.User;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.exception.ValidationException;
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.server.mapper.rowmapper.UserRowMapper;
+import com.vbay.server.repository.UserRepository;
 
 
 public class JdbcUserRepository implements UserRepository {
@@ -30,7 +30,7 @@ public class JdbcUserRepository implements UserRepository {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-                return Optional.of(mapUser(rs));
+                return Optional.of(UserRowMapper.mapUser(rs));
             }
         }
     }
@@ -53,7 +53,7 @@ public class JdbcUserRepository implements UserRepository {
                     return Optional.empty();
                 }
 
-                return Optional.of(mapUser(rs));
+                return Optional.of(UserRowMapper.mapUser(rs));
             }
         }
     }
@@ -99,7 +99,7 @@ public class JdbcUserRepository implements UserRepository {
             statement.setString(4, user.getPhoneNumber());
             statement.setString(5, user.getPosition().name());
             statement.setString(6, user.getUserStatus().name());
-            statement.setDouble(7, user.getBalance());
+            statement.setBigDecimal(7, user.getBalance());
             statement.setString(8, user.getTimeinit());
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -110,19 +110,4 @@ public class JdbcUserRepository implements UserRepository {
             throw e;
         }
     }
-
-    private User mapUser(ResultSet rs) throws SQLException {
-        User user = new User(rs.getString("username"),
-                        rs.getString("email"),
-                        rs.getString("password_hash"), 
-                        rs.getString("phone_number"),
-                        Position.valueOf(rs.getString("position")),
-                        UserStatus.valueOf(rs.getString("status")),
-                        rs.getDouble("balance"),
-                        rs.getString("time_init"));
-        user.setId(rs.getLong("id"));
-        return user;
-    }
-
-
 }

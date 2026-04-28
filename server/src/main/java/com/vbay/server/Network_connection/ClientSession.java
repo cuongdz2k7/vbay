@@ -27,6 +27,15 @@ public class ClientSession {
         this.position = position;
         return userId;
     }
+    public Long getUserId() {
+        return userId;
+    }
+    public String getUsername() {
+        return username;
+    }
+    public Position getPosition() {
+        return position;
+    }
 
     public void clearSession() {
         this.userId = null;

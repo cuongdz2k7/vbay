@@ -1,17 +1,19 @@
 package com.vbay.server.Model;
 
+import java.math.BigDecimal;
+
 public class Bid {
     // Base
     private long id;
     private long auction_id;
     private long bidder_id;
     // Bid Detail
-    private double bid_amount;
+    private BigDecimal bid_amount;
     private String bid_time;
     private boolean is_winner;
 
     //Constructor (Create new bid)
-    public Bid(long auction_id, long bidder_id, double bid_amount, String bid_time){
+    public Bid(long auction_id, long bidder_id, BigDecimal bid_amount, String bid_time){
         //Base:
         this.auction_id = auction_id;
         this.bidder_id = bidder_id;
@@ -33,7 +35,7 @@ public class Bid {
         return this.bidder_id;
     }
     //b, Bid Detail:
-    public double getBidAmount(){
+    public BigDecimal getBidAmount(){
         return this.bid_amount;
     }
     public String getBidTime(){
@@ -55,7 +57,7 @@ public class Bid {
         this.bidder_id = new_bidder_id;
     }
     //b, Bid Detail:
-    public void setBidAmount(double new_bid_amount){
+    public void setBidAmount(BigDecimal new_bid_amount){
         this.bid_amount = new_bid_amount;
     }
     public void setBidTime(String new_bid_time){

@@ -15,4 +15,5 @@ public class ProductImageDTO {
         return isThumbnail;
     }
 
+
 }

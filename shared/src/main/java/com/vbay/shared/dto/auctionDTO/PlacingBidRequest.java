@@ -1,11 +1,13 @@
 package com.vbay.shared.dto.auctionDTO;
 
+import java.math.BigDecimal;
+
 public class PlacingBidRequest {
     private String auctionId;
     private String bidderId;
-    private double bidAmount;
+    private BigDecimal bidAmount;
 
-    public PlacingBidRequest(String auctionId, String bidderId, double bidAmount) {
+    public PlacingBidRequest(String auctionId, String bidderId, BigDecimal bidAmount) {
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         this.bidAmount = bidAmount;
@@ -19,7 +21,7 @@ public class PlacingBidRequest {
         return bidderId;
     }
 
-    public double getBidAmount() {
+    public BigDecimal getBidAmount() {
         return bidAmount;
     }
 

@@ -69,6 +69,10 @@ public class SocketClient {
         pendingResponse.put(message.getRequestId(), queue);
 
         String jsonMessage = JsonUtils.toJson(message);
+        if (jsonMessage == null) {
+            pendingResponse.remove(message.getRequestId());
+            throw new IOException("Failed to serialize request to JSON");
+        }
         out.println(jsonMessage);
         if (out.checkError()) {
             pendingResponse.remove(message.getRequestId());
