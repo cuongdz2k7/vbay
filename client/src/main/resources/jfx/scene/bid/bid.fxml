@@ -63,8 +63,7 @@
                         <VBox spacing="12" styleClass="bid-panel" HBox.hgrow="ALWAYS">
                             <Label text="Place a Bid" styleClass="section-title"/>
                             <Label text="Input only for layout preview. No bid logic is connected yet." styleClass="placeholder-text" wrapText="true"/>
-                            <TextField promptText="Enter your bid amount" styleClass="bid-input"/>
-                            <Button text="Submit Bid" disable="true" maxWidth="Infinity" styleClass="submit-bid-btn"/>
+                            <Button text="Submit Bid" onAction="#handleOpenPlaceBid" maxWidth="Infinity" styleClass="submit-bid-btn"/>
                         </VBox>
                     </HBox>
                 </VBox>

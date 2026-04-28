@@ -26,12 +26,15 @@ public class BidController implements SceneDataReceiver<Product> {
     @FXML
     private ProgressBar progressBar;
 
+    private Product currentProduct;
+
     @Override
     public void setSceneData(Product data) {
         if (data == null) {
             return;
         }
 
+        currentProduct = data;
         titleLabel.setText(data.getTitle());
         priceLabel.setText(data.getPrice());
         timeLabel.setText(data.getTimeLeft());
@@ -49,6 +52,30 @@ public class BidController implements SceneDataReceiver<Product> {
             alert.setTitle("VBay");
             alert.setHeaderText("Navigation failed");
             alert.setContentText("Could not return to the home scene.");
+            alert.showAndWait();
+        }
+    }
+
+
+    //From "Live Auction Detailed" to " Place Bid" Scene
+    @FXML
+    private void handleOpenPlaceBid(ActionEvent event) {
+        if (currentProduct == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("VBay");
+            alert.setHeaderText("Missing product");
+            alert.setContentText("No asset is loaded for bidding.");
+            alert.showAndWait();
+            return;
+        }
+
+        try {
+            SceneManager.switchScene("/jfx/scene/bid/placeBid.fxml", currentProduct);
+        } catch (Exception exception) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("VBay");
+            alert.setHeaderText("Navigation failed");
+            alert.setContentText("Could not open the place bid scene.");
             alert.showAndWait();
         }
     }

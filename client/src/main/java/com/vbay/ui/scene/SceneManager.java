@@ -25,15 +25,11 @@ public class SceneManager {
     }
 
     public static void switchScene(String fxmlPath) throws Exception {
-        currentStage.setScene(createStyledScene(fxmlPath));
-        currentStage.show();
-        enterImmersiveMode();
+        applyViewToStage(loadView(fxmlPath, null));
     }
 
     public static void switchScene(String fxmlPath, Object sceneData) throws Exception {
-        currentStage.setScene(createStyledScene(fxmlPath, sceneData));
-        currentStage.show();
-        enterImmersiveMode();
+        applyViewToStage(loadView(fxmlPath, sceneData));
     }
 
     public static Scene createStyledScene(String fxmlPath) throws Exception {
@@ -41,12 +37,9 @@ public class SceneManager {
     }
 
     public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
-        FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(SceneManager.class.getResource(fxmlPath)));
-        Parent root = loader.load();
-        applySceneData(loader.getController(), sceneData);
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(
-            SceneManager.class.getResource(resolveStylesheetPath(fxmlPath))).toExternalForm());
+        LoadedView view = loadView(fxmlPath, sceneData);
+        Scene scene = new Scene(view.root);
+        scene.getStylesheets().add(view.stylesheetPath);
         installGlobalShortcuts(scene);
         return scene;
     }
@@ -59,6 +52,37 @@ public class SceneManager {
 
     public static Stage getStage() {
         return currentStage;
+    }
+
+    private static void applyViewToStage(LoadedView view) {
+        if (currentStage == null) {
+            throw new IllegalStateException("Stage has not been initialized.");
+        }
+
+        Scene scene = currentStage.getScene();
+        if (scene == null) {
+            scene = new Scene(view.root);
+            scene.getStylesheets().add(view.stylesheetPath);
+            installGlobalShortcuts(scene);
+            currentStage.setScene(scene);
+        } else {
+            scene.setRoot(view.root);
+            scene.getStylesheets().setAll(view.stylesheetPath);
+        }
+
+        if (!currentStage.isShowing()) {
+            currentStage.show();
+        }
+    }
+
+    private static LoadedView loadView(String fxmlPath, Object sceneData) throws Exception {
+        FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(SceneManager.class.getResource(fxmlPath)));
+        Parent root = loader.load();
+        applySceneData(loader.getController(), sceneData);
+        String stylesheetPath = Objects.requireNonNull(
+            SceneManager.class.getResource(resolveStylesheetPath(fxmlPath))
+        ).toExternalForm();
+        return new LoadedView(root, stylesheetPath);
     }
 
     public static void enterImmersiveMode() {
@@ -124,4 +148,6 @@ public class SceneManager {
             enterImmersiveMode();
         }
     }
+
+    private record LoadedView(Parent root, String stylesheetPath) { }
 }

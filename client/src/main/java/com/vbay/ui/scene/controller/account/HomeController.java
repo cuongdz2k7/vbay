@@ -174,12 +174,12 @@ public class HomeController {
 
     public void handleCardClick(Product product) {
         try {
-            SceneManager.switchScene("/jfx/scene/bid/placeBid.fxml", product);
+            SceneManager.switchScene("/jfx/scene/bid/bid.fxml", product);
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,
                 "Navigation failed",
-                "Could not open the place bid scene for the selected product."
+                "Could not open the bid detail scene for the selected product."
             );
         }
     }
