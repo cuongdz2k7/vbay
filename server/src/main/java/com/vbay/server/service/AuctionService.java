@@ -5,13 +5,13 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-import com.vbay.server.databaseManager.DatabaseConnection;
-import com.vbay.server.exception.ValidationException;
-import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.exception.ValidationException;
+import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;

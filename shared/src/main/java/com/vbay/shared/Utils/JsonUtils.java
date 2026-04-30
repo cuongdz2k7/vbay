@@ -1,5 +1,8 @@
 package com.vbay.shared.Utils;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -7,7 +10,20 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 
 public class JsonUtils {
-    private static final Gson gson = new GsonBuilder().create();
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+
+    private static final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(
+                    LocalDateTime.class,
+                    (com.google.gson.JsonSerializer<LocalDateTime>) (src, typeOfSrc, context) ->
+                            context.serialize(src.format(DATE_TIME_FORMATTER))
+            )
+            .registerTypeAdapter(
+                    LocalDateTime.class,
+                    (com.google.gson.JsonDeserializer<LocalDateTime>) (json, typeOfT, context) ->
+                            LocalDateTime.parse(json.getAsString(), DATE_TIME_FORMATTER)
+            )
+            .create();
 
     private JsonUtils() {
     }

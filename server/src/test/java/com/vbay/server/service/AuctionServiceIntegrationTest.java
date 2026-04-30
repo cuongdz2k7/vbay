@@ -140,7 +140,7 @@ class AuctionServiceIntegrationTest {
             assertEquals("iPhone 15 auction", savedAuction.getTitle());
             assertEquals(new BigDecimal("100.00"), savedAuction.getStartPrice());
             assertEquals(new BigDecimal("100.00"), savedAuction.getCurrentPrice());
-            assertEquals(AuctionStatus.PENDING, savedAuction.getStatus());
+            assertEquals(AuctionStatus.SCHEDULED, savedAuction.getStatus());
         }
     }
 

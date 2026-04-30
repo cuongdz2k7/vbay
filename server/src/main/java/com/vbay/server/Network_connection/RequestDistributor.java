@@ -16,35 +16,64 @@ import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
+/*
+Auth flow detail: 
+1. Handler/service làm việc bình thường
+    validate
+    gọi repository
+xử lý business
+2. Nếu có lỗi:
+    throw ValidationException
+    throw AuthenticationException
+    throw SQLException
+hoặc exception khác
+3. Exception sẽ bubble lên dispatch()
+4. dispatch() catch theo từng loại và convert thành Respond<>(..., false, ...)
+5. Nếu không có exception nào bị throw:
+    code chạy hết xuống cuối method
+    return Respond<>(..., true, ...)
+
+Tại sao distributor lại thread-safe ? 
+- vì các local variable trong method dispatch là bản riêng của từng thread, ở trong các call stack khác nhau, nên không có sự chia sẻ dữ liệu nào giữa các thread.
+- AuthService được thiết kế để thread-safe.
+
+*/
+
 public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
 
-    public RequestDistributor(AuthService authService, AuctionService auctionService) {
+    public RequestDistributor (AuthService authService, AuctionService auctionService) {
         this.authService = authService;
         this.auctionService = auctionService;
     }
+    /*
+    switch-case theo type để gọi handler tương ứng
+    parse json
+    đóng gói response vào Respond<> và trả về
+    */
 
-    public Respond<?> dispatch(String rawRequest, ClientSession session) {
+    ///dispatch
+    public Respond<?> dispatch (String rawRequest, ClientSession session) {
+        ///refactoring lại cái chỗ này, tách riêng phần parse requestId và type ra, sau đó mới switch-case theo type để gọi handler tương ứng
+        ///code smell ở chỗ này.
         JsonObject root;
         try {
             root = JsonUtils.fromJson(rawRequest, JsonObject.class);
-        } catch (Exception exception) {
+        } catch (Exception e) {
             return new Respond<>(null, false, "Invalid request format", null);
         }
         if (root == null) {
             return new Respond<>(null, false, "Invalid request format", null);
         }
-
+        
         JsonElement requestIdElement = root.get("requestId");
         JsonElement typeElement = root.get("type");
 
-        String requestId = requestIdElement != null && !requestIdElement.isJsonNull()
-            ? requestIdElement.getAsString()
-            : null;
-        String typeRaw = typeElement != null && !typeElement.isJsonNull()
-            ? typeElement.getAsString()
-            : null;
+        String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
+                            ? requestIdElement.getAsString() : null;
+
+        String typeRaw = (typeElement != null && !typeElement.isJsonNull()) ? typeElement.getAsString() : null;
 
         if (typeRaw == null || typeRaw.isBlank()) {
             return new Respond<>(requestId, false, "Invalid request type", null);
@@ -53,7 +82,7 @@ public class RequestDistributor {
         RequestType type;
         try {
             type = RequestType.valueOf(typeRaw);
-        } catch (IllegalArgumentException exception) {
+        } catch (IllegalArgumentException e) {
             return new Respond<>(requestId, false, "Unsupported request type: " + typeRaw, null);
         }
 
@@ -66,26 +95,31 @@ public class RequestDistributor {
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
-        } catch (ValidationException | AuthenticationException exception) {
-            exception.printStackTrace();
-            return new Respond<>(requestId, false, exception.getMessage(), null);
-        } catch (SQLException exception) {
-            exception.printStackTrace();
+        } catch (ValidationException | AuthenticationException e) {
+            e.printStackTrace();
+            return new Respond<>(requestId, false, e.getMessage(), null);
+        } catch (SQLException e) {
+            e.printStackTrace();
             return new Respond<>(requestId, false, "DataBase error", null);
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
             return new Respond<>(requestId, false, "Unexpected error", null);
         }
     }
 
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session)
-        throws SQLException, AuthenticationException {
+    
+
+    
+    ///bỏ chuyển rawString sang authservice
+    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
         }
-        LoginResponse loginResponse = authService.login(loginRequest);
-        session.setSession(loginResponse.getUserId(), loginResponse.getUsername(), loginResponse.getPosition());
+        LoginResponse loginResponse = authService.login(loginRequest); ///nếu catch được exception thì dừng luôn ở đây
+        session.setSession(loginResponse.getUserId(), 
+                            loginResponse.getUsername(), 
+                            loginResponse.getPosition());
         return new Respond<>(requestId, true, "Login successful", loginResponse);
     }
 
@@ -97,9 +131,7 @@ public class RequestDistributor {
         authService.register(registerRequest);
         return new Respond<>(requestId, true, "Register successful", null);
     }
-
-    private Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session)
-        throws SQLException {
+    private Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
         if (createAuctionRequest == null) {
             return new Respond<>(requestId, false, "Invalid create auction request", null);
@@ -107,4 +139,5 @@ public class RequestDistributor {
         auctionService.createAuction(createAuctionRequest, session);
         return new Respond<>(requestId, true, "Auction created successfully", null);
     }
+    
 }

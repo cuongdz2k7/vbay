@@ -6,10 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
+import com.vbay.server.model.User;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.rowmapper.UserRowMapper;
-import com.vbay.server.model.User;
 import com.vbay.server.repository.UserRepository;
 
 

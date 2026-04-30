@@ -1,14 +1,94 @@
 CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    email TEXT NOT NULL UNIQUE,
-    passwordHash TEXT NOT NULL,
-    phone_number TEXT,
-    position TEXT NOT NULL DEFAULT 'USER',
-    status TEXT NOT NULL DEFAULT 'ACTIVE',
-    balance REAL NOT NULL DEFAULT 0,
-    timeinit TEXT NOT NULL
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(20),
+    position VARCHAR(20) NOT NULL DEFAULT 'USER',
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+    time_init DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
---để lưu username dạng cây giúp query username nhanh hơn (tương tự chặt nhị phân)
-CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS products (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    seller_id BIGINT NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    category_id VARCHAR(100) NOT NULL,
+    product_condition VARCHAR(50) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+
+    CONSTRAINT fk_products_seller
+        FOREIGN KEY (seller_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS product_images (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    image_url VARCHAR(255) NOT NULL,
+    is_thumbnail BOOLEAN NOT NULL DEFAULT FALSE,
+
+    CONSTRAINT fk_product_images_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS auctions (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    product_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    minimum_bid_step DECIMAL(15,2) NOT NULL,
+    starting_price DECIMAL(15,2) NOT NULL,
+    current_price DECIMAL(15,2) NOT NULL,
+    reserve_price DECIMAL(15,2),
+    buy_now_price DECIMAL(15,2),
+    final_price DECIMAL(15,2),
+    starting_time DATETIME NOT NULL,
+    ending_time DATETIME NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
+    winner_user_id BIGINT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_auctions_product
+        FOREIGN KEY (product_id) REFERENCES products(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_auctions_seller
+        FOREIGN KEY (seller_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_auctions_winner
+        FOREIGN KEY (winner_user_id) REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS bids (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    auction_id BIGINT NOT NULL,
+    bidder_id BIGINT NOT NULL,
+    bid_amount DECIMAL(15,2) NOT NULL,
+    bid_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(20) NOT NULL DEFAULT 'PLACED',
+
+    CONSTRAINT fk_bids_auction
+        FOREIGN KEY (auction_id) REFERENCES auctions(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_bids_bidder
+        FOREIGN KEY (bidder_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE
+);
