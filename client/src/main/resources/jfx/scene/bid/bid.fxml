@@ -39,27 +39,34 @@
                     </padding>
 
                     <HBox spacing="24" alignment="TOP_LEFT">
-                        <VBox spacing="16" styleClass="bid-panel" HBox.hgrow="ALWAYS">
-                            <ImageView fx:id="productImageView" fitWidth="640" fitHeight="380" preserveRatio="false" styleClass="hero-image"/>
+                        <VBox spacing="16" styleClass="bid-panel image-panel" prefWidth="560">
+                            <ImageView fx:id="productImageView" fitWidth="520" fitHeight="320" preserveRatio="false" styleClass="hero-image"/>
                         </VBox>
 
-                        <VBox spacing="18" styleClass="bid-panel" prefWidth="420">
+                        <VBox spacing="18" styleClass="bid-panel details-panel" prefWidth="520" HBox.hgrow="ALWAYS">
                             <Label fx:id="titleLabel" text="Product title" styleClass="product-title" wrapText="true"/>
                             <Label fx:id="priceLabel" text="\$0.00" styleClass="product-price"/>
                             <Label fx:id="timeLabel" text="0h 00m left" styleClass="product-time"/>
-                            <ProgressBar fx:id="progressBar" prefWidth="380" progress="0.0"/>
+                            <ProgressBar fx:id="progressBar" maxWidth="Infinity" progress="0.0"/>
                             <Label text="About this lot" styleClass="section-title"/>
-                            <Label fx:id="descriptionLabel" text="Product description" styleClass="product-description" wrapText="true"/>
+                            <ScrollPane fitToWidth="true"
+                                        hbarPolicy="NEVER"
+                                        vbarPolicy="ALWAYS"
+                                        prefViewportHeight="160"
+                                        styleClass="asset-description-scroll"
+                                        VBox.vgrow="ALWAYS">
+                                <content>
+                                    <Label fx:id="descriptionLabel"
+                                           text="Product description"
+                                           styleClass="product-description"
+                                           wrapText="true"
+                                           maxWidth="Infinity"/>
+                                </content>
+                            </ScrollPane>
                         </VBox>
                     </HBox>
 
                     <HBox spacing="24" alignment="TOP_LEFT">
-                        <VBox spacing="12" styleClass="bid-panel" HBox.hgrow="ALWAYS">
-                            <Label text="Bid History" styleClass="section-title"/>
-                            <Label text="No bid history wired yet. This area is reserved for the live feed." styleClass="placeholder-text" wrapText="true"/>
-                            <Label text="Recent activity will appear here in a later iteration." styleClass="placeholder-text" wrapText="true"/>
-                        </VBox>
-
                         <VBox spacing="12" styleClass="bid-panel" HBox.hgrow="ALWAYS">
                             <Label text="Place a Bid" styleClass="section-title"/>
                             <Label text="Input only for layout preview. No bid logic is connected yet." styleClass="placeholder-text" wrapText="true"/>

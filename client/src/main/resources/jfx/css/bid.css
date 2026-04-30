@@ -63,6 +63,14 @@
     -fx-padding: 18;
 }
 
+.image-panel {
+    -fx-max-width: 560;
+}
+
+.details-panel {
+    -fx-min-width: 500;
+}
+
 .hero-image {
     -fx-background-radius: 18;
 }
@@ -96,6 +104,33 @@
     -fx-text-fill: #c8aca4;
     -fx-font-size: 13px;
     -fx-font-weight: 600;
+}
+
+.asset-description-scroll {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: #2f241f;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-padding: 4;
+}
+
+.asset-description-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.asset-description-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.asset-description-scroll .scroll-bar:vertical .track {
+    -fx-background-color: #201814;
+    -fx-background-radius: 999;
+}
+
+.asset-description-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #5a4338;
+    -fx-background-radius: 999;
 }
 
 .progress-bar {

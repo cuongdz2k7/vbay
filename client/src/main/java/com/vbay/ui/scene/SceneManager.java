@@ -23,11 +23,11 @@ public class SceneManager {
             });
         }
     }
-
+    // Switch Scene without any inheriting data
     public static void switchScene(String fxmlPath) throws Exception {
         applyViewToStage(loadView(fxmlPath, null));
     }
-
+    // With inheritance
     public static void switchScene(String fxmlPath, Object sceneData) throws Exception {
         applyViewToStage(loadView(fxmlPath, sceneData));
     }

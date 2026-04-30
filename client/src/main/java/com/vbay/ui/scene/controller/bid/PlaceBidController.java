@@ -19,6 +19,11 @@ import javafx.scene.image.ImageView;
 
 public class PlaceBidController implements SceneDataReceiver<Product> {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final String[] HISTORY_BIDDERS = {
+        "Mia Tran",
+        "Alex Carter",
+        "Noah Pham"
+    };
 
     @FXML
     private ImageView productImageView;
@@ -27,17 +32,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
     @FXML
     private Label assetNameLabel;
     @FXML
-    private Label assetCurrentBidChipLabel;
-    @FXML
-    private Label assetStartingPriceChipLabel;
-    @FXML
-    private Label assetStepChipLabel;
-    @FXML
-    private Label assetSummaryLabel;
-    @FXML
     private Label titleLabel;
-    @FXML
-    private Label descriptionLabel;
     @FXML
     private Label currentBidLabel;
     @FXML
@@ -54,6 +49,19 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
     private ProgressBar progressBar;
     @FXML
     private TextField bidAmountField;
+    //Three Highest Bidder
+    @FXML
+    private Label historyBidderOneLabel;
+    @FXML
+    private Label historyAmountOneLabel;
+    @FXML
+    private Label historyBidderTwoLabel;
+    @FXML
+    private Label historyAmountTwoLabel;
+    @FXML
+    private Label historyBidderThreeLabel;
+    @FXML
+    private Label historyAmountThreeLabel;
 
     private Product currentProduct;
     private BigDecimal nextMinimumBid = BigDecimal.ZERO;
@@ -69,12 +77,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
 
         assetCodeLabel.setText(buildAssetCode(data.getTitle()));
         assetNameLabel.setText(data.getTitle());
-        assetCurrentBidChipLabel.setText("Current Bid  " + data.getPrice());
-        assetStartingPriceChipLabel.setText("Starting Price  " + data.getStartingPrice());
-        assetStepChipLabel.setText("Step  " + data.getBidStep());
-        assetSummaryLabel.setText(data.getDescription());
         titleLabel.setText(data.getTitle());
-        descriptionLabel.setText(data.getDescription());
         currentBidLabel.setText(data.getPrice());
         startingPriceLabel.setText(data.getStartingPrice());
         stepLabel.setText(data.getBidStep());
@@ -84,6 +87,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         progressBar.setProgress(data.getProgress());
         bidAmountField.setText(formatCurrency(nextMinimumBid));
         productImageView.setImage(ProductImageLoader.load(data.getImagePath()));
+        populateBidHistory(data);
     }
 
     @FXML
@@ -145,20 +149,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         showMessage(Alert.AlertType.INFORMATION, "Watch asset", "Watchlist flow is not connected yet.");
     }
 
-    @FXML
-    private void handleOpenAssetOverview(ActionEvent event) {
-        if (currentProduct == null) {
-            showMessage(Alert.AlertType.WARNING, "Missing product", "No asset is loaded to inspect.");
-            return;
-        }
-
-        try {
-            SceneManager.switchScene("/jfx/scene/bid/assetOverview.fxml", currentProduct);
-        } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Navigation failed", "Could not open the asset overview scene.");
-        }
-    }
-
+    //Creating Code of Product ~ MASANPHAM
     private static String buildAssetCode(String title) {
         String compact = title == null ? "LOT-UNSET" : title.replaceAll("[^A-Za-z0-9]+", "-").toUpperCase(Locale.US);
         compact = compact.replaceAll("^-+|-+$", "");
@@ -168,6 +159,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         return compact.isBlank() ? "LOT-UNSET" : compact;
     }
 
+    //Converting String --> Decimal (Caculating Money)
     private static BigDecimal parseCurrency(String value) {
         String normalized = value.replaceAll("[^\\d.]", "");
         if (normalized.isBlank()) {
@@ -176,8 +168,40 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         return new BigDecimal(normalized);
     }
 
+    //Exchaning Decimal (Displaying Money)
     private static String formatCurrency(BigDecimal value) {
         return CURRENCY_FORMAT.format(value);
+    }
+
+    // 3 Highest Bid
+    private void populateBidHistory(Product data) {
+        BigDecimal currentBid = parseCurrency(data.getPrice());
+        BigDecimal step = parseCurrency(data.getBidStep());
+        BigDecimal startingBid = parseCurrency(data.getStartingPrice());
+        //Bidder 1
+        setHistoryRow(
+            historyBidderOneLabel, 
+            historyAmountOneLabel, 
+            HISTORY_BIDDERS[0], 
+            currentBid);
+        //Bidder 2
+        setHistoryRow(
+            historyBidderTwoLabel,
+            historyAmountTwoLabel,
+            HISTORY_BIDDERS[1],
+            currentBid.subtract(step).max(startingBid));
+        //Bidder 3
+        setHistoryRow(
+            historyBidderThreeLabel,
+            historyAmountThreeLabel,
+            HISTORY_BIDDERS[2],
+            currentBid.subtract(step.multiply(BigDecimal.valueOf(2))).max(startingBid)
+        );
+    }
+
+    private void setHistoryRow(Label bidderLabel, Label amountLabel, String bidder, BigDecimal amount) {
+        bidderLabel.setText(bidder);
+        amountLabel.setText(formatCurrency(amount));
     }
 
     private void showMessage(Alert.AlertType type, String title, String content) {

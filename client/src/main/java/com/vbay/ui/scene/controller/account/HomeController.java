@@ -179,7 +179,7 @@ public class HomeController {
             showMessage(
                 Alert.AlertType.ERROR,
                 "Navigation failed",
-                "Could not open the bid detail scene for the selected product."
+                "Could not open the placebid detail scene for the selected product."
             );
         }
     }

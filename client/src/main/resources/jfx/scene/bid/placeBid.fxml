@@ -41,41 +41,33 @@
                         <Insets top="18" right="18" bottom="18" left="18"/>
                     </padding>
 
-                    <HBox spacing="18" alignment="TOP_CENTER" styleClass="place-bid-shell">
-                        <ScrollPane fitToWidth="true"
-                                    hbarPolicy="NEVER"
-                                    vbarPolicy="AS_NEEDED"
-                                    pannable="true"
-                                    prefViewportHeight="520"
-                                    styleClass="asset-panel-scroll"
-                                    HBox.hgrow="ALWAYS">
-                            <content>
-                                <VBox spacing="14" styleClass="visual-panel">
-                                    <Label text="CURRENT ASSET" styleClass="eyebrow-label"/>
-                                    <Label fx:id="assetCodeLabel" text="LOT-UNSET" styleClass="asset-code"/>
-                                    <ImageView fx:id="productImageView" fitWidth="640" fitHeight="320" preserveRatio="false" styleClass="hero-image"/>
-                                    <Label fx:id="assetNameLabel" text="Product title" styleClass="asset-name" wrapText="true"/>
-                                    <HBox spacing="10" styleClass="asset-chip-row">
-                                        <children>
-                                            <Label fx:id="assetCurrentBidChipLabel" text="Current Bid  \$0.00" styleClass="asset-chip accent-chip"/>
-                                            <Label fx:id="assetStartingPriceChipLabel" text="Starting Price  \$0.00" styleClass="asset-chip"/>
-                                        </children>
+                    <HBox spacing="20" alignment="TOP_LEFT" styleClass="place-bid-shell">
+                            <VBox spacing="14" styleClass="visual-panel" prefWidth="540" maxWidth="540">
+                                <Label text="CURRENT ASSET" styleClass="eyebrow-label"/>
+                                <Label fx:id="assetCodeLabel" text="LOT-UNSET" styleClass="asset-code"/>
+                                <ImageView fx:id="productImageView" fitWidth="500" fitHeight="280" preserveRatio="false" styleClass="hero-image"/>
+                                <Label fx:id="assetNameLabel" text="Product title" styleClass="asset-name" wrapText="true"/>
+                                <VBox spacing="10" styleClass="history-panel">
+                                    <Label text="Bid History" styleClass="section-title"/>
+                                    <HBox alignment="CENTER_LEFT" styleClass="history-row">
+                                        <Label fx:id="historyBidderOneLabel" text="Bidder 1" styleClass="history-bidder"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="historyAmountOneLabel" text="\$0.00" styleClass="history-amount"/>
                                     </HBox>
-                                    <Label fx:id="assetStepChipLabel" text="Step  \$0.00" styleClass="asset-chip"/>
-                                    <VBox spacing="6">
-                                        <Label text="Auction Notes" styleClass="section-title"/>
-                                        <Label fx:id="descriptionLabel" text="Product description" styleClass="description-label" wrapText="true"/>
-                                    </VBox>
-                                    <VBox spacing="6">
-                                        <Label text="Product Summary" styleClass="section-title"/>
-                                        <Label fx:id="assetSummaryLabel" text="Summary" styleClass="description-label" wrapText="true"/>
-                                    </VBox>
-                                    <Button text="OPEN ASSET SHEET" maxWidth="180" onAction="#handleOpenAssetOverview" styleClass="secondary-action-btn"/>
+                                    <HBox alignment="CENTER_LEFT" styleClass="history-row">
+                                        <Label fx:id="historyBidderTwoLabel" text="Bidder 2" styleClass="history-bidder"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="historyAmountTwoLabel" text="\$0.00" styleClass="history-amount"/>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" styleClass="history-row">
+                                        <Label fx:id="historyBidderThreeLabel" text="Bidder 3" styleClass="history-bidder"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label fx:id="historyAmountThreeLabel" text="\$0.00" styleClass="history-amount"/>
+                                    </HBox>
                                 </VBox>
-                            </content>
-                        </ScrollPane>
+                            </VBox>
 
-                        <VBox spacing="16" styleClass="bid-panel" prefWidth="360" maxWidth="360">
+                        <VBox spacing="16" styleClass="bid-panel" prefWidth="460" minWidth="460" maxWidth="460">
                             <VBox spacing="4">
                                 <Label text="VERIFIED ASSET" styleClass="eyebrow-label accent"/>
                                 <Label fx:id="titleLabel" text="Product title" styleClass="product-title" wrapText="true"/>

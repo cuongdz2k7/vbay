@@ -433,6 +433,28 @@ public final class MockProductCatalog {
         double progress,
         String imagePath
     ) {
-        return new Product(title, description, price, startingPrice, bidStep, timeLeft, progress, imagePath);
+        return new Product(
+            title,
+            expandDescription(description),
+            price,
+            startingPrice,
+            bidStep,
+            timeLeft,
+            progress,
+            imagePath
+        );
+    }
+    //Testing
+    private static String expandDescription(String summary) {
+        return summary
+            + "\n\n"
+            + "This listing is positioned as a premium auction lot with verified visual condition, "
+            + "careful presentation, and a pricing ladder intended to keep bidding active through the final window."
+            + "\n\n"
+            + "Buyers should expect a well-kept item profile, a competitive bid step, and enough detail to evaluate "
+            + "whether the lot fits a collector setup, a professional workflow, or a resale-driven purchase strategy."
+            + "\n\n"
+            + "The current auction pace suggests healthy attention from watchers, so this item is best reviewed early "
+            + "before the closing phase compresses decision time and pushes the live price toward the upper estimate.";
     }
 }

@@ -74,7 +74,7 @@
 
 .place-bid-content {
     -fx-background-color: transparent;
-    -fx-min-width: 980;
+    -fx-min-width: 1120;
 }
 
 .place-bid-shell {
@@ -102,6 +102,10 @@
     -fx-padding: 16;
 }
 
+.visual-panel {
+    -fx-padding: 14;
+}
+
 .eyebrow-label {
     -fx-text-fill: #80716c;
     -fx-font-size: 10px;
@@ -114,33 +118,14 @@
 
 .asset-code {
     -fx-text-fill: #f6eee9;
-    -fx-font-size: 22px;
+    -fx-font-size: 18px;
     -fx-font-weight: 900;
 }
 
 .asset-name {
     -fx-text-fill: #f8efec;
-    -fx-font-size: 17px;
+    -fx-font-size: 15px;
     -fx-font-weight: 900;
-}
-
-.asset-chip-row {
-    -fx-padding: 2 0 0 0;
-}
-
-.asset-chip {
-    -fx-background-color: rgba(255, 255, 255, 0.04);
-    -fx-background-radius: 999;
-    -fx-border-color: #4a352d;
-    -fx-border-radius: 999;
-    -fx-padding: 7 12 7 12;
-    -fx-text-fill: #ead8d1;
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
-}
-
-.accent-chip {
-    -fx-text-fill: #ff8a5f;
 }
 
 .hero-image {
@@ -160,9 +145,37 @@
     -fx-line-spacing: 2px;
 }
 
+.history-panel {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 18;
+    -fx-border-color: #312621;
+    -fx-border-radius: 18;
+    -fx-padding: 14;
+}
+
+.history-row {
+    -fx-background-color: rgba(19, 19, 19, 0.96);
+    -fx-background-radius: 14;
+    -fx-border-color: #2f241f;
+    -fx-border-radius: 14;
+    -fx-padding: 11 12 11 12;
+}
+
+.history-bidder {
+    -fx-text-fill: #f1e4df;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.history-amount {
+    -fx-text-fill: #ff8a5f;
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+}
+
 .product-title {
     -fx-text-fill: #f8efec;
-    -fx-font-size: 18px;
+    -fx-font-size: 24px;
     -fx-font-weight: 900;
 }
 
