@@ -1,4 +1,4 @@
-package com.vbay.server.repository;
+package com.vbay.server.repository.JDBCrepository;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,10 +6,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import com.vbay.server.Model.User;
 import com.vbay.server.databaseManager.DatabaseConnection;
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.server.exception.ValidationException;
+import com.vbay.server.mapper.rowmapper.UserRowMapper;
+import com.vbay.server.model.User;
+import com.vbay.server.repository.UserRepository;
 
 
 public class JdbcUserRepository implements UserRepository {
@@ -17,7 +18,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override  
     public Optional<User> findByUsername (String username) throws SQLException { 
         String sql = """
-            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
+            SELECT id, username, email, password_hash, phone_number, position, status, balance, time_init
             FROM users
             WHERE username = ?
             """;
@@ -29,14 +30,14 @@ public class JdbcUserRepository implements UserRepository {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-                return Optional.of(mapUser(rs));
+                return Optional.of(UserRowMapper.mapUser(rs));
             }
         }
     }
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
-            SELECT id, username, email, passwordHash, phone_number, position, status, balance, timeinit
+            SELECT id, username, email, password_hash, phone_number, position, status, balance, time_init
             FROM users
             WHERE email = ?
             LIMIT 1
@@ -52,7 +53,7 @@ public class JdbcUserRepository implements UserRepository {
                     return Optional.empty();
                 }
 
-                return Optional.of(mapUser(rs));
+                return Optional.of(UserRowMapper.mapUser(rs));
             }
         }
     }
@@ -87,7 +88,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public void save (User user) throws SQLException {
         String sql = """
-            INSERT INTO users (username, email, passwordHash, phone_number, position, status, balance, timeinit)
+            INSERT INTO users (username, email, password_hash, phone_number, position, status, balance, time_init)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
         try (Connection connection = DatabaseConnection.getConnection();
@@ -98,24 +99,15 @@ public class JdbcUserRepository implements UserRepository {
             statement.setString(4, user.getPhoneNumber());
             statement.setString(5, user.getPosition().name());
             statement.setString(6, user.getUserStatus().name());
-            statement.setDouble(7, user.getBalance());
+            statement.setBigDecimal(7, user.getBalance());
             statement.setString(8, user.getTimeinit());
             statement.executeUpdate();
+        } catch (SQLException e) {
+            String sqlState = e.getSQLState();///catch lỗi trùng username hoặc email do ràng buộc unique trong database (race condition)
+            if ("23000".equals(sqlState) && e.getErrorCode() == 1062) {
+                throw new ValidationException("Username or email already exists");
+            }
+            throw e;
         }
     }
-
-    private User mapUser(ResultSet rs) throws SQLException {
-        User user = new User(rs.getString("username"),
-                        rs.getString("email"),
-                        rs.getString("passwordHash"), 
-                        rs.getString("phone_number"),
-                        Position.valueOf(rs.getString("position")),
-                        UserStatus.valueOf(rs.getString("status")),
-                        rs.getDouble("balance"),
-                        rs.getString("timeinit"));
-        user.setId(rs.getLong("id"));
-        return user;
-    }
-
-
 }

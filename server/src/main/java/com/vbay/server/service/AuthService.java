@@ -1,18 +1,20 @@
 package com.vbay.server.service;
 
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
-import com.vbay.server.Model.User;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.model.User;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
-import com.vbay.shared.dto.LoginRequest;
-import com.vbay.shared.dto.LoginResponse;
-import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.server.service.validation.ValidationUtils;
+import com.vbay.shared.dto.authDTO.LoginRequest;
+import com.vbay.shared.dto.authDTO.LoginResponse;
+import com.vbay.shared.dto.authDTO.RegisterRequest;
 
 public class AuthService {
     private final UserRepository userRepository;
@@ -22,10 +24,6 @@ public class AuthService {
     public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.passwordHasher = passwordHasher;
-    }
-
-    private static boolean isBlank (String str) {
-        return str == null || str.isBlank();
     }
 
     private boolean isUniqueConstraintViolation(SQLException e) {
@@ -39,14 +37,12 @@ public class AuthService {
             || lower.contains("sqlite_constraint_unique");
     }
 
-   
     private void validateLoginRequest (LoginRequest request) {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
+        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
 
     public LoginResponse login (LoginRequest request) throws SQLException, AuthenticationException {
@@ -61,7 +57,7 @@ public class AuthService {
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 throw new AuthenticationException("Invalid username or password");
             }
-            return new LoginResponse(String.valueOf(user.getId()),
+            return new LoginResponse(user.getId(),
                                     user.getUserName(),
                                     user.getEmail(),
                                     user.getPosition());
@@ -78,15 +74,9 @@ public class AuthService {
         if (request == null) {
             throw new ValidationException("Register request is required");
         }
-        if (isBlank(request.getUsername())) { 
-            throw new ValidationException("Register request is required"); 
-        }
-        if (isBlank(request.getEmail())) {
-            throw new ValidationException("Email is required");
-        }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
+        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
@@ -105,7 +95,7 @@ public class AuthService {
                 request.getEmail().trim(),
                 passwordHasher.hash(request.getPassword()),
                 request.getPhoneNumber(),
-                0
+                BigDecimal.ZERO
             );
             userRepository.save(newUser);
         } catch (SQLException e) {

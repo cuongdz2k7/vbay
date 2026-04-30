@@ -1,83 +1,132 @@
-package com.vbay.server.Model;
+package com.vbay.server.model;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.vbay.shared.enums.shared_status.ProductStatus;
 
 public class Product {
-    // Base
     private long id;
-    private String product_name;
+    private long sellerId;
+    private String name;
+    private List<ProductImage> images;
     private String description;
-    private String category;
-    // Owner + Auction
-    private long seller_id;
-    private double starting_price;
-    private double buy_now_price;
-    private int stock_quantity;
+    private long categoryId;
+    private String condition;
+    private ProductStatus status;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    //Constructor (Create new product)
-    public Product(String product_name, String description, String category, long seller_id, double starting_price, double buy_now_price, int stock_quantity){
-        //Base:
-        this.product_name = product_name;
+    public Product(String name, String description, long categoryId, String condition) {
+        this.name = name;
+        this.images = List.of();
         this.description = description;
-        this.category = category;
-        //Owner + Auction:
-        this.seller_id = seller_id;
-        this.starting_price = starting_price;
-        this.buy_now_price = buy_now_price;
-        this.stock_quantity = stock_quantity;
+        this.categoryId = categoryId;
+        this.condition = condition;
+        this.status = ProductStatus.AVAILABLE;
     }
 
-    //Getter
-    //a, Base:
-    public long getId(){
-        return this.id;
-    }
-    public String getProductName(){
-        return this.product_name;
-    }
-    public String getDescription(){
-        return this.description;
-    }
-    public String getCategory(){
-        return this.category;
-    }
-    //b, Owner + Auction:
-    public long getSellerId(){
-        return this.seller_id;
-    }
-    public double getStartingPrice(){
-        return this.starting_price;
-    }
-    public double getBuyNowPrice(){
-        return this.buy_now_price;
-    }
-    public int getStockQuantity(){
-        return this.stock_quantity;
+    public Product(
+        long id,
+        long sellerId,
+        String name,
+        List<ProductImage> images,
+        String description,
+        long categoryId,
+        String condition,
+        ProductStatus status,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+    ) {
+        this.id = id;
+        this.sellerId = sellerId;
+        this.name = name;
+        this.images = images;
+        this.description = description;
+        this.categoryId = categoryId;
+        this.condition = condition;
+        this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
-    //Setter (Change data)
-    //a, Base:
-    public void setId(long new_id){
-        this.id = new_id;
+    public long getId() {
+        return id;
     }
-    public void setProductName(String new_product_name){
-        this.product_name = new_product_name;
+
+    public long getSellerId() {
+        return sellerId;
     }
-    public void setDescription(String new_description){
-        this.description = new_description;
+
+    public String getName() {
+        return name;
     }
-    public void setCategory(String new_category){
-        this.category = new_category;
+
+    public List<ProductImage> getImages() {
+        return images;
     }
-    //b, Owner + Auction:
-    public void setSellerId(long new_seller_id){
-        this.seller_id = new_seller_id;
+
+    public String getDescription() {
+        return description;
     }
-    public void setStartingPrice(double new_starting_price){
-        this.starting_price = new_starting_price;
+
+    public String getCondition() {
+        return condition;
     }
-    public void setBuyNowPrice(double new_buy_now_price){
-        this.buy_now_price = new_buy_now_price;
+
+    public long getCategoryId() {
+        return categoryId;
     }
-    public void setStockQuantity(int new_stock_quantity){
-        this.stock_quantity = new_stock_quantity;
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public ProductStatus getStatus() {
+        return status;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public void setSellerId(long sellerId) {
+        this.sellerId = sellerId;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setImages(List<ProductImage> images) {
+        this.images = images;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setCondition(String condition) {
+        this.condition = condition;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public void setStatus(ProductStatus status) {
+        this.status = status;
+    }
+
+    public void setCategoryId(long categoryId) {
+        this.categoryId = categoryId;
     }
 }
