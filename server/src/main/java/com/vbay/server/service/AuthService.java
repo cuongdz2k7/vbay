@@ -37,19 +37,32 @@ public class AuthService {
         ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
         ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
+    //
+    private static void logInfo(String action, String detail) {
+        System.out.println("\n[AUTH][" + action + "] " + detail);
+    }
+
+    private static void logError(String action, String detail) {
+        System.err.println("\n[AUTH][" + action + "] " + detail);
+    }
 
     public LoginResponse login (LoginRequest request) throws SQLException {
         validateLoginRequest(request);
+        String email = request.getEmail().trim();
+        logInfo("LOGIN_ATTEMPT", "email=" + email);
 
         try {
-            Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
+            Optional<User> userOptional = userRepository.findByEmail(email);
             if (userOptional.isEmpty()) { 
+                logError("LOGIN_FAILED", "email=" + email + ", reason: user_not_found");
                 throw new AuthenticationException("Invalid email or password");
             }
             User user = userOptional.get(); 
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+                logError("LOGIN_FAILED", "email=" + email + ", reason: invalid_password");
                 throw new AuthenticationException("Invalid username or password");
             }
+            logInfo("LOGIN_SUCCESS", "userId=" + user.getId() + ", email=" + user.getEmail());
             return new LoginResponse(user.getId(),
                                     user.getUserName(),
                                     user.getEmail(),
@@ -75,16 +88,20 @@ public class AuthService {
 
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim();
+        logInfo("REGISTER_ATTEMPT", "username=" + username + ", email=" + email);
 
         try {
             User newUser = new User(
-                request.getUsername().trim(),
-                request.getEmail().trim(),
+                username,
+                email,
                 passwordHasher.hash(request.getPassword()),
                 request.getPhoneNumber(),
                 BigDecimal.ZERO
             );
             userRepository.save(newUser);
+            logInfo("REGISTER_SUCCESS", "username=" + username + ", email=" + email);
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');

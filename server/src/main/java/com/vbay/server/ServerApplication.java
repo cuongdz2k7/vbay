@@ -46,7 +46,7 @@ public class ServerApplication {
             
             //ServerSocker : dung o phia server -> mo cong + ket noi voi client ( cua chinh cua server)
             System.out.println("Port: " + PORT);
-            System.out.println("waiting for clients...");
+            System.out.println("Waiting for clients...");
             while(true) {
                 Socket socket = serverSocket.accept();
                 // socket = dai dien ket noi giua client + server

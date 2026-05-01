@@ -97,6 +97,7 @@ public class LoginController {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response. getMessage() : "Login failed.");
         }
+        System.out.println("Client login successful: " + email);
     }
 
     @FXML

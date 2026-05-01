@@ -112,6 +112,9 @@ public class RequestDistributor {
     
     ///bỏ chuyển rawString sang authservice
     private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
+        if (session.isAuthenticated()) {
+            throw new AuthenticationException("Client is already logged in");
+        }
         LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
