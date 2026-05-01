@@ -6,10 +6,10 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.vbay.server.Model.Auction;
-import com.vbay.server.Model.Product;
-import com.vbay.server.Model.ProductImage;
-import com.vbay.server.Network_connection.ClientSession;
+import com.vbay.server.model.Auction;
+import com.vbay.server.model.Product;
+import com.vbay.server.model.ProductImage;
+import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
@@ -23,6 +23,10 @@ import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
+import com.vbay.server.databaseManager.ConnectionProvider;
+import com.vbay.server.exception.AuthenticationException;
+import com.vbay.server.model.Bid;
+
 
 
  /*
@@ -220,11 +224,7 @@ public class AuctionService {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             Auction auction = auctionRepository.findById(request.getAuctionId())
                         .orElseThrow(() -> new ValidationException("Auction not found"));
-            
-
-            Bid bid = new Bid(auction.getId(), session.getUserId(), request.getBidAmount();
-            auctionRepository.placeBid(request.getAuctionId(), session.getUserId(), request.getBidAmount());
-=        } catch (SQLException e) {
+        } catch (SQLException e) {
             throw new RuntimeException("Failed to place bid: " + e.getMessage(), e);
         }
     }

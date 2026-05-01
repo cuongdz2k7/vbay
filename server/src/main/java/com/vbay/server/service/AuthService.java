@@ -17,6 +17,8 @@ import com.vbay.server.service.validation.ValidationUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
+import com.vbay.server.databaseManager.ConnectionProvider;
+
 
 
 public class AuthService {
