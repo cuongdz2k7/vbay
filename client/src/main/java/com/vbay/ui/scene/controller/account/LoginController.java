@@ -1,4 +1,4 @@
-package com.vbay.ui.scene.controller;
+package com.vbay.ui.scene.controller.account;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -17,7 +17,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.shape.SVGPath;
 
-public class logincontroller {
+public class LoginController {
 
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
@@ -73,7 +73,8 @@ public class logincontroller {
 
         try {
             loginUser(email, password);
-            SceneManager.switchScene("/jfx/scene/app.fxml");
+            SceneManager.switchScene("/jfx/scene/account/home.fxml");
+            SceneManager.enterImmersiveMode();
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,
@@ -96,6 +97,7 @@ public class logincontroller {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response. getMessage() : "Login failed.");
         }
+        System.out.println("Client login successful: " + email);
     }
 
     @FXML
@@ -110,7 +112,7 @@ public class logincontroller {
     @FXML
     private void handleSignUp(ActionEvent event) {
         try {
-            SceneManager.switchScene("/jfx/scene/register.fxml");
+            SceneManager.switchScene("/jfx/scene/account/register.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,

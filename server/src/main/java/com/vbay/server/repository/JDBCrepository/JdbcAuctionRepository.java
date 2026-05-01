@@ -8,7 +8,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.Optional;
 
-import com.vbay.server.Model.Auction;
+import com.vbay.server.model.Auction;
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
 import com.vbay.server.repository.AuctionRepository;
 

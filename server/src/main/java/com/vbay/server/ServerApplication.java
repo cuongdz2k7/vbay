@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import com.vbay.server.Network_connection.ClientHandler;
-import com.vbay.server.Network_connection.RequestDistributor;
+import com.vbay.server.network_connection.ClientHandler;
+import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.databaseManager.DatabaseInitializer;
 
 public class ServerApplication {
@@ -32,8 +32,8 @@ public class ServerApplication {
             RequestDistributor distributor = appConfig.getRequestDistributor();
 
             System.out.println("Port: " + PORT);
-            System.out.println("waiting for clients...");
-            while (true) {
+            System.out.println("Waiting for clients...");
+            while(true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected");
                 Thread newThread = new Thread(new ClientHandler(socket, distributor));

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.vbay.server.Model.Product;
+import com.vbay.server.model.Product;
 import com.vbay.server.mapper.rowmapper.ProductRowMapper;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;

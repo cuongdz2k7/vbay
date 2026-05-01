@@ -1,4 +1,4 @@
-package com.vbay.ui.scene.controller;
+package com.vbay.ui.scene.controller.account;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -16,7 +16,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
-public class registercontroller {
+public class RegisterController {
 
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
@@ -132,7 +132,7 @@ public class registercontroller {
 
     private void goToLogin() {
         try {
-            SceneManager.switchScene("/jfx/scene/login.fxml");
+            SceneManager.switchScene("/jfx/scene/account/login.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,

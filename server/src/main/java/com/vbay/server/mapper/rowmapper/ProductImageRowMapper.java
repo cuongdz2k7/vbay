@@ -1,7 +1,7 @@
 package com.vbay.server.mapper.rowmapper;
 import java.sql.SQLException;
 
-import com.vbay.server.Model.ProductImage;
+import com.vbay.server.model.ProductImage;
 
 public class ProductImageRowMapper {
     private ProductImageRowMapper() {}

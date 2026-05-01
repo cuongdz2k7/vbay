@@ -1,4 +1,4 @@
-package com.vbay.server.Network_connection;
+package com.vbay.server.network_connection;
 //Import
 import java.io.BufferedReader;
 import java.io.IOException;

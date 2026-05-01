@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-import com.vbay.server.Model.ProductImage;
+import com.vbay.server.model.ProductImage;
 
 public interface ProductImageRepository {
     Optional<ProductImage> save(ProductImage productImage) throws SQLException;

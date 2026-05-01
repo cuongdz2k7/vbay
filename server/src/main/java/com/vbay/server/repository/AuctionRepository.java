@@ -3,7 +3,7 @@ package com.vbay.server.repository;
 import java.sql.SQLException;
 import java.util.Optional;
 
-import com.vbay.server.Model.Auction;
+import com.vbay.server.model.Auction;
 
 public interface AuctionRepository {
     Optional<Auction> save(Auction auction) throws SQLException;

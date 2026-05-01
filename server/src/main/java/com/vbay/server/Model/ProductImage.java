@@ -1,4 +1,4 @@
-package com.vbay.server.Model;
+package com.vbay.server.model;
 
 public class ProductImage {
     private long id;

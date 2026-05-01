@@ -2,7 +2,7 @@ package com.vbay.server.mapper.rowmapper;
 
 import java.util.List;
 
-import com.vbay.server.Model.Product;
+import com.vbay.server.model.Product;
 import com.vbay.shared.enums.shared_status.ProductStatus;
 
 public class ProductRowMapper {

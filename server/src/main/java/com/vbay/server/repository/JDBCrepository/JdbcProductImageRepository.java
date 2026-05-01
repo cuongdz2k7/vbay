@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.vbay.server.Model.ProductImage;
+import com.vbay.server.model.ProductImage;
 import com.vbay.server.mapper.rowmapper.ProductImageRowMapper;
 import com.vbay.server.repository.ProductImageRepository;
 

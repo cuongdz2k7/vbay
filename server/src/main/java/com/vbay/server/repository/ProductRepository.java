@@ -4,7 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-import com.vbay.server.Model.Product;
+import com.vbay.server.model.Product;
 import com.vbay.shared.enums.shared_status.ProductStatus;
 
 public interface ProductRepository {

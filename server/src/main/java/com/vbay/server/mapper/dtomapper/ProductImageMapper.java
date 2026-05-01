@@ -3,7 +3,7 @@ package com.vbay.server.mapper.dtomapper;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.vbay.server.Model.ProductImage;
+import com.vbay.server.model.ProductImage;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
 
 public class ProductImageMapper {

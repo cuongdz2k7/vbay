@@ -5,6 +5,8 @@ import java.util.Objects;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.stage.Stage;
 
 public class SceneManager {
@@ -12,18 +14,33 @@ public class SceneManager {
 
     public static void setStage(Stage newStage) {
         currentStage = newStage;
+        if (currentStage != null) {
+            currentStage.setFullScreenExitHint("");
+            currentStage.fullScreenProperty().addListener((observable, wasFullScreen, isFullScreen) -> {
+                if (!isFullScreen) {
+                    currentStage.setMaximized(true);
+                }
+            });
+        }
     }
-
+    // Switch Scene without any inheriting data
     public static void switchScene(String fxmlPath) throws Exception {
-        currentStage.setScene(createStyledScene(fxmlPath));
-        currentStage.show();
+        applyViewToStage(loadView(fxmlPath, null));
+    }
+    // With inheritance
+    public static void switchScene(String fxmlPath, Object sceneData) throws Exception {
+        applyViewToStage(loadView(fxmlPath, sceneData));
     }
 
     public static Scene createStyledScene(String fxmlPath) throws Exception {
-        Parent root = FXMLLoader.load(Objects.requireNonNull(SceneManager.class.getResource(fxmlPath)));
-        Scene scene = new Scene(root);
-        scene.getStylesheets().add(Objects.requireNonNull(
-            SceneManager.class.getResource(resolveStylesheetPath(fxmlPath))).toExternalForm());
+        return createStyledScene(fxmlPath, null);
+    }
+
+    public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
+        LoadedView view = loadView(fxmlPath, sceneData);
+        Scene scene = new Scene(view.root);
+        scene.getStylesheets().add(view.stylesheetPath);
+        installGlobalShortcuts(scene);
         return scene;
     }
 
@@ -36,4 +53,101 @@ public class SceneManager {
     public static Stage getStage() {
         return currentStage;
     }
+
+    private static void applyViewToStage(LoadedView view) {
+        if (currentStage == null) {
+            throw new IllegalStateException("Stage has not been initialized.");
+        }
+
+        Scene scene = currentStage.getScene();
+        if (scene == null) {
+            scene = new Scene(view.root);
+            scene.getStylesheets().add(view.stylesheetPath);
+            installGlobalShortcuts(scene);
+            currentStage.setScene(scene);
+        } else {
+            scene.setRoot(view.root);
+            scene.getStylesheets().setAll(view.stylesheetPath);
+        }
+
+        if (!currentStage.isShowing()) {
+            currentStage.show();
+        }
+    }
+
+    private static LoadedView loadView(String fxmlPath, Object sceneData) throws Exception {
+        FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(SceneManager.class.getResource(fxmlPath)));
+        Parent root = loader.load();
+        applySceneData(loader.getController(), sceneData);
+        String stylesheetPath = Objects.requireNonNull(
+            SceneManager.class.getResource(resolveStylesheetPath(fxmlPath))
+        ).toExternalForm();
+        return new LoadedView(root, stylesheetPath);
+    }
+
+    public static void enterImmersiveMode() {
+        if (currentStage == null) {
+            return;
+        }
+
+        currentStage.setMaximized(true);
+        currentStage.setFullScreen(true);
+    }
+
+    public static void showOverviewMode() {
+        if (currentStage == null) {
+            return;
+        }
+
+        currentStage.setFullScreen(false);
+        currentStage.setMaximized(true);
+    }
+
+    public static void showWindowedMode(double width, double height) {
+        if (currentStage == null) {
+            return;
+        }
+
+        currentStage.setFullScreen(false);
+        currentStage.setMaximized(false);
+        currentStage.setWidth(width);
+        currentStage.setHeight(height);
+        currentStage.centerOnScreen();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applySceneData(Object controller, Object sceneData) {
+        if (sceneData == null || !(controller instanceof SceneDataReceiver<?>)) {
+            return;
+        }
+
+        SceneDataReceiver<Object> receiver = (SceneDataReceiver<Object>) controller;
+        receiver.setSceneData(sceneData);
+    }
+
+    private static void installGlobalShortcuts(Scene scene) {
+        scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.F11) {
+                toggleFullScreen();
+                event.consume();
+            } else if (event.getCode() == KeyCode.ESCAPE && currentStage != null && currentStage.isFullScreen()) {
+                showOverviewMode();
+                event.consume();
+            }
+        });
+    }
+
+    private static void toggleFullScreen() {
+        if (currentStage == null) {
+            return;
+        }
+
+        if (currentStage.isFullScreen()) {
+            showOverviewMode();
+        } else {
+            enterImmersiveMode();
+        }
+    }
+
+    private record LoadedView(Parent root, String stylesheetPath) { }
 }
