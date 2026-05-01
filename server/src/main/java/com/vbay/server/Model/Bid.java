@@ -1,9 +1,6 @@
 package com.vbay.server.model;
 
 import java.math.BigDecimal;
-
-import java.math.BigDecimal;
-
 public class Bid {
     // Base
     private long id;

@@ -2,15 +2,7 @@ package com.vbay.server.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 import com.vbay.shared.enums.shared_status.ProductStatus;
-
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import com.vbay.shared.enums.shared_status.ProductStatus;
-
 
 public class Product {
     private long id;
