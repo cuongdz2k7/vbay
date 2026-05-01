@@ -2,6 +2,8 @@ package com.vbay.server.model;
 
 import java.math.BigDecimal;
 
+import java.math.BigDecimal;
+
 public class Payment {
     // Base
     private long id;

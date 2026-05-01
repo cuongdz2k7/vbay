@@ -17,8 +17,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+<<<<<<< HEAD
 import com.vbay.server.model.Product;
 import com.vbay.server.network_connection.ClientSession;
+=======
+import com.vbay.server.Model.Product;
+import com.vbay.server.Network_connection.ClientSession;
+>>>>>>> origin/cuongdz2k7
 import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
