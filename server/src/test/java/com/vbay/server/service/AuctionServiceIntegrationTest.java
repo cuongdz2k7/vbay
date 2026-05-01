@@ -22,6 +22,7 @@ import com.vbay.server.Network_connection.ClientSession;
 import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
+import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
@@ -42,7 +43,10 @@ class AuctionServiceIntegrationTest {
         jdbcUrl = "jdbc:h2:mem:" + UUID.randomUUID() + ";MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
         keepAliveConnection = DriverManager.getConnection(jdbcUrl);
         createSchema(keepAliveConnection);
-        auctionService = new AuctionService(() -> DriverManager.getConnection(jdbcUrl));
+        auctionService = new AuctionService(
+            () -> DriverManager.getConnection(jdbcUrl),
+            new JdbcRepositoryFactory()
+        );
         session = new ClientSession();
         session.setSession(SELLER_ID, "seller", Position.USER);
     }

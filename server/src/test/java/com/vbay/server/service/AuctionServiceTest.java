@@ -1,6 +1,7 @@
 package com.vbay.server.service;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
@@ -19,7 +21,10 @@ class AuctionServiceTest {
 
     @BeforeAll
     static void setUp() {
-        auctionService = new AuctionService();
+        auctionService = new AuctionService(
+            () -> { throw new SQLException("Connection is not used in validation-only tests"); },
+            new JdbcRepositoryFactory()
+        );
     }
 
     private CreateProductRequest validProduct() {

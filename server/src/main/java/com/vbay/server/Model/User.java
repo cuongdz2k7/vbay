@@ -77,6 +77,18 @@ public class User {
     public BigDecimal getBalance(){
         return this.balance;
     }
+    public boolean isActive(){
+        return this.status == UserStatus.ACTIVE;
+    }
+    public boolean isBanned(){
+        return this.status == UserStatus.BANNED;
+    }
+    public boolean isSuspended(){
+        return this.status == UserStatus.SUSPENDED;
+    }
+    public boolean isDeleted(){
+        return this.status == UserStatus.DELETED;
+    }
 
     //Setter (Change data)
     //a, Base:

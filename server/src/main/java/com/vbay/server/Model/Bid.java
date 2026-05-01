@@ -1,26 +1,32 @@
 package com.vbay.server.Model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.vbay.shared.enums.BidSource;
+import com.vbay.shared.enums.shared_status.BidStatus;
 
 public class Bid {
     // Base
     private long id;
-    private long auction_id;
-    private long bidder_id;
+    private long auctionId;
+    private long bidderId;
     // Bid Detail
-    private BigDecimal bid_amount;
-    private String bid_time;
-    private boolean is_winner;
+    private BigDecimal bidAmount;
+    private LocalDateTime bidTime;
+    private BidSource bidSource;
+    private BidStatus status;
 
-    //Constructor (Create new bid)
-    public Bid(long auction_id, long bidder_id, BigDecimal bid_amount, String bid_time){
+
+    //Constructor (Create new manual bid)
+    public Bid(long auctionId, long bidderId, BigDecimal bidAmount, LocalDateTime bidTime){
         //Base:
-        this.auction_id = auction_id;
-        this.bidder_id = bidder_id;
+        this.auctionId = auctionId;
+        this.bidderId = bidderId;
         //Bid Detail:
-        this.bid_amount = bid_amount;
-        this.bid_time = bid_time;
-        this.is_winner = false;
+        this.bidAmount = bidAmount;
+        this.bidTime = bidTime;
+        this.bidSource = BidSource.USER_BID;
     }
 
     //Getter
@@ -29,20 +35,23 @@ public class Bid {
         return this.id;
     }
     public long getAuctionId(){
-        return this.auction_id;
+        return this.auctionId;
     }
     public long getBidderId(){
-        return this.bidder_id;
+        return this.bidderId;
     }
     //b, Bid Detail:
     public BigDecimal getBidAmount(){
-        return this.bid_amount;
+        return this.bidAmount;
     }
-    public String getBidTime(){
-        return this.bid_time;
+    public LocalDateTime getBidTime(){
+        return this.bidTime;
     }
-    public boolean isWinner(){
-        return this.is_winner;
+    public BidStatus getStatus(){
+        return this.status;
+    }
+    public BidSource getBidSource(){
+        return this.bidSource;
     }
 
     //Setter (Change data)
@@ -51,19 +60,22 @@ public class Bid {
         this.id = new_id;
     }
     public void setAuctionId(long new_auction_id){
-        this.auction_id = new_auction_id;
+        this.auctionId = new_auction_id;
     }
     public void setBidderId(long new_bidder_id){
-        this.bidder_id = new_bidder_id;
+        this.bidderId = new_bidder_id;
     }
     //b, Bid Detail:
     public void setBidAmount(BigDecimal new_bid_amount){
-        this.bid_amount = new_bid_amount;
+        this.bidAmount = new_bid_amount;
     }
-    public void setBidTime(String new_bid_time){
-        this.bid_time = new_bid_time;
+    public void setBidTime(LocalDateTime new_bid_time){
+        this.bidTime = new_bid_time;
     }
-    public void setWinner(boolean new_is_winner){
-        this.is_winner = new_is_winner;
+    public void setStatus(BidStatus new_status){
+        this.status = new_status;
+    }
+    public void setBidSource(BidSource new_bid_source){
+        this.bidSource = new_bid_source;
     }
 }

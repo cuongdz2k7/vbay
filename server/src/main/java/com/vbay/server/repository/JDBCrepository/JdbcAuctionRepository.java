@@ -149,4 +149,5 @@ public class JdbcAuctionRepository implements AuctionRepository {
             }
         }
     }
+
 }

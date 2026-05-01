@@ -1,9 +1,9 @@
 package com.vbay.shared.enums.shared_status;
 
 public enum UserStatus {
-    PENDING, // chua xac thuc 
     ACTIVE, // hoat dong
-    SUSPENDED, // nghi ngo , rat la sú
+    SUSPENDED, // bi tam ngung
     BANNED, // bi ban <(")
+    DELETED // bi xoa (khong con ton tai trong database, chi de phan biet voi banned)
 }
 

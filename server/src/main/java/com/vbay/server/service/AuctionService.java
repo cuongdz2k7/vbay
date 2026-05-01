@@ -3,25 +3,30 @@ package com.vbay.server.service;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.vbay.server.Model.Auction;
 import com.vbay.server.Model.Product;
 import com.vbay.server.Model.ProductImage;
+import com.vbay.server.Model.User;
 import com.vbay.server.Network_connection.ClientSession;
-import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.databaseManager.ConnectionProvider;
+import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.repository.AuctionRepository;
-import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
-import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
-import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
+import com.vbay.server.repository.RepositoryFactory;
+import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.validation.ValidationUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
+
+
  /*
 * Business rules:
 * 1. Giá tiền phải là số dương
@@ -31,27 +36,43 @@ import com.vbay.shared.dto.productDTO.ProductImageDTO;
 * 5. Khi tạo auction, product sẽ được tạo với status là AVAILABLE, sau đó khi auction bắt đầu thì product sẽ được update thành ACTIVE, khi auction kết thúc hoặc bị hủy thì product sẽ được update thành INACTIVE
 * 6. Mỗi ảnh chỉ có 1 thumbnail, nếu có nhiều hơn 1 ảnh được đánh dấu là thumbnail thì sẽ throw validation exception
 * 7. Khi tạo auction, phải có ít nhất 1 ảnh của product, nếu không có ảnh nào là thumbnail thì sẽ tự động đánh dấu ảnh đầu tiên là thumbnail
-
 */
+
+/*
+các bước để place bid:
+1. Insert bid mới
+2. Update current_price của auction
+3. Trừ tiền/cọc user
+Authentication/Authorization check:
+- Auction đó có tồn tại không?  \
+- Auction đó đang ACTIVE không? \
+- User có phải seller của auction đó không? \
+- Auction đã bắt đầu/chưa kết thúc chưa? nhỡ đâu auction đang active nhưng chưa đến thời gian bắt đầu hoặc đã qua thời gian kết thúc
+- Bid amount có >= current_price + minimum_bid_step không? \
+
+- User có bị banned/không đủ điều kiện không? 
+- Nếu có balance/đặt cọc thì đủ tiền không?
+- Nếu có buy now price thì bid amount có >= buy now price không? 
+        nếu có buy now price mà bid amount đã >= buy now price rồi thì coi như mua luôn, auction kết thúc ngay lập tức
+        và UI phải check nếu bid amount >= buy now price thì hiển thị you are about to buy this item with buy now price, do you want to proceed? để tránh trường hợp user nhập bid amount rất lớn vượt xa buy now price rồi vô tình mua luôn
+ */
 
 public class AuctionService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
-    @FunctionalInterface
-    interface ConnectionProvider {
-        Connection getConnection() throws SQLException;
-    }
-
     private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
 
-    public AuctionService() {
-
-        ///truyền DatabaseConnection::getConnection vào constructor AuctionService(ConnectionProvider connectionProvider) 
-        this(DatabaseConnection::getConnection);
-    }
-
-    AuctionService(ConnectionProvider connectionProvider) {
+    public AuctionService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
         this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
     }
+
+    private void checkSession(ClientSession session) {
+        if (session == null || !session.isAuthenticated()) {
+            throw new AuthenticationException("User must be logged in to perform this action");
+        }
+    }
+
 
     private void validateRequiredSections(CreateAuctionRequest request) {
         ValidationUtils.requireNotNull(request.getProduct(), "Product data is required");
@@ -138,15 +159,16 @@ public class AuctionService {
     }
 
     public void createAuction(CreateAuctionRequest request, ClientSession session) throws SQLException {
+        checkSession(session);
         validateCreateAuctionRequest(request);
 
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
 
             try {
-                ProductRepository productRepository = new JdbcProductRepository(connection);
-                ProductImageRepository productImageRepository = new JdbcProductImageRepository(connection);
-                AuctionRepository auctionRepository = new JdbcAuctionRepository(connection);
+                ProductRepository productRepository = repositoryFactory.createProductRepository(connection);
+                ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+                AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
 
                 // 1. tạo Product object
                 long productId = createProduct(request.getProduct(), session, productRepository, productImageRepository);
@@ -171,5 +193,43 @@ public class AuctionService {
             }
         }
     }
+
+    void ValidateBidRequiredSection(PlaceBidRequest request) {
+        ValidationUtils.requireNotNull(request.getAuctionId(), "Auction ID is required");
+        ValidationUtils.requireNotNull(request.getBidAmount(), "Bid amount is required");
+    }
+
+    void ValidateBidMoneyFields(PlaceBidRequest request) {
+        ValidationUtils.requirePositive(request.getBidAmount(), "Bid amount must be a positive number");
+    }
+
+    void ValidatePlaceBidRequest(PlaceBidRequest request) {
+        if (request == null) {
+            throw new ValidationException("Request cannot be null");
+        }
+        ValidateBidRequiredSection(request);
+        ValidateBidMoneyFields(request);
+    }
+
+
+
+    public void placeBid(PlaceBidRequest request, ClientSession session) {
+        checkSession(session);
+        ValidatePlaceBidRequest(request);
+       ///Authentication/Authorization check:
+        try (Connection connection = connectionProvider.getConnection()) {
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            Auction auction = auctionRepository.findById(request.getAuctionId())
+                        .orElseThrow(() -> new ValidationException("Auction not found"));
+            
+
+            Bid bid = new Bid(auction.getId(), session.getUserId(), request.getBidAmount();
+            auctionRepository.placeBid(request.getAuctionId(), session.getUserId(), request.getBidAmount());
+=        } catch (SQLException e) {
+            throw new RuntimeException("Failed to place bid: " + e.getMessage(), e);
+        }
+    }
+
 
 }

@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS bids (
     bidder_id BIGINT NOT NULL,
     bid_amount DECIMAL(15,2) NOT NULL,
     bid_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT 'PLACED',
+    bid_source VARCHAR(20) NOT NULL DEFAULT 'USER_BID',
+    status VARCHAR(20) NOT NULL,
 
     CONSTRAINT fk_bids_auction
         FOREIGN KEY (auction_id) REFERENCES auctions(id)

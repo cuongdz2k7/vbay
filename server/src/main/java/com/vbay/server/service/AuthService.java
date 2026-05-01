@@ -2,13 +2,16 @@ package com.vbay.server.service;
 
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
 import com.vbay.server.Model.User;
+import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.validation.ValidationUtils;
@@ -18,12 +21,14 @@ import com.vbay.shared.dto.authDTO.RegisterRequest;
 
 
 public class AuthService {
-    private final UserRepository userRepository;
+    private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
     ///add object to check wheather the passwork is weak/strong : PasswordPolicy
-    
-    public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
-        this.userRepository = userRepository;
+
+    public AuthService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, PasswordHasher passwordHasher) {
+        this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
     }
    /*
@@ -41,7 +46,8 @@ public class AuthService {
     public LoginResponse login (LoginRequest request) throws SQLException {
         validateLoginRequest(request);
 
-        try {
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
             if (userOptional.isEmpty()) { 
                 throw new AuthenticationException("Invalid email or password");
@@ -76,7 +82,8 @@ public class AuthService {
     public void register(RegisterRequest request) throws SQLException {
         validateRegisterRequest(request);
 
-        try {
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             User newUser = new User(
                 request.getUsername().trim(),
                 request.getEmail().trim(),
