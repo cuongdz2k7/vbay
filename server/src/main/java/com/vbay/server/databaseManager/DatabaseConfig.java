@@ -1,5 +1,6 @@
 package com.vbay.server.databaseManager;
-
+///Keeping DB connection CONFIGURATION
+///Showing which DB to CONNECT
 public class DatabaseConfig {
     private static final String HOST = "localhost";
     private static final int PORT = 1638;
@@ -9,7 +10,6 @@ public class DatabaseConfig {
     private static final String JDBC_URL =
         "jdbc:mysql://" + HOST + ":" + PORT + "/" + DATABASE
         + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
-
 
     private DatabaseConfig() {
     }
