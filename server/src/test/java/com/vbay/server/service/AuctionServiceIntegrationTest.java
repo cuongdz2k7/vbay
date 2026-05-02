@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
@@ -23,12 +25,20 @@ import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
+import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
+import com.vbay.shared.enums.BidSource;
+import com.vbay.shared.enums.PaymentType;
 import com.vbay.shared.enums.Position;
+import com.vbay.shared.enums.shared_status.BidStatus;
 import com.vbay.shared.enums.shared_status.AuctionStatus;
+import com.vbay.shared.enums.shared_status.PaymentStatus;
 import com.vbay.shared.enums.shared_status.ProductStatus;
+import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.server.exception.AuthenticationException;
+import com.vbay.server.exception.ValidationException;
 
 class AuctionServiceIntegrationTest {
     private static final long SELLER_ID = 1L;
@@ -148,6 +158,198 @@ class AuctionServiceIntegrationTest {
         }
     }
 
+    @Test
+    void placeBid_validNormalBid_holdsBuyerBalanceAndCreatesWinningBid() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder"));
+
+        assertEquals(1, countRows(keepAliveConnection, "bids"));
+        assertDecimal("880.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("120.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        assertDecimal("120.00", scalarDecimal("SELECT current_price FROM auctions WHERE id = " + auctionId));
+        assertEquals(2L, scalarLong("SELECT winner_user_id FROM auctions WHERE id = " + auctionId));
+        assertEquals(BidStatus.WINNING.name(), scalarString("SELECT status FROM bids WHERE auction_id = " + auctionId));
+    }
+
+    @Test
+    void placeBid_whenExistingWinner_outbidsOldBidAndReleasesOldHold() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "oldwinner", UserStatus.ACTIVE, new BigDecimal("500.00"), new BigDecimal("120.00"));
+        seedUser(3L, "newwinner", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("120.00"), new BigDecimal("10.00"), new BigDecimal("250.00"));
+        updateAuctionWinner(auctionId, 2L);
+        long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
+
+        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("150.00")), sessionFor(3L, "newwinner"));
+
+        assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
+        assertEquals(BidStatus.WINNING.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
+        assertDecimal("620.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        assertDecimal("850.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 3"));
+        assertDecimal("150.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 3"));
+        assertEquals(3L, scalarLong("SELECT winner_user_id FROM auctions WHERE id = " + auctionId));
+    }
+
+    @Test
+    void placeBid_whenAuctionNotFound_rollsBack() {
+        seedUserUnchecked(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(999L, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+    }
+
+    @Test
+    void placeBid_whenAuctionScheduled_rejectsAndDoesNotHoldBalance() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(
+            AuctionStatus.SCHEDULED,
+            new BigDecimal("100.00"),
+            new BigDecimal("10.00"),
+            new BigDecimal("200.00"),
+            LocalDateTime.now().plusHours(1),
+            LocalDateTime.now().plusHours(2)
+        );
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+
+        assertEquals(0, countRows(keepAliveConnection, "bids"));
+        assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+    }
+
+    @Test
+    void placeBid_whenActiveAuctionExpired_syncsEndedAndRejects() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(
+            AuctionStatus.ACTIVE,
+            new BigDecimal("100.00"),
+            new BigDecimal("10.00"),
+            new BigDecimal("200.00"),
+            LocalDateTime.now().minusHours(2),
+            LocalDateTime.now().minusHours(1)
+        );
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+
+        assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
+        assertEquals(0, countRows(keepAliveConnection, "bids"));
+    }
+
+    @Test
+    void placeBid_whenSellerBidsOwnAuction_rejects() throws SQLException {
+        seedUser(SELLER_ID);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), session));
+    }
+
+    @Test
+    void placeBid_whenBidBelowMinimum_rejectsWithoutHoldingBalance() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("109.99")), sessionFor(2L, "bidder")));
+
+        assertEquals(0, countRows(keepAliveConnection, "bids"));
+        assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+    }
+
+    @Test
+    void placeBid_whenUserCannotBid_rejectsEachBlockedStatus() throws SQLException {
+        seedUser(SELLER_ID);
+        long suspendedAuction = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        assertBlockedUserCannotBid(2L, "suspended", UserStatus.SUSPENDED, suspendedAuction);
+
+        long bannedAuction = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        assertBlockedUserCannotBid(3L, "banned", UserStatus.BANNED, bannedAuction);
+
+        long deletedAuction = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        assertBlockedUserCannotBid(4L, "deleted", UserStatus.DELETED, deletedAuction);
+    }
+
+    @Test
+    void placeBid_whenInsufficientBalance_rejectsWithoutPartialChanges() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("119.99"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+
+        assertEquals(0, countRows(keepAliveConnection, "bids"));
+        assertDecimal("119.99", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+    }
+
+    @Test
+    void placeBid_whenBidHigherThanBuyNow_rejects() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("201.00")), sessionFor(2L, "bidder")));
+
+        assertEquals(0, countRows(keepAliveConnection, "bids"));
+    }
+
+    @Test
+    void placeBid_whenBidEqualsBuyNow_completesAuctionAndCreatesHeldPayment() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+
+        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(2L, "buyer"));
+
+        assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE auction_id = " + auctionId));
+        assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
+        assertDecimal("200.00", scalarDecimal("SELECT current_price FROM auctions WHERE id = " + auctionId));
+        assertDecimal("200.00", scalarDecimal("SELECT final_price FROM auctions WHERE id = " + auctionId));
+        assertEquals(2L, scalarLong("SELECT winner_user_id FROM auctions WHERE id = " + auctionId));
+        assertDecimal("800.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        assertEquals(PaymentStatus.HELD.name(), scalarString("SELECT status FROM payments WHERE auction_id = " + auctionId));
+        assertEquals(PaymentType.BUY_NOW.name(), scalarString("SELECT type FROM payments WHERE auction_id = " + auctionId));
+        assertDecimal("200.00", scalarDecimal("SELECT amount FROM payments WHERE auction_id = " + auctionId));
+    }
+
+    @Test
+    void placeBid_whenBuyNowWithExistingWinner_releasesOldHoldAndCreatesWonBid() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "oldwinner", UserStatus.ACTIVE, new BigDecimal("500.00"), new BigDecimal("120.00"));
+        seedUser(3L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("120.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        updateAuctionWinner(auctionId, 2L);
+        long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
+
+        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(3L, "buyer"));
+
+        assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
+        assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
+        assertDecimal("620.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        assertDecimal("800.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 3"));
+        assertEquals(1, countRows(keepAliveConnection, "payments"));
+    }
+
+    @Test
+    void placeBid_withoutAuthenticatedSession_rejectsBeforeTransaction() {
+        assertThrows(AuthenticationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(1L, new BigDecimal("120.00")), new ClientSession()));
+    }
+
     private CreateProductRequest validProduct() {
         return new CreateProductRequest(
             "iPhone 15",
@@ -180,11 +382,160 @@ class AuctionServiceIntegrationTest {
     }
 
     private void seedUser(long userId) throws SQLException {
+        seedUser(userId, "seller", UserStatus.ACTIVE, BigDecimal.ZERO, BigDecimal.ZERO);
+    }
+
+    private void seedUserUnchecked(long userId, String username, UserStatus status, BigDecimal availableBalance, BigDecimal holdBalance) {
+        try {
+            seedUser(userId, username, status, availableBalance, holdBalance);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void seedUser(long userId, String username, UserStatus status, BigDecimal availableBalance, BigDecimal holdBalance) throws SQLException {
+        String sql = """
+            INSERT INTO users (id, username, email, password_hash, position, status, available_balance, hold_balance)
+            VALUES (?, ?, ?, 'hash', 'USER', ?, ?, ?)
+            """;
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.setString(2, username);
+            statement.setString(3, username + "@example.com");
+            statement.setString(4, status.name());
+            statement.setBigDecimal(5, availableBalance);
+            statement.setBigDecimal(6, holdBalance);
+            statement.executeUpdate();
+        }
+    }
+
+    private ClientSession sessionFor(long userId, String username) {
+        ClientSession clientSession = new ClientSession();
+        clientSession.setSession(userId, username, Position.USER);
+        return clientSession;
+    }
+
+    private long seedAuction(AuctionStatus status, BigDecimal currentPrice, BigDecimal minimumBidStep, BigDecimal buyNowPrice) throws SQLException {
+        return seedAuction(
+            status,
+            currentPrice,
+            minimumBidStep,
+            buyNowPrice,
+            LocalDateTime.now().minusHours(1),
+            LocalDateTime.now().plusHours(1)
+        );
+    }
+
+    private long seedAuction(
+        AuctionStatus status,
+        BigDecimal currentPrice,
+        BigDecimal minimumBidStep,
+        BigDecimal buyNowPrice,
+        LocalDateTime startingTime,
+        LocalDateTime endingTime
+    ) throws SQLException {
+        long productId;
+        String productSql = """
+            INSERT INTO products (seller_id, name, description, category_id, product_condition, status)
+            VALUES (?, 'Bid product', 'Bid product description', 1, 'USED', 'AVAILABLE')
+            """;
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(productSql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setLong(1, SELLER_ID);
+            statement.executeUpdate();
+            try (ResultSet rs = statement.getGeneratedKeys()) {
+                rs.next();
+                productId = rs.getLong(1);
+            }
+        }
+
+        String auctionSql = """
+            INSERT INTO auctions (
+                product_id, seller_id, title, description, minimum_bid_step,
+                starting_price, current_price, reserve_price, buy_now_price,
+                starting_time, ending_time, status
+            )
+            VALUES (?, ?, 'Bid auction', 'Bid auction description', ?, ?, ?, NULL, ?, ?, ?, ?)
+            """;
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(auctionSql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setLong(1, productId);
+            statement.setLong(2, SELLER_ID);
+            statement.setBigDecimal(3, minimumBidStep);
+            statement.setBigDecimal(4, new BigDecimal("100.00"));
+            statement.setBigDecimal(5, currentPrice);
+            statement.setBigDecimal(6, buyNowPrice);
+            statement.setObject(7, startingTime);
+            statement.setObject(8, endingTime);
+            statement.setString(9, status.name());
+            statement.executeUpdate();
+            try (ResultSet rs = statement.getGeneratedKeys()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private long seedBid(long auctionId, long bidderId, BigDecimal amount, BidStatus status) throws SQLException {
+        String sql = """
+            INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_source, status)
+            VALUES (?, ?, ?, ?, ?)
+            """;
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            statement.setLong(1, auctionId);
+            statement.setLong(2, bidderId);
+            statement.setBigDecimal(3, amount);
+            statement.setString(4, BidSource.USER_BID.name());
+            statement.setString(5, status.name());
+            statement.executeUpdate();
+            try (ResultSet rs = statement.getGeneratedKeys()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
+    private void updateAuctionWinner(long auctionId, long winnerUserId) throws SQLException {
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(
+            "UPDATE auctions SET winner_user_id = ? WHERE id = ?")) {
+            statement.setLong(1, winnerUserId);
+            statement.setLong(2, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    private void assertBlockedUserCannotBid(long userId, String username, UserStatus status, long auctionId) throws SQLException {
+        seedUser(userId, username, status, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        assertThrows(ValidationException.class,
+            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(userId, username)));
+        assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + userId));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = " + userId));
+    }
+
+    private void assertDecimal(String expected, BigDecimal actual) {
+        assertEquals(0, new BigDecimal(expected).compareTo(actual), "Expected " + expected + " but was " + actual);
+    }
+
+    private BigDecimal scalarDecimal(String sql) throws SQLException {
+        try (Statement statement = keepAliveConnection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+            rs.next();
+            return rs.getBigDecimal(1);
+        }
+    }
+
+    private long scalarLong(String sql) throws SQLException {
+        try (Statement statement = keepAliveConnection.createStatement();
+             ResultSet rs = statement.executeQuery(sql)) {
+            rs.next();
+            return rs.getLong(1);
+        }
+    }
+
+    private String scalarString(String sql) throws SQLException {
         try (Statement statement = keepAliveConnection.createStatement()) {
-            statement.executeUpdate("""
-                INSERT INTO users (id, username, email, password_hash, position, status)
-                VALUES (%d, 'seller', 'seller@example.com', 'hash', 'USER', 'ACTIVE')
-                """.formatted(userId));
+            try (ResultSet rs = statement.executeQuery(sql)) {
+                rs.next();
+                return rs.getString(1);
+            }
         }
     }
 
@@ -215,8 +566,9 @@ class AuctionServiceIntegrationTest {
                     phone_number VARCHAR(20),
                     position VARCHAR(20) NOT NULL DEFAULT 'USER',
                     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-                    balance DECIMAL(15,2) NOT NULL DEFAULT 0,
-                    time_init DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    hold_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    time_init TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """);
             statement.execute("""
@@ -227,8 +579,8 @@ class AuctionServiceIntegrationTest {
                     description TEXT,
                     category_id VARCHAR(100) NOT NULL,
                     product_condition VARCHAR(50) NOT NULL,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                     CONSTRAINT fk_products_seller FOREIGN KEY (seller_id) REFERENCES users(id)
                 )
@@ -255,15 +607,50 @@ class AuctionServiceIntegrationTest {
                     reserve_price DECIMAL(15,2),
                     buy_now_price DECIMAL(15,2),
                     final_price DECIMAL(15,2),
-                    starting_time DATETIME NOT NULL,
-                    ending_time DATETIME NOT NULL,
+                    starting_time TIMESTAMP NOT NULL,
+                    ending_time TIMESTAMP NOT NULL,
                     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
                     winner_user_id BIGINT NULL,
-                    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     CONSTRAINT fk_auctions_product FOREIGN KEY (product_id) REFERENCES products(id),
                     CONSTRAINT fk_auctions_seller FOREIGN KEY (seller_id) REFERENCES users(id),
                     CONSTRAINT fk_auctions_winner FOREIGN KEY (winner_user_id) REFERENCES users(id)
+                )
+                """);
+            statement.execute("""
+                CREATE TABLE bids (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    auction_id BIGINT NOT NULL,
+                    bidder_id BIGINT NOT NULL,
+                    bid_amount DECIMAL(15,2) NOT NULL,
+                    bid_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    bid_source VARCHAR(20) NOT NULL DEFAULT 'USER_BID',
+                    status VARCHAR(20) NOT NULL,
+                    CONSTRAINT fk_bids_auction FOREIGN KEY (auction_id) REFERENCES auctions(id),
+                    CONSTRAINT fk_bids_bidder FOREIGN KEY (bidder_id) REFERENCES users(id)
+                )
+                """);
+            statement.execute("""
+                CREATE TABLE payments (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    auction_id BIGINT NOT NULL,
+                    buyer_id BIGINT NOT NULL,
+                    seller_id BIGINT NOT NULL,
+                    winning_bid_id BIGINT NOT NULL,
+                    amount DECIMAL(15,2) NOT NULL,
+                    type VARCHAR(30) NOT NULL,
+                    status VARCHAR(30) NOT NULL,
+                    held_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    released_at TIMESTAMP NULL,
+                    refunded_at TIMESTAMP NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT uq_payments_auction UNIQUE (auction_id),
+                    CONSTRAINT fk_payments_auction FOREIGN KEY (auction_id) REFERENCES auctions(id),
+                    CONSTRAINT fk_payments_buyer FOREIGN KEY (buyer_id) REFERENCES users(id),
+                    CONSTRAINT fk_payments_seller FOREIGN KEY (seller_id) REFERENCES users(id),
+                    CONSTRAINT fk_payments_winning_bid FOREIGN KEY (winning_bid_id) REFERENCES bids(id)
                 )
                 """);
         }

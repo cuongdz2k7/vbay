@@ -1,60 +1,64 @@
 package com.vbay.server.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.vbay.shared.enums.PaymentType;
+import com.vbay.shared.enums.shared_status.PaymentStatus;
 public class Payment {
-    // Base
     private long id;
-    private long auction_id;
-    private long buyer_id;
-    private long seller_id;
-    // Payment Detail
+    private long auctionId;
+    private long buyerId;
+    private long sellerId;
+    private long winningBidId;  
     private BigDecimal amount;
-    private String payment_method;
-    private String payment_time;
-    // State
-    private boolean is_paid;
+    private PaymentType type;
+    private PaymentStatus status;
+    private LocalDateTime heldAt;
+    private LocalDateTime releasedAt;
+    private LocalDateTime refundedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     //Constructor (Create new payment)
-    public Payment(long auction_id, long buyer_id, long seller_id, BigDecimal amount, String payment_method, String payment_time){
+    public Payment(long auctionId, long buyerId, long sellerId, long winningBidId, BigDecimal amount, PaymentType type, PaymentStatus status) {
         //Base:
-        this.auction_id = auction_id;
-        this.buyer_id = buyer_id;
-        this.seller_id = seller_id;
+        this.auctionId = auctionId;
+        this.buyerId = buyerId;
+        this.sellerId = sellerId;
+        this.winningBidId = winningBidId;
         //Payment Detail:
         this.amount = amount;
-        this.payment_method = payment_method;
-        this.payment_time = payment_time;
-        //State:
-        this.is_paid = false;
-    }
+        this.type = type;
+        this.status = status;
 
+    }
     //Getter
     //a, Base:
     public long getId(){
         return this.id;
     }
     public long getAuctionId(){
-        return this.auction_id;
+        return this.auctionId;
     }
     public long getBuyerId(){
-        return this.buyer_id;
+        return this.buyerId;
     }
     public long getSellerId(){
-        return this.seller_id;
+        return this.sellerId;
+    }
+    public long getWinningBidId(){
+        return this.winningBidId;
     }
     //b, Payment Detail:
     public BigDecimal getAmount(){
         return this.amount;
     }
-    public String getPaymentMethod(){
-        return this.payment_method;
-    }
-    public String getPaymentTime(){
-        return this.payment_time;
-    }
-    //c, State:
-    public boolean isPaid(){
-        return this.is_paid;
+    public PaymentType getType(){
+        return this.type;
+    } 
+    public PaymentStatus getStatus(){
+        return this.status;
     }
 
     //Setter (Change data)
@@ -63,26 +67,19 @@ public class Payment {
         this.id = new_id;
     }
     public void setAuctionId(long new_auction_id){
-        this.auction_id = new_auction_id;
+        this.auctionId = new_auction_id;
     }
     public void setBuyerId(long new_buyer_id){
-        this.buyer_id = new_buyer_id;
+        this.buyerId = new_buyer_id;
     }
     public void setSellerId(long new_seller_id){
-        this.seller_id = new_seller_id;
+        this.sellerId = new_seller_id;
     }
     //b, Payment Detail:
     public void setAmount(BigDecimal new_amount){
         this.amount = new_amount;
     }
-    public void setPaymentMethod(String new_payment_method){
-        this.payment_method = new_payment_method;
-    }
-    public void setPaymentTime(String new_payment_time){
-        this.payment_time = new_payment_time;
-    }
-    //c, State:
-    public void setPaid(boolean new_is_paid){
-        this.is_paid = new_is_paid;
+    public void setStatus(PaymentStatus new_status){
+        this.status = new_status;
     }
 }

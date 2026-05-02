@@ -19,16 +19,24 @@ public class Bid {
 
 
     //Constructor (Create new manual bid)
-    public Bid(long auctionId, long bidderId, BigDecimal bidAmount, LocalDateTime bidTime){
+    public Bid(long auctionId, long bidderId, BigDecimal bidAmount){
         //Base:
         this.auctionId = auctionId;
         this.bidderId = bidderId;
         //Bid Detail:
         this.bidAmount = bidAmount;
-        this.bidTime = bidTime;
         this.bidSource = BidSource.USER_BID;
     }
 
+    public Bid(long auctionId, long bidderId, BigDecimal bidAmount, LocalDateTime bidTime, BidStatus status, BidSource bidSource){
+        this.auctionId = auctionId;
+        this.bidderId = bidderId;
+        this.bidAmount = bidAmount;
+        this.bidTime = bidTime;
+        this.status = status;
+        this.bidSource = bidSource;
+
+    }
     //Getter
     //a, Base:
     public long getId(){

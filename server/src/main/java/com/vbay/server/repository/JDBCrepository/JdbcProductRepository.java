@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import com.vbay.server.model.Product;
 import com.vbay.server.mapper.rowmapper.ProductRowMapper;
+import com.vbay.server.model.Product;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.shared.enums.shared_status.ProductStatus;
@@ -24,7 +24,7 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public Optional<Product> save(Product product) throws SQLException {
+    public Product save(Product product) throws SQLException {
         String sql = "INSERT INTO products (seller_id, name, description, category_id, product_condition, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setLong(1, product.getSellerId());
@@ -34,16 +34,16 @@ public class JdbcProductRepository implements ProductRepository {
             statement.setString(5, product.getCondition());
             statement.setString(6, product.getStatus().name());
             statement.executeUpdate();
-            ResultSet rs = statement.getGeneratedKeys();
-            if (rs.next()) {
-                long id = rs.getLong(1);
-                product.setId(id);
-                loadTimestamps(product);
-                return Optional.of(product);
-            } else {
-                throw new SQLException("Creating product failed, no ID obtained.");
+            try (ResultSet rs = statement.getGeneratedKeys()) {
+                if (rs.next()) {
+                    product.setId(rs.getLong(1));
+                    loadTimestamps(product);
+                    return product;
+                }
             }
-        }
+        } 
+        throw new SQLException("Creating product failed, no ID obtained.");
+
     }
 
     private void loadTimestamps(Product product) throws SQLException {

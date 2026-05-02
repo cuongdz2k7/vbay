@@ -3,15 +3,18 @@ package com.vbay.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.TimeZone;
 
+import com.vbay.server.databaseManager.DatabaseInitializer;
 import com.vbay.server.network_connection.ClientHandler;
 import com.vbay.server.network_connection.RequestDistributor;
-import com.vbay.server.databaseManager.DatabaseInitializer;
 
 public class ServerApplication {
     private static final int PORT = 3618;
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Server is shutting down - Ensuring all data is saved to database");
 
