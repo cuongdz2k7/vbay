@@ -242,7 +242,7 @@ Thiết kế Buy Now:
 2. nếu có thì release hold của bidder đấy
 3. cập nhật oldBid thành outbid
 4. trừ available balance thằng buyer
-5. 
+
 
 
 Rule AutoBid:
@@ -349,8 +349,14 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
     }
 
     private void validateAuctionCanReceiveBid(Auction auction, long userId, LocalDateTime dbNow) throws SQLException {
-        if (dbNow.isBefore(auction.getStartingTime()) || dbNow.isAfter(auction.getEndingTime())) {
-            throw new ValidationException("Auction is not active");
+        if (!auction.getStatus().isClosedForBidding()) {
+            throw new ValidationException("Auction cannot receive bids");
+        }
+        if (dbNow.isBefore(auction.getStartingTime())) {
+            throw new ValidationException("Auction is not started yet");
+        }
+        if (!dbNow.isBefore(auction.getEndingTime())) {
+            throw new ValidationException("Auction has already ended");
         }
         if (userId == auction.getSellerId()) {
             throw new ValidationException("Cannot place bid on your own auction");
@@ -392,7 +398,6 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
                 long auctionId = auction.getId();
                 //2. lấy thời gian hiện tại -> đặt nó là thời gian đặt bid, phải dùng dbTimezone do rule quyết định lấy time trong DB làm mốc chuẩn
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
-                //
                 validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
 
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
