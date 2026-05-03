@@ -24,7 +24,7 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public Product save(Product product) throws SQLException {
+    public Product save (Product product) throws SQLException {
         String sql = "INSERT INTO products (seller_id, name, description, category_id, product_condition, status) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setLong(1, product.getSellerId());
@@ -43,7 +43,6 @@ public class JdbcProductRepository implements ProductRepository {
             }
         } 
         throw new SQLException("Creating product failed, no ID obtained.");
-
     }
 
     private void loadTimestamps(Product product) throws SQLException {

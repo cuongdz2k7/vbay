@@ -10,8 +10,8 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import com.vbay.server.model.Auction;
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
+import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
 
 
@@ -197,6 +197,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
             AND starting_time <= ?
             AND ending_time > ?
         """;
+        ///localdatetime before: 10h46
+        ///sau 1s update lại database của từng auction
+        /// localdateimte now: currentime
+        /// 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 Timestamp now = Timestamp.valueOf(dbNow);
                 statement.setLong(1, auctionId);

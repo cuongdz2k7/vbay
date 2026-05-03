@@ -7,9 +7,10 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
-import com.vbay.server.model.User;
+import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.model.User;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
@@ -17,7 +18,6 @@ import com.vbay.server.service.validation.ValidationUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
-import com.vbay.server.databaseManager.ConnectionProvider;
 
 
 

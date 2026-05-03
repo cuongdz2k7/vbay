@@ -348,8 +348,8 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
         }
     }
 
-    private void validateAuctionCanReceiveBid(Auction auction, long userId) throws SQLException {
-        if (!auction.isActive()) {
+    private void validateAuctionCanReceiveBid(Auction auction, long userId, LocalDateTime dbNow) throws SQLException {
+        if (dbNow.isBefore(auction.getStartingTime()) || dbNow.isAfter(auction.getEndingTime())) {
             throw new ValidationException("Auction is not active");
         }
         if (userId == auction.getSellerId()) {
@@ -370,8 +370,11 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
             throw new ValidationException("Bid amount is not sufficient");
         }
     }
-
-
+    ///now()
+    ///realtime: sau 1 milisecond-> x -> chekc xem auction mà nó đến starting time <= x -> scheduel -> active 
+    ///schedule chưa làm mới database
+    ///bidder 1 đặt bid ở Auction A -> lock lại auction A 
+    ///thời điểm tk bidder 1 đặt bid đc là dbNow
     public void placeBid(PlaceBidRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
@@ -389,23 +392,15 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
                 long auctionId = auction.getId();
                 //2. lấy thời gian hiện tại -> đặt nó là thời gian đặt bid, phải dùng dbTimezone do rule quyết định lấy time trong DB làm mốc chuẩn
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
-                //3. sync status
-                auctionRepository.syncStatus(auctionId, dbNow);
-                //4. update lại auction có status mới, check sufficient bidamount bằng method hold và decrease available balance
-                auction = auctionRepository.lockAuctionForUpdate(auctionId)
-                    .orElseThrow(() -> new ValidationException("Auction not found"));
-                if (!auction.isActive()) {
-                    connection.commit(); 
-                    ///bug: Với auction hết hạn, trước đó sync xong rồi throw thì rollback làm status quay lại ACTIVE. 
-                    // Sửa để commit phần sync status trước khi throw Auction is not active.
-                    throw new ValidationException("Auction is not active");
-                }
-                validateAuctionCanReceiveBid(auction, session.getUserId());
+                //
+                validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
+
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
+                ///vì buynow có thể ít hơn current price + bước nhảy
                 if (!buyNow) {
                     validateMinimumBid(auction, request.getBidAmount());
                 }
-                //5. Lock Auction validate xong xuôi rồi mới lock user
+                //3. Lock Auction validate xong xuôi rồi mới lock user
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
                 validateUserCanBid(user, request.getBidAmount());
