@@ -8,7 +8,7 @@ import com.vbay.server.model.Product;
 import com.vbay.shared.enums.shared_status.ProductStatus;
 
 public interface ProductRepository {
-    Optional<Product> save(Product product) throws SQLException;
+    Product save(Product product) throws SQLException;
 
     Optional<Product> findById(long productId) throws SQLException;
 

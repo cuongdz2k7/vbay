@@ -9,7 +9,12 @@ public class DatabaseConfig {
     private static final String PASSWORD = "1234";
     private static final String JDBC_URL =
         "jdbc:mysql://" + HOST + ":" + PORT + "/" + DATABASE
-        + "?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true";
+        + "?useSSL=false"
+        + "&serverTimezone=UTC"
+        + "&connectionTimeZone=UTC"
+        + "&forceConnectionTimeZoneToSession=true"
+        + "&allowPublicKeyRetrieval=true";
+
 
     private DatabaseConfig() {
     }

@@ -1,15 +1,17 @@
 package com.vbay.server.repository.JDBCrepository;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
-import com.vbay.server.model.Auction;
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
+import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
 
 
@@ -21,7 +23,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
     @Override
-    public Optional<Auction> save(Auction auction) throws SQLException {
+    public Auction save(Auction auction) throws SQLException {
         String sql = """
             INSERT INTO auctions (
                 product_id, seller_id, title, description, minimum_bid_step,
@@ -50,11 +52,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 if (rs.next()) {
                     auction.setId(rs.getLong(1));
-                    return Optional.of(auction);
+                    return auction;
                 }
             }
-        }
-
+        } 
         throw new SQLException("Creating auction failed, no ID obtained.");
     }
 
@@ -149,4 +150,116 @@ public class JdbcAuctionRepository implements AuctionRepository {
             }
         }
     }
+
+    @Override
+    public Optional<Auction> lockAuctionForUpdate (long auctionId) throws SQLException {
+        String sql = """
+        SELECT id, product_id, seller_id, title, description, minimum_bid_step,
+                starting_price, current_price, reserve_price, buy_now_price,
+                starting_time, ending_time, status
+        FROM auctions
+        WHERE id = ?
+        FOR UPDATE
+        """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(AuctionRowMapper.mapAuction(rs));
+            }
+        }
+    }
+    public LocalDateTime getCurrentDatabaseTime () throws SQLException {
+        String sql = "SELECT CURRENT_TIMESTAMP";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            rs.next();
+            return rs.getTimestamp(1).toLocalDateTime();
+        }
+    }
+
+    @Override
+    public void syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException {
+        activateIfDue(auctionId, dbNow);
+        endIfExpired(auctionId, dbNow);
+    }
+    private void activateIfDue(long auctionId, LocalDateTime dbNow) throws SQLException {
+         String sql = """
+            UPDATE auctions
+            SET status = 'ACTIVE'
+            WHERE id = ?
+            AND status = 'SCHEDULED'
+            AND starting_time <= ?
+            AND ending_time > ?
+        """;
+        ///localdatetime before: 10h46
+        ///sau 1s update lại database của từng auction
+        /// localdateimte now: currentime
+        /// 
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                Timestamp now = Timestamp.valueOf(dbNow);
+                statement.setLong(1, auctionId);
+                statement.setTimestamp(2, now);
+                statement.setTimestamp(3, now);
+                statement.executeUpdate(); 
+        }    
+    }
+
+    private void endIfExpired (long auctionId, LocalDateTime dbNow) throws SQLException {
+         String sql = """
+            UPDATE auctions
+            SET status = 'ENDED'
+            WHERE id = ?
+            AND status IN ('SCHEDULED', 'ACTIVE')
+            AND ending_time <= ?
+        """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                Timestamp now = Timestamp.valueOf(dbNow);
+                statement.setLong(1, auctionId);
+                statement.setTimestamp(2, now);
+                statement.executeUpdate(); 
+        }    
+    }
+
+    @Override
+    public void updateCurrentBid(long auctionId, BigDecimal currentBid, long winningUserId) throws SQLException {
+        String sql = """
+            UPDATE auctions
+            SET current_price = ?,
+                winner_user_id = ?
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setBigDecimal(1, currentBid);
+            statement.setLong(2, winningUserId);
+            statement.setLong(3, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void completeByBuyNow(long auctionId, long buyerId) throws SQLException {
+        String sql = """
+            UPDATE auctions
+            SET current_price = buy_now_price,
+                final_price = buy_now_price,
+                winner_user_id = ?,
+                status = 'ENDED'
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, buyerId);
+            statement.setLong(2, auctionId);
+            statement.executeUpdate();
+        }
+    }
+    
+
 }
