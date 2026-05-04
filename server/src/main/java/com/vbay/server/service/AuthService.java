@@ -2,13 +2,16 @@ package com.vbay.server.service;
 
 
 import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
 
-import com.vbay.server.model.User;
+import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.model.User;
+import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.validation.ValidationUtils;
@@ -17,13 +20,16 @@ import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
 
 
+
 public class AuthService {
-    private final UserRepository userRepository;
+    private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
     ///add object to check wheather the passwork is weak/strong : PasswordPolicy
-    
-    public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
-        this.userRepository = userRepository;
+
+    public AuthService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, PasswordHasher passwordHasher) {
+        this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
     }
    /*
@@ -51,8 +57,9 @@ public class AuthService {
         String email = request.getEmail().trim();
         logInfo("LOGIN_ATTEMPT", "email=" + email);
 
-        try {
-            Optional<User> userOptional = userRepository.findByEmail(email);
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
             if (userOptional.isEmpty()) { 
                 logError("LOGIN_FAILED", "email=" + email + ", reason: user_not_found");
                 throw new AuthenticationException("Invalid email or password");
@@ -92,7 +99,8 @@ public class AuthService {
         String email = request.getEmail().trim();
         logInfo("REGISTER_ATTEMPT", "username=" + username + ", email=" + email);
 
-        try {
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             User newUser = new User(
                 username,
                 email,

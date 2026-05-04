@@ -110,7 +110,12 @@ public class Auction {
     public AuctionStatus getStatus(){
         return this.status;
     }
-
+    public boolean isActive(){
+        return this.status.equals(AuctionStatus.ACTIVE);
+    }
+    public boolean isEnded(){
+        return this.status.equals(AuctionStatus.ENDED);
+    }
     //Setter (Change data)
     //a, Base:
     public void setId(long new_id){

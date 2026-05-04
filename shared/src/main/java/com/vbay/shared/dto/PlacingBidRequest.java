@@ -1,5 +1,6 @@
 package com.vbay.shared.dto;
 
+///dành cho manual place bid
 public class PlacingBidRequest {
     private String auctionId;
     private String bidderId;
@@ -23,12 +24,4 @@ public class PlacingBidRequest {
         return bidAmount;
     }
 
-    @Override
-    public String toString() {
-        return "PlacingBidRequest{" +
-            "auctionId='" + this.getAuctionId() + '\'' +
-            ", bidderId='" + this.getBidderId() + '\'' +
-            ", bidAmount=" + this.getBidAmount() +
-            '}';
-    }
 }

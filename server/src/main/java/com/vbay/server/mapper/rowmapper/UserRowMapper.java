@@ -17,7 +17,8 @@ public class UserRowMapper {
                         rs.getString("phone_number"),
                         Position.valueOf(rs.getString("position")),
                         UserStatus.valueOf(rs.getString("status")),
-                        rs.getBigDecimal("balance"),
+                        rs.getBigDecimal("available_balance"),
+                        rs.getBigDecimal("hold_balance"),
                         rs.getString("time_init"));
         user.setId(rs.getLong("id"));
         return user;

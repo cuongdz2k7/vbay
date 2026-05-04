@@ -26,7 +26,6 @@
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
-            <version>9.7.0</version>
         </dependency>
         <dependency>
             <groupId>de.mkammerer</groupId>
@@ -55,12 +54,21 @@
                 <version>3.5.0</version>
                 <configuration>
                     <mainClass>com.vbay.server.ServerApplication</mainClass>
+                    <systemProperties>
+                        <systemProperty>
+                            <key>user.timezone</key>
+                            <value>UTC</value>
+                        </systemProperty>
+                    </systemProperties>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.2</version>
+                <configuration>
+                    <argLine>-Duser.timezone=UTC</argLine>
+                </configuration>
             </plugin>
         </plugins>
     </build>
