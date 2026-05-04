@@ -11,7 +11,7 @@ import java.util.Optional;
 import com.vbay.server.mapper.rowmapper.BidRowMapper;
 import com.vbay.server.model.Bid;
 import com.vbay.server.repository.BidRepository;
-import com.vbay.shared.enums.shared_status.BidStatus;
+import com.vbay.shared.status.shared_status.BidStatus;
 
 public class JdbcBidRepository implements BidRepository {
     private final Connection connection;

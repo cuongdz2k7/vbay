@@ -10,6 +10,7 @@ target/
 client/target/
 server/target/
 .m2/
+.mvn-settings.xml
 
 # Compiled class files
 *.class

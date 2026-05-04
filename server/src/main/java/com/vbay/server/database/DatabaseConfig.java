@@ -1,6 +1,4 @@
-package com.vbay.server.databaseManager;
-///Keeping DB connection CONFIGURATION
-///Showing which DB to CONNECT
+package com.vbay.server.database;
 public class DatabaseConfig {
     private static final String HOST = "localhost";
     private static final int PORT = 1638;

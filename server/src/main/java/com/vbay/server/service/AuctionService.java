@@ -30,10 +30,10 @@ import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
-import com.vbay.shared.enums.BidSource;
-import com.vbay.shared.enums.PaymentType;
-import com.vbay.shared.enums.shared_status.BidStatus;
-import com.vbay.shared.enums.shared_status.PaymentStatus;
+import com.vbay.shared.status.BidSource;
+import com.vbay.shared.status.PaymentType;
+import com.vbay.shared.status.shared_status.BidStatus;
+import com.vbay.shared.status.shared_status.PaymentStatus;
 
 
  /*

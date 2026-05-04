@@ -13,7 +13,7 @@ import com.vbay.server.mapper.rowmapper.ProductRowMapper;
 import com.vbay.server.model.Product;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
-import com.vbay.shared.enums.shared_status.ProductStatus;
+import com.vbay.shared.status.shared_status.ProductStatus;
 
 
 public class JdbcProductRepository implements ProductRepository {

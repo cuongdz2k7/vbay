@@ -1,4 +1,4 @@
-package com.vbay.server.databaseManager;
+package com.vbay.server.database;
 
 import java.sql.Connection;
 import java.sql.SQLException;

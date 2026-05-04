@@ -1,4 +1,4 @@
-package com.vbay.shared.enums.shared_status;
+package com.vbay.shared.status.shared_status;
 
 public enum PaymentStatus {
     HELD,      // platform đang giữ tiền

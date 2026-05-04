@@ -1,4 +1,4 @@
-package com.vbay.shared.Utils;
+package com.vbay.shared.utils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

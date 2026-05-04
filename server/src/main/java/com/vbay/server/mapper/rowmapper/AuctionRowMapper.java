@@ -4,7 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.vbay.server.model.Auction;
-import com.vbay.shared.enums.shared_status.AuctionStatus;
+import com.vbay.shared.status.shared_status.AuctionStatus;
 
 public class AuctionRowMapper {
     private AuctionRowMapper() {}
