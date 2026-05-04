@@ -336,6 +336,7 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
     /*
     Nếu lock user trước rồi mới lock auction, user A có thể bị giữ ví trong lúc chờ auction lock. 
     Như vậy A chưa chắc bid được, nhưng các thao tác tiền khác của A đã bị chặn.
+    Điều này ảnh hưởng lớn đến các thao tác autobid, khi thằng a nó đến thời điểm đặt bid, chưa bid được nma nó đc cộng tiền bởi 1 Auction khác (bị outbid chẳng hạn)
     Flow nên là: lock Auction trước -> validate -> lock user để thay đổi balance
     */
 
@@ -376,11 +377,6 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
             throw new ValidationException("Bid amount is not sufficient");
         }
     }
-    ///now()
-    ///realtime: sau 1 milisecond-> x -> chekc xem auction mà nó đến starting time <= x -> scheduel -> active 
-    ///schedule chưa làm mới database
-    ///bidder 1 đặt bid ở Auction A -> lock lại auction A 
-    ///thời điểm tk bidder 1 đặt bid đc là dbNow
     public void placeBid(PlaceBidRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
