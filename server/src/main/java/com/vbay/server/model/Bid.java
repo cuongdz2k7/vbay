@@ -1,9 +1,10 @@
 package com.vbay.server.model;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.status.BidSource;
-import com.vbay.shared.status.shared_status.BidStatus;
+import com.vbay.shared.enums.BidSource;
+import com.vbay.shared.enums.shared_status.BidStatus;
 
 public class Bid {
     // Base

@@ -4,8 +4,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.vbay.server.model.Bid;
-import com.vbay.shared.status.BidSource;
-import com.vbay.shared.status.shared_status.BidStatus;
+import com.vbay.shared.enums.BidSource;
+import com.vbay.shared.enums.shared_status.BidStatus;
 
 public class BidRowMapper {
     public static Bid mapBid(ResultSet rs) throws SQLException {

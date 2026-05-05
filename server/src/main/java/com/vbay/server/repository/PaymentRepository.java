@@ -3,7 +3,7 @@ package com.vbay.server.repository;
 import java.sql.SQLException;
 
 import com.vbay.server.model.Payment;
-import com.vbay.shared.status.shared_status.PaymentStatus;
+import com.vbay.shared.enums.shared_status.PaymentStatus;
 
 public interface PaymentRepository {
     Payment save(Payment payment) throws SQLException;

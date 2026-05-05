@@ -12,7 +12,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import com.vbay.shared.utils.JsonUtils;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 

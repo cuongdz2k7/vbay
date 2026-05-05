@@ -1,4 +1,4 @@
-package com.vbay.server.database;
+package com.vbay.server.databaseManager;
 
 import java.sql.Connection;
 import java.sql.DriverManager;

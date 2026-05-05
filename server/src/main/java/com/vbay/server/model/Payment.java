@@ -3,8 +3,8 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.status.PaymentType;
-import com.vbay.shared.status.shared_status.PaymentStatus;
+import com.vbay.shared.enums.PaymentType;
+import com.vbay.shared.enums.shared_status.PaymentStatus;
 public class Payment {
     private long id;
     private long auctionId;

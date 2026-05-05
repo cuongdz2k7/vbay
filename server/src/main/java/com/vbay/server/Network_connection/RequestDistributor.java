@@ -1,4 +1,4 @@
-package com.vbay.server.network;
+package com.vbay.server.network_connection;
 
 import java.sql.SQLException;
 
@@ -8,12 +8,12 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
-import com.vbay.shared.utils.JsonUtils;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
-import com.vbay.shared.status.RequestType;
+import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
 /*

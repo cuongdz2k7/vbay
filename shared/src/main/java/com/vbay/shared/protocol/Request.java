@@ -1,7 +1,7 @@
 package com.vbay.shared.protocol;
 
-import com.vbay.shared.utils.IDGenerator;
-import com.vbay.shared.status.RequestType;
+import com.vbay.shared.Utils.IDGenerator;
+import com.vbay.shared.enums.RequestType;
 
 public class Request<T> {
     private RequestType type;

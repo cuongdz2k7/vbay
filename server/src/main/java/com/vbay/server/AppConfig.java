@@ -1,8 +1,8 @@
 package com.vbay.server;
 
-import com.vbay.server.database.ConnectionProvider;
-import com.vbay.server.database.DatabaseConnection;
-import com.vbay.server.network.RequestDistributor;
+import com.vbay.server.databaseManager.ConnectionProvider;
+import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.security.Argon2PasswordHasher;
@@ -37,8 +37,8 @@ public class AppConfig {
     -> khởi tạo RequestDistributor
     */
     public AppConfig() {
-        this(DatabaseConnection::getConnection,
-            new JdbcRepositoryFactory(),
+        this(DatabaseConnection::getConnection, 
+            new JdbcRepositoryFactory(), 
             new Argon2PasswordHasher());
     }
 

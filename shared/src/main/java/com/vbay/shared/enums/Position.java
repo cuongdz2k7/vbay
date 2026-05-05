@@ -1,4 +1,4 @@
-package com.vbay.shared.status;
+package com.vbay.shared.enums;
 
 public enum Position {
     USER, // nguoi dung

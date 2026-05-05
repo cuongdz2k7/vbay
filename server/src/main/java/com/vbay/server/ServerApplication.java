@@ -5,14 +5,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.TimeZone;
 
-import com.vbay.server.network.ClientHandler;
-import com.vbay.server.network.RequestDistributor;
-import com.vbay.server.database.DatabaseInitializer;
-import com.vbay.server.repository.JdbcUserRepository;
-import com.vbay.server.repository.UserRepository;
-import com.vbay.server.security.Argon2PasswordHasher;
-import com.vbay.server.security.PasswordHasher;
-import com.vbay.server.service.AuthService;
+import com.vbay.server.databaseManager.DatabaseInitializer;
+import com.vbay.server.network_connection.ClientHandler;
+import com.vbay.server.network_connection.RequestDistributor;
 
 public class ServerApplication {
     private static final int PORT = 3618;

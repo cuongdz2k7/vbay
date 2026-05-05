@@ -8,7 +8,7 @@ import java.sql.Statement;
 
 import com.vbay.server.model.Payment;
 import com.vbay.server.repository.PaymentRepository;
-import com.vbay.shared.status.shared_status.PaymentStatus;
+import com.vbay.shared.enums.shared_status.PaymentStatus;
 
 public class JDBCPaymentRepository implements PaymentRepository {
     private final Connection connection;

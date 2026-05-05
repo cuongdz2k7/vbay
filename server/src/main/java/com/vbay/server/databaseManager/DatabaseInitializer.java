@@ -1,4 +1,4 @@
-package com.vbay.server.database;
+package com.vbay.server.databaseManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;

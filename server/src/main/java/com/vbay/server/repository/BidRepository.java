@@ -3,7 +3,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import com.vbay.server.model.Bid;
-import com.vbay.shared.status.shared_status.BidStatus;
+import com.vbay.shared.enums.shared_status.BidStatus;
 
 
 public interface BidRepository {
