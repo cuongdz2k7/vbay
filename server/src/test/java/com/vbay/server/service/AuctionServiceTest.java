@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
+import com.vbay.server.service.validation.ValidateAuctionDTO;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
@@ -53,14 +54,14 @@ class AuctionServiceTest {
 
     @Test
     void validateCreateAuctionRequest_validRequest_doesNotThrow() {
-        assertDoesNotThrow(() -> auctionService.validateCreateAuctionRequest(validRequest()));
+        assertDoesNotThrow(() -> ValidateAuctionDTO.validateCreateAuctionRequest(validRequest()));
     }
 
     @Test
     void validateCreateAuctionRequest_nullRequest_throwsValidationException() {
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(null)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(null)
         );
     }
 
@@ -80,7 +81,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -107,7 +108,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -134,7 +135,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -154,7 +155,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -174,7 +175,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -194,7 +195,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -214,7 +215,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -234,7 +235,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -254,7 +255,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 
@@ -274,7 +275,7 @@ class AuctionServiceTest {
 
         assertThrows(
             ValidationException.class,
-            () -> auctionService.validateCreateAuctionRequest(request)
+            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
         );
     }
 }

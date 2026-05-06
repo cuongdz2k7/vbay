@@ -1,4 +1,4 @@
-package com.vbay.shared.enums;
+package com.vbay.shared.enums.bid;
 
 public enum BidSource {
     USER_BID,

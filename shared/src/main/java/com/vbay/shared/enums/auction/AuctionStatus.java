@@ -1,4 +1,4 @@
-package com.vbay.shared.enums.shared_status;
+package com.vbay.shared.enums.auction;
 
 public enum AuctionStatus {
     SCHEDULED(false),

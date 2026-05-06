@@ -9,6 +9,7 @@ import com.vbay.server.security.Argon2PasswordHasher;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
+import com.vbay.server.service.BidService;
 
 /*
 design pattern: Dependency Injection (DI)
@@ -24,18 +25,19 @@ public class AppConfig {
     private final PasswordHasher passwordHasher;
     private final AuthService authService;
     private final AuctionService auctionService;
+    private final BidService bidService;
     private final RequestDistributor requestDistributor;
 
 
-    /*
-    Trong Java, this(...) trong constructor nghĩa là gọi constructor khác cùng class. 
-    Nó phải nằm ở dòng đầu tiên.
-    new AppConfig()
-    -> gọi AppConfig(DatabaseConnection::getConnection, JdbcRepositoryFactory, Argon2PasswordHasher)
-    -> constructor 3 tham số khởi tạo AuthService
-    -> khởi tạo AuctionService
-    -> khởi tạo RequestDistributor
-    */
+/*
+Trong Java, this(...) trong constructor nghĩa là gọi constructor khác cùng class. 
+Nó phải nằm ở dòng đầu tiên.
+new AppConfig()
+-> gọi AppConfig(DatabaseConnection::getConnection, JdbcRepositoryFactory, Argon2PasswordHasher)
+-> constructor 3 tham số khởi tạo AuthService
+-> khởi tạo AuctionService
+-> khởi tạo RequestDistributor
+*/
     public AppConfig() {
         this(DatabaseConnection::getConnection, 
             new JdbcRepositoryFactory(), 
@@ -51,7 +53,8 @@ public class AppConfig {
         this.passwordHasher = passwordHasher;
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory);
-        this.requestDistributor = new RequestDistributor(authService, auctionService);
+        this.bidService = new BidService(connectionProvider, repositoryFactory);
+        this.requestDistributor = new RequestDistributor(authService, auctionService, bidService);
     }
 
     public RequestDistributor getRequestDistributor() {

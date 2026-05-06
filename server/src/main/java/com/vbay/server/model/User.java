@@ -3,8 +3,8 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.shared.enums.auth.Position;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class User {
     private long id;

@@ -8,8 +8,10 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
+import com.vbay.server.service.BidService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
@@ -42,10 +44,12 @@ Tại sao distributor lại thread-safe ?
 public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
+    private final BidService bidService;
 
-    public RequestDistributor (AuthService authService, AuctionService auctionService) {
+    public RequestDistributor (AuthService authService, AuctionService auctionService, BidService bidService) {
         this.authService = authService;
         this.auctionService = auctionService;
+        this.bidService = bidService;
     }
     /*
     switch-case theo type để gọi handler tương ứng
@@ -93,6 +97,7 @@ public class RequestDistributor {
                 case LOGIN -> handleLogin(requestId, payload, session);
                 case REGISTER -> handleRegister(requestId, payload);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
+                case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -141,6 +146,15 @@ public class RequestDistributor {
         }
         auctionService.createAuction(createAuctionRequest, session);
         return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    private Respond<Void> handlePlaceBid (String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        PlaceBidRequest placeBidRequest = JsonUtils.fromJson(payload, PlaceBidRequest.class);
+        if (placeBidRequest == null) {
+            return new Respond<>(requestId, false, "Invalid place bid request", null);
+        }
+        bidService.placeBid(placeBidRequest, session);
+        return new Respond<>(requestId, true, "Placed bid successfully", null);
     }
     
 }

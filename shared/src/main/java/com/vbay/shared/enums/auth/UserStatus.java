@@ -1,4 +1,4 @@
-package com.vbay.shared.enums.shared_status;
+package com.vbay.shared.enums.auth;
 
 public enum UserStatus {
     ACTIVE, // hoat dong

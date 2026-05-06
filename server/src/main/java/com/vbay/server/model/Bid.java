@@ -3,8 +3,8 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.enums.BidSource;
-import com.vbay.shared.enums.shared_status.BidStatus;
+import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.bid.BidSource;
 
 public class Bid {
     // Base

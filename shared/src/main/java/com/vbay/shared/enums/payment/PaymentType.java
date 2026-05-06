@@ -1,4 +1,4 @@
-package com.vbay.shared.enums;
+package com.vbay.shared.enums.payment;
 
 public enum PaymentType {
     AUCTION_WIN,

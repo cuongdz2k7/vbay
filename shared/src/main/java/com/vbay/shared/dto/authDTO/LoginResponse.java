@@ -1,6 +1,6 @@
 package com.vbay.shared.dto.authDTO;
 
-import com.vbay.shared.enums.Position;
+import com.vbay.shared.enums.auth.Position;
 
 public class LoginResponse {
     private long userId;

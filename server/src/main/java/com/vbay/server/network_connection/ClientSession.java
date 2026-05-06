@@ -1,6 +1,6 @@
 package com.vbay.server.network_connection;
 
-import com.vbay.shared.enums.Position;
+import com.vbay.shared.enums.auth.Position;
 
 
 public class ClientSession {

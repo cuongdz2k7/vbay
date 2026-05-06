@@ -29,14 +29,14 @@ import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
-import com.vbay.shared.enums.BidSource;
-import com.vbay.shared.enums.PaymentType;
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.BidStatus;
-import com.vbay.shared.enums.shared_status.AuctionStatus;
-import com.vbay.shared.enums.shared_status.PaymentStatus;
-import com.vbay.shared.enums.shared_status.ProductStatus;
-import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.shared.enums.auction.*;
+import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.auth.Position;
+import com.vbay.shared.enums.auth.UserStatus;
+import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.payment.PaymentStatus;
+import com.vbay.shared.enums.payment.PaymentType;
+import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 
@@ -46,6 +46,7 @@ class AuctionServiceIntegrationTest {
     private String jdbcUrl;
     private Connection keepAliveConnection;
     private AuctionService auctionService;
+    private BidService bidService;
     private ClientSession session;
 
     @BeforeEach
@@ -54,6 +55,10 @@ class AuctionServiceIntegrationTest {
         keepAliveConnection = DriverManager.getConnection(jdbcUrl);
         createSchema(keepAliveConnection);
         auctionService = new AuctionService(
+            () -> DriverManager.getConnection(jdbcUrl),
+            new JdbcRepositoryFactory()
+        );
+        bidService = new BidService(
             () -> DriverManager.getConnection(jdbcUrl),
             new JdbcRepositoryFactory()
         );
@@ -164,7 +169,7 @@ class AuctionServiceIntegrationTest {
         seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
-        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder"));
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder"));
 
         assertEquals(1, countRows(keepAliveConnection, "bids"));
         assertDecimal("880.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
@@ -183,7 +188,7 @@ class AuctionServiceIntegrationTest {
         updateAuctionWinner(auctionId, 2L);
         long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
 
-        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("150.00")), sessionFor(3L, "newwinner"));
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("150.00")), sessionFor(3L, "newwinner"));
 
         assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
         assertEquals(BidStatus.WINNING.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
@@ -199,7 +204,7 @@ class AuctionServiceIntegrationTest {
         seedUserUnchecked(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(999L, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(999L, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
     }
 
     @Test
@@ -216,7 +221,7 @@ class AuctionServiceIntegrationTest {
         );
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
         assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
@@ -237,7 +242,7 @@ class AuctionServiceIntegrationTest {
         );
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
 
         assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
         assertEquals(0, countRows(keepAliveConnection, "bids"));
@@ -249,7 +254,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), session));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), session));
     }
 
     @Test
@@ -259,7 +264,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("109.99")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("109.99")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
         assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
@@ -286,7 +291,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
         assertDecimal("119.99", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
@@ -300,7 +305,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("201.00")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("201.00")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
     }
@@ -311,7 +316,7 @@ class AuctionServiceIntegrationTest {
         seedUser(2L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
-        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(2L, "buyer"));
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(2L, "buyer"));
 
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE auction_id = " + auctionId));
         assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
@@ -334,7 +339,7 @@ class AuctionServiceIntegrationTest {
         updateAuctionWinner(auctionId, 2L);
         long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
 
-        auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(3L, "buyer"));
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(3L, "buyer"));
 
         assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
@@ -347,7 +352,7 @@ class AuctionServiceIntegrationTest {
     @Test
     void placeBid_withoutAuthenticatedSession_rejectsBeforeTransaction() {
         assertThrows(AuthenticationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(1L, new BigDecimal("120.00")), new ClientSession()));
+            () -> bidService.placeBid(new PlaceBidRequest(1L, new BigDecimal("120.00")), new ClientSession()));
     }
 
     private CreateProductRequest validProduct() {
@@ -505,7 +510,7 @@ class AuctionServiceIntegrationTest {
     private void assertBlockedUserCannotBid(long userId, String username, UserStatus status, long auctionId) throws SQLException {
         seedUser(userId, username, status, new BigDecimal("1000.00"), BigDecimal.ZERO);
         assertThrows(ValidationException.class,
-            () -> auctionService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(userId, username)));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(userId, username)));
         assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + userId));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = " + userId));
     }
