@@ -1,8 +1,8 @@
-package com.vbay.ui.scene.controller.bid;
+package com.vbay.ui.scene_ui.controller.bid;
 
 import com.vbay.ui.model.Product;
-import com.vbay.ui.scene.SceneDataReceiver;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneDataReceiver;
+import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.event.ActionEvent;
@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.image.ImageView;
 
 public class BidController implements SceneDataReceiver<Product> {
@@ -46,7 +47,7 @@ public class BidController implements SceneDataReceiver<Product> {
     @FXML
     private void handleBack(ActionEvent event) {
         try {
-            SceneManager.switchScene("/jfx/scene/account/home.fxml");
+            SceneManager.switchScene("/jfx/scene/Home.fxml");
         } catch (Exception exception) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("VBay");
@@ -70,7 +71,7 @@ public class BidController implements SceneDataReceiver<Product> {
         }
 
         try {
-            SceneManager.switchScene("/jfx/scene/bid/placeBid.fxml", currentProduct);
+            SceneManager.switchScene("/jfx/scene/bid/PlaceBid.fxml", currentProduct);
         } catch (Exception exception) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("VBay");
@@ -78,5 +79,13 @@ public class BidController implements SceneDataReceiver<Product> {
             alert.setContentText("Could not open the place bid scene.");
             alert.showAndWait();
         }
+    }
+    @FXML
+    public void handleOpenByNow(ActionEvent event){
+        Alert notification =new Alert(Alert.AlertType.INFORMATION);
+        notification.setTitle("Vbay");
+        notification.setHeaderText("By Now succeed");
+        notification.setContentText("You Already bought the products,\n Congratulation");
+        notification.showAndWait();
     }
 }

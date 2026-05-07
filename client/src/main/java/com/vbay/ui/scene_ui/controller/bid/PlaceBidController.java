@@ -1,12 +1,12 @@
-package com.vbay.ui.scene.controller.bid;
+package com.vbay.ui.scene_ui.controller.bid;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
 import com.vbay.ui.model.Product;
-import com.vbay.ui.scene.SceneDataReceiver;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneDataReceiver;
+import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.event.ActionEvent;
@@ -93,7 +93,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
     @FXML
     private void handleBack(ActionEvent event) {
         try {
-            SceneManager.switchScene("/jfx/scene/account/home.fxml");
+            SceneManager.switchScene("/jfx/scene/Home.fxml");
         } catch (Exception exception) {
             showMessage(Alert.AlertType.ERROR, "Navigation failed", "Could not return to the home scene.");
         }

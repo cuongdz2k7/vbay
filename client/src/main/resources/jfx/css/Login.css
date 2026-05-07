@@ -8,7 +8,7 @@
 
 .brand-icon-badge {
     -fx-background-color: #ff5722;
-    -fx-background-radius: 2;
+    -fx-background-radius: 4;
 }
 
 .brand-icon-shape {
@@ -85,7 +85,7 @@
 
 .primary-button {
     -fx-background-color: #ff5722;
-    -fx-background-radius: 0;
+    -fx-background-radius: 8;
     -fx-text-fill: #5f1500;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
@@ -110,9 +110,15 @@
     -fx-padding: 0;
     -fx-border-width: 0;
     -fx-background-color: transparent;
-    -fx-text-fill: #ffb5a0;
+    -fx-text-fill: #ff8a5c;
     -fx-cursor: hand;
     -fx-underline: false;
+}
+
+.muted-link:visited,
+.muted-link:hover,
+.muted-link:armed {
+    -fx-text-fill: #ff8a5c;
 }
 
 .muted-link:hover {
@@ -122,6 +128,24 @@
 .small-link {
     -fx-font-size: 10px;
     -fx-font-weight: 600;
+}
+
+.small-link,
+.small-link:visited,
+.small-link:hover,
+.small-link:armed {
+    -fx-text-fill: #ff8a5c;
+}
+
+.forgot-password-link,
+.forgot-password-link:visited,
+.forgot-password-link:hover,
+.forgot-password-link:armed {
+    -fx-text-fill: #ff5722;
+}
+
+.forgot-password-link .text {
+    -fx-fill: #ff5722;
 }
 
 .primary-link {
@@ -142,7 +166,7 @@
 .icon-button {
     -fx-background-color: transparent, transparent, transparent;
     -fx-background-insets: 0;
-    -fx-background-radius: 0;
+    -fx-background-radius: 6;
     -fx-border-color: transparent;
     -fx-border-width: 0;
     -fx-padding: 0;
@@ -152,7 +176,7 @@
 .password-toggle-button {
     -fx-background-color: #0e0e0e;
     -fx-background-insets: 0;
-    -fx-background-radius: 0;
+    -fx-background-radius: 6;
     -fx-border-color: transparent;
 }
 
@@ -161,7 +185,7 @@
 .password-toggle-button:pressed {
     -fx-background-color: #0e0e0e;
     -fx-background-insets: 0;
-    -fx-background-radius: 0;
+    -fx-background-radius: 6;
     -fx-border-color: transparent;
 }
 
@@ -195,3 +219,4 @@
     -fx-text-fill: #ffb5a0;
     -fx-opacity: 1;
 }
+

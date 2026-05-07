@@ -14,9 +14,9 @@
 
 .back-btn {
     -fx-background-color: transparent;
-    -fx-background-radius: 12;
+    -fx-background-radius: 8;
     -fx-border-color: #56423a;
-    -fx-border-radius: 12;
+    -fx-border-radius: 8;
     -fx-text-fill: #f5e5df;
     -fx-font-size: 13px;
     -fx-font-weight: 800;
@@ -53,26 +53,80 @@
 .bid-content {
     -fx-background-color: transparent;
     -fx-min-width: 980;
+    -fx-alignment: top-left;
 }
 
 .bid-panel {
     -fx-background-color: rgba(18, 18, 18, 0.92);
-    -fx-background-radius: 22;
+    -fx-background-radius: 12;
     -fx-border-color: #312621;
-    -fx-border-radius: 22;
+    -fx-border-radius: 12;
     -fx-padding: 18;
 }
 
-.image-panel {
-    -fx-max-width: 560;
+.left-column-frame {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(17, 17, 17, 0.96) 0%, rgba(21, 21, 21, 0.98) 100%);
+    -fx-background-radius: 14;
+    -fx-border-color: #2f241f;
+    -fx-border-radius: 14;
+    -fx-padding: 18;
+}
+
+.image-showcase {
+    -fx-background-color: rgba(10, 10, 10, 0.98);
+    -fx-background-radius: 10;
+    -fx-border-color: #2d231e;
+    -fx-border-radius: 10;
+    -fx-padding: 0;
 }
 
 .details-panel {
     -fx-min-width: 500;
+    -fx-pref-height: 792;
+    -fx-max-height: 792;
 }
 
 .hero-image {
-    -fx-background-radius: 18;
+    -fx-background-radius: 10;
+}
+
+.side-action-panel {
+    -fx-alignment: center;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 18, 18, 0.98) 0%, rgba(23, 23, 23, 0.98) 100%);
+    -fx-border-color: #4a342b;
+}
+
+.place-bid-panel {
+    -fx-pref-height: 236;
+}
+
+.buy-now-panel {
+    -fx-pref-height: 208;
+}
+
+.buy-now-btn {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff5b52 0%, #d62828 55%, #a91515 100%);
+    -fx-background-radius: 8;
+    -fx-border-color: #ff9d97;
+    -fx-border-radius: 8;
+    -fx-border-width: 1.2;
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+    -fx-font-weight: 900;
+    -fx-padding: 12 18 12 18;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(214, 40, 40, 0.42), 22, 0.25, 0, 8);
+}
+
+.buy-now-btn:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff6f66 0%, #e03131 55%, #b71c1c 100%);
+    -fx-border-color: #ffc0bb;
+}
+
+.buy-now-btn:pressed {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #e54841 0%, #be2323 55%, #8f1010 100%);
+    -fx-effect: dropshadow(gaussian, rgba(214, 40, 40, 0.25), 12, 0.18, 0, 3);
+    -fx-translate-y: 1;
 }
 
 .product-title {
@@ -106,31 +160,13 @@
     -fx-font-weight: 600;
 }
 
-.asset-description-scroll {
-    -fx-background-color: transparent;
-    -fx-background: transparent;
-    -fx-border-color: #2f241f;
-    -fx-border-radius: 16;
-    -fx-background-radius: 16;
-    -fx-padding: 4;
-}
-
-.asset-description-scroll > .viewport {
-    -fx-background-color: transparent;
-}
-
-.asset-description-scroll .scroll-bar:vertical {
-    -fx-background-color: transparent;
-}
-
-.asset-description-scroll .scroll-bar:vertical .track {
-    -fx-background-color: #201814;
-    -fx-background-radius: 999;
-}
-
-.asset-description-scroll .scroll-bar:vertical .thumb {
-    -fx-background-color: #5a4338;
-    -fx-background-radius: 999;
+.description-frame {
+    -fx-background-color: rgba(30, 22, 19, 0.94);
+    -fx-background-radius: 10;
+    -fx-border-color: #362821;
+    -fx-border-radius: 10;
+    -fx-padding: 18 18 20 18;
+    -fx-spacing: 12;
 }
 
 .progress-bar {
@@ -139,19 +175,19 @@
 
 .progress-bar .track {
     -fx-background-color: #2a211d;
-    -fx-background-radius: 999;
+    -fx-background-radius: 4;
 }
 
 .progress-bar .bar {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff8a5f 0%, #ff5722 100%);
-    -fx-background-radius: 999;
+    -fx-background-radius: 4;
 }
 
 .bid-input {
     -fx-background-color: #1a1a1a;
-    -fx-background-radius: 14;
+    -fx-background-radius: 8;
     -fx-border-color: #43322c;
-    -fx-border-radius: 14;
+    -fx-border-radius: 8;
     -fx-text-fill: #f5e5df;
     -fx-prompt-text-fill: #826e67;
     -fx-padding: 12 14 12 14;
@@ -159,9 +195,11 @@
 
 .submit-bid-btn {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff7a45 0%, #d94a19 100%);
-    -fx-background-radius: 14;
+    -fx-background-radius: 8;
     -fx-text-fill: #2f130b;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
+    -fx-cursor: hand;
     -fx-padding: 12 18 12 18;
 }
+

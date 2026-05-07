@@ -1,4 +1,4 @@
-package com.vbay.ui.scene.controller;
+package com.vbay.ui.scene_ui.controller.card;
 
 import java.util.function.Consumer;
 

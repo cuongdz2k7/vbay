@@ -5,7 +5,7 @@ import com.vbay.network.SocketClient;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneManager;
 
 import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
@@ -41,7 +41,7 @@ public class MainApp extends Application {
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
         SceneManager.setStage(primaryStage);
-        primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/account/login.fxml"));
+        primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/auth/Login.fxml"));
         primaryStage.setTitle("VBay");
         primaryStage.setMinWidth(430);
         primaryStage.setMinHeight(720);

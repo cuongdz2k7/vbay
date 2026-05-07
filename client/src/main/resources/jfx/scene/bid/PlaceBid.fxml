@@ -16,7 +16,7 @@
             xmlns:fx="http://javafx.com/fxml"
             prefWidth="1440" prefHeight="900"
             styleClass="place-bid-root"
-            fx:controller="com.vbay.ui.scene.controller.bid.PlaceBidController">
+            fx:controller="com.vbay.ui.scene_ui.controller.bid.PlaceBidController">
 
     <top>
         <HBox alignment="CENTER_LEFT" spacing="16" styleClass="place-bid-topbar">

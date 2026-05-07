@@ -1,4 +1,4 @@
-package com.vbay.ui.scene.controller.account;
+package com.vbay.ui.scene_ui.controller.auth;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -8,7 +8,7 @@ import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -132,7 +132,7 @@ public class RegisterController {
 
     private void goToLogin() {
         try {
-            SceneManager.switchScene("/jfx/scene/account/login.fxml");
+            SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,

@@ -16,7 +16,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
 
-<AnchorPane prefHeight="720.0" prefWidth="430.0" styleClass="login-screen" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vbay.ui.scene.controller.account.LoginController">
+<AnchorPane prefHeight="720.0" prefWidth="430.0" styleClass="login-screen" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vbay.ui.scene_ui.controller.auth.LoginController">
     <children>
         <BorderPane prefHeight="720.0" prefWidth="430.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <center>
@@ -45,7 +45,7 @@
 
 
 
-                                                <Label styleClass="brand-wordmark" text="Vbay" />
+                                                <Label styleClass="brand-wordmark" text="VBay" />
                                             </children>
                                         </HBox>
 
@@ -68,7 +68,7 @@
                                                 <VBox spacing="8.0">
                                                     <children>
                                                         <Label styleClass="field-label" text="EMAIL ADDRESS" />
-                                                        <TextField fx:id="emailField" onAction="#handleLogin" promptText="name@firm.com" styleClass="auth-input" />
+                                                        <TextField fx:id="emailField" onAction="#handleLogin" promptText="Email" styleClass="auth-input" />
                                                     </children>
                                                 </VBox>
 
@@ -78,7 +78,7 @@
                                                             <children>
                                                                 <Label styleClass="field-label" text="PASSWORD" />
                                                                 <Region HBox.hgrow="ALWAYS" />
-                                                                <Hyperlink focusTraversable="false" onAction="#handleForgotPassword" styleClass="muted-link small-link" text="Forgot password?" />
+                                                                <Hyperlink focusTraversable="false" onAction="#handleForgotPassword" style="-fx-text-fill: #ff5722;" styleClass="muted-link small-link forgot-password-link" text="Forgot password?" />
                                                             </children>
                                                         </HBox>
 

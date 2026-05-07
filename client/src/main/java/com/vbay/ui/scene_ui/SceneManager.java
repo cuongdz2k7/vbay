@@ -1,4 +1,4 @@
-package com.vbay.ui.scene;
+package com.vbay.ui.scene_ui;
 
 import java.util.Objects;
 
@@ -46,7 +46,9 @@ public class SceneManager {
 
     private static String resolveStylesheetPath(String fxmlPath) {
         String fileName = fxmlPath.substring(fxmlPath.lastIndexOf('/') + 1);
-        String cssFileName = fileName.replace(".fxml", ".css");
+        int extensionIndex = fileName.lastIndexOf('.');
+        String baseName = extensionIndex >= 0 ? fileName.substring(0, extensionIndex) : fileName;
+        String cssFileName = baseName + ".css";
         return "/jfx/css/" + cssFileName;
     }
 
