@@ -91,6 +91,7 @@ public class RequestDistributor {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
                 case LOGIN -> handleLogin(requestId, payload, session);
+                case LOGOUT -> handleLogout(requestId, session);
                 case REGISTER -> handleRegister(requestId, payload);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
@@ -124,6 +125,14 @@ public class RequestDistributor {
                             loginResponse.getUsername(), 
                             loginResponse.getPosition());
         return new Respond<>(requestId, true, "Login successful", loginResponse);
+    }
+    /// LogoutResponse not Available
+    private Respond<Void> handleLogout(String requestId, ClientSession session) {
+        if (session == null || !session.isAuthenticated()) {
+            return new Respond<>(requestId, true, "Client is already logged out", null);
+        }
+        session.clearSession();
+        return new Respond<>(requestId, true, "Logout successful", null);
     }
 
     private Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
