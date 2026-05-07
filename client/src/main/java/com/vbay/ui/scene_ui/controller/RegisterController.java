@@ -1,19 +1,12 @@
-package com.vbay.ui.scene.controller.account;
-
+package com.vbay.ui.scene_ui.controller;
 import java.io.IOException;
 import java.util.regex.Pattern;
-
 import com.vbay.network.SocketClient;
-<<<<<<<< HEAD:client/src/main/java/com/vbay/ui/scene/controller/account/RegisterController.java
 import com.vbay.shared.dto.authDTO.RegisterRequest;
-import com.vbay.shared.status.RequestType;
-========
-import com.vbay.shared.dto.RegisterRequest;
-import com.vbay.shared.status.RequestType;
->>>>>>>> origin/main:client/src/main/java/com/vbay/ui/scene/controller/RegisterController.java
+import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;

@@ -1,6 +1,6 @@
-package com.vbay.ui.scene.controller;
+package com.vbay.ui.scene_ui.controller;
 
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
