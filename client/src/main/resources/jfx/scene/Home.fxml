@@ -21,7 +21,7 @@
             xmlns:fx="http://javafx.com/fxml"
             prefWidth="1440" prefHeight="900"
             styleClass="root-layout"
-            fx:controller="com.vbay.ui.scene_ui.controller.Home.HomeController">
+            fx:controller="com.vbay.ui.scene_ui.controller.home.HomeController">
 
     <top>
         <HBox spacing="20" alignment="CENTER_LEFT" styleClass="navbar">
@@ -85,6 +85,30 @@
                     </VBox>
 
                     <VBox spacing="12" VBox.vgrow="ALWAYS">
+                        <Button fx:id="dashboardModuleButton" maxWidth="Infinity" onAction="#handleModuleToggle" styleClass="module-nav-item">
+                            <graphic>
+                                <HBox alignment="CENTER_LEFT" spacing="12">
+                                    <SVGPath content="M2 2H7V7H2ZM10 2H15V7H10ZM2 10H7V15H2ZM10 10H15V15H10Z" styleClass="module-icon-shape"/>
+                                    <Label text="Dashboard" styleClass="module-label"/>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <Label text="›" styleClass="module-chevron"/>
+                                </HBox>
+                            </graphic>
+                        </Button>
+                        <VBox fx:id="dashboardModulePanel" managed="false" spacing="8" styleClass="module-panel" visible="false">
+                            <Button fx:id="dashboardHighlightsButton" text="Highlights +" maxWidth="Infinity" onAction="#handleSectionToggle" styleClass="nav-item"/>
+                            <VBox fx:id="dashboardHighlightsSubmenu" managed="false" spacing="6" styleClass="category-submenu" visible="false">
+                                <Button fx:id="dashboardFeaturedTechButton" text="Featured Tech" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
+                                <Button fx:id="dashboardCollectorDeskButton" text="Collector Desk" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
+                            </VBox>
+
+                            <Button fx:id="dashboardSellerDeskButton" text="Seller Desk +" maxWidth="Infinity" onAction="#handleSectionToggle" styleClass="nav-item"/>
+                            <VBox fx:id="dashboardSellerDeskSubmenu" managed="false" spacing="6" styleClass="category-submenu" visible="false">
+                                <Button fx:id="dashboardDraftWatchButton" text="Draft Watch" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
+                                <Button fx:id="dashboardPerformanceBoardButton" text="Performance Board" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
+                            </VBox>
+                        </VBox>
+
                         <Button fx:id="categoriesModuleButton" maxWidth="Infinity" onAction="#handleModuleToggle" styleClass="module-nav-item">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
@@ -127,32 +151,7 @@
                                 <Button fx:id="racketsButton" text="Rackets" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
                                 <Button fx:id="pickleballRacketsButton" text="Pickleball Rackets" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
                             </VBox>
-                        </VBox>
-
-                        <Button fx:id="dashboardModuleButton" maxWidth="Infinity" onAction="#handleModuleToggle" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M2 2H7V7H2ZM10 2H15V7H10ZM2 10H7V15H2ZM10 10H15V15H10Z" styleClass="module-icon-shape"/>
-                                    <Label text="Dashboard" styleClass="module-label"/>
-                                    <Region HBox.hgrow="ALWAYS"/>
-                                    <Label text="›" styleClass="module-chevron"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
-                        <VBox fx:id="dashboardModulePanel" managed="false" spacing="8" styleClass="module-panel" visible="false">
-                            <Button fx:id="dashboardHighlightsButton" text="Highlights +" maxWidth="Infinity" onAction="#handleSectionToggle" styleClass="nav-item"/>
-                            <VBox fx:id="dashboardHighlightsSubmenu" managed="false" spacing="6" styleClass="category-submenu" visible="false">
-                                <Button fx:id="dashboardFeaturedTechButton" text="Featured Tech" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
-                                <Button fx:id="dashboardCollectorDeskButton" text="Collector Desk" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
-                            </VBox>
-
-                            <Button fx:id="dashboardSellerDeskButton" text="Seller Desk +" maxWidth="Infinity" onAction="#handleSectionToggle" styleClass="nav-item"/>
-                            <VBox fx:id="dashboardSellerDeskSubmenu" managed="false" spacing="6" styleClass="category-submenu" visible="false">
-                                <Button fx:id="dashboardDraftWatchButton" text="Draft Watch" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
-                                <Button fx:id="dashboardPerformanceBoardButton" text="Performance Board" maxWidth="Infinity" onAction="#handleSubcategorySelection" styleClass="nav-sub-item"/>
-                            </VBox>
-                        </VBox>
-
+                        </VBox> 
                         <Button fx:id="myBidModuleButton" maxWidth="Infinity" onAction="#handleModuleToggle" styleClass="module-nav-item">
                             <graphic>
                                 <HBox alignment="CENTER_LEFT" spacing="12">
