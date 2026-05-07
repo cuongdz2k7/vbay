@@ -17,6 +17,7 @@ public class User {
     private UserStatus status;
     private BigDecimal availableBalance;
     private BigDecimal holdBalance;
+    private long version;
 
     public User(
             String username,
@@ -98,6 +99,10 @@ public class User {
         return holdBalance;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }
@@ -148,6 +153,10 @@ public class User {
 
     public void setHoldBalance(BigDecimal holdBalance) {
         this.holdBalance = holdBalance;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
 
 }

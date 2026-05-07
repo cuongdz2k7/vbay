@@ -14,7 +14,7 @@ public interface ProductRepository {
 
     List<Product> findBySellerId(long sellerId) throws SQLException;
 
-    void updateStatus(long productId, ProductStatus status) throws SQLException;
+    long updateStatus(long productId, ProductStatus status) throws SQLException;
 
     boolean existsById(long productId) throws SQLException;
 }

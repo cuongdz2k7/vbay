@@ -16,6 +16,7 @@ public class Product {
     private ProductStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private long version;
 
 
     ///status sẽ là AVAILABLE khi mới tạo product, sau đó sẽ được update dựa trên trạng thái của auction (ACTIVE, ENDED, CANCELED)
@@ -71,6 +72,9 @@ public class Product {
     public ProductStatus getStatus() {
         return status;
     }
+    public long getVersion() {
+        return version;
+    }
     public void setId(long id) {
         this.id = id;
     }
@@ -100,6 +104,9 @@ public class Product {
     }
     public void setCategoryId(long categoryId) {
         this.categoryId = categoryId;
+    }
+    public void setVersion(long version) {
+        this.version = version;
     }
     
     

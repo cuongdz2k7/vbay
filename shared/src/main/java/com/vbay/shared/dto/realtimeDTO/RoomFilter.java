@@ -55,4 +55,8 @@ public final class RoomFilter {
             return new RoomFilter(map);
         }
     }
+
+    public boolean isEmpty() {
+        return filters.isEmpty();
+    }
 }

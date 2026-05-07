@@ -16,9 +16,9 @@ public interface AuctionRepository {
     Optional<Auction> lockAuctionForUpdate (long auctionId) throws SQLException;
     LocalDateTime getCurrentDatabaseTime () throws SQLException;
     void syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException;
-    void updateCurrentBid(long auctionId, 
+    long updateCurrentBid(long auctionId, 
                             BigDecimal currentBid, 
                             long winningUserId) throws SQLException;   
-    void completeByBuyNow(long auctionId, long buyerId) throws SQLException;
+    long completeByBuyNow(long auctionId, long buyerId) throws SQLException;
     
 }

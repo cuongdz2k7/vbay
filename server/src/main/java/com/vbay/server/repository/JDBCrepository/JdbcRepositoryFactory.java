@@ -38,6 +38,6 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
 
     @Override
     public PaymentRepository createPaymentRepository(Connection connection) {
-        return new JDBCPaymentRepository(connection);
+        return new JdbcPaymentRepository(connection);
     }
 }

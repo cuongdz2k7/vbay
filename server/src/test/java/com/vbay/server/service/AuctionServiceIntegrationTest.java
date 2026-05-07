@@ -573,6 +573,7 @@ class AuctionServiceIntegrationTest {
                     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                     available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
                     hold_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    version BIGINT NOT NULL DEFAULT 0,
                     time_init TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
                 """);
@@ -587,6 +588,7 @@ class AuctionServiceIntegrationTest {
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+                    version BIGINT NOT NULL DEFAULT 0,
                     CONSTRAINT fk_products_seller FOREIGN KEY (seller_id) REFERENCES users(id)
                 )
                 """);
@@ -616,6 +618,7 @@ class AuctionServiceIntegrationTest {
                     ending_time TIMESTAMP NOT NULL,
                     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
                     winner_user_id BIGINT NULL,
+                    version BIGINT NOT NULL DEFAULT 0,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     CONSTRAINT fk_auctions_product FOREIGN KEY (product_id) REFERENCES products(id),

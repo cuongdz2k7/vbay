@@ -19,4 +19,24 @@ public class Room {
         return filter == null ? RoomFilter.none() : filter;
     }
 
+    public Long getTargetId() {
+        return targetId;
+    }
+    public RoomType getType() {
+        return type;
+    }
+    public RoomFilter getFilter() {
+        return filter;
+    }
+    public void setType(RoomType type) {
+        this.type = type;
+    }
+    public void setTargetId(Long targetId) {
+        this.targetId = targetId;
+    }
+    public void setFilter(RoomFilter filter) {
+        this.filter = filter;
+    }
+    
+
 }

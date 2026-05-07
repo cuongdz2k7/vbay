@@ -10,10 +10,10 @@ import com.vbay.server.model.Payment;
 import com.vbay.server.repository.PaymentRepository;
 import com.vbay.shared.enums.payment.PaymentStatus;
 
-public class JDBCPaymentRepository implements PaymentRepository {
+public class JdbcPaymentRepository implements PaymentRepository {
     private final Connection connection;
 
-    public JDBCPaymentRepository(Connection connection) {
+    public JdbcPaymentRepository(Connection connection) {
         this.connection = connection;
     }
 

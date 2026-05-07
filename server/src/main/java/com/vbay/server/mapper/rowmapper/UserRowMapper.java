@@ -21,6 +21,7 @@ public class UserRowMapper {
                         rs.getBigDecimal("hold_balance"),
                         rs.getString("time_init"));
         user.setId(rs.getLong("id"));
+        user.setVersion(rs.getLong("version"));
         return user;
     }
 }

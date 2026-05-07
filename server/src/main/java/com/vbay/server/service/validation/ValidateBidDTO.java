@@ -1,6 +1,7 @@
 package com.vbay.server.service.validation;
 
 import com.vbay.server.exception.ValidationException;
+import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 
 public class ValidateBidDTO {
@@ -19,6 +20,13 @@ public class ValidateBidDTO {
         }
         validateBidRequiredSection(request);
         validateBidMoneyFields(request);
+    }
+
+    public static void validateBuyNowRequest(BuyNowRequest request) {
+        if (request == null) {
+            throw new ValidationException("Request cannot be null");
+        }
+        ValidationUtils.requireNotNull(request.getAuctionId(), "Auction ID is required");
     }
 
 }

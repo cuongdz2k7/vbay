@@ -19,7 +19,11 @@ import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
+import com.vbay.server.service.result.BuyNowResult;
+import com.vbay.server.service.result.PlaceBidResult;
+import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
+import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
@@ -85,6 +89,9 @@ Còn nếu refund:
     buyer available += buyNowPrice
     payment -> REFUNDED
 
+nên tách nghiệp vụ placebid ra nếu placebid >= buynowprice thì client check đồng nghĩa với việc ấn vào buy now cho dễ xử lí tách nghiệp vụ, thì placebid nó chắc chắn không thể là buy now
+
+
 Nên dùng Cách B cho buy now và auction kết thúc, nó đúng nghiệp vụ “escrow/platform holding”, tiền không còn nằm trong ví buyer nữa. 
 Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đã mua xong, không còn khả năng bị outbid, nên tiền nên chuyển sang chỗ payment thì đúng hơn.
 
@@ -107,15 +114,21 @@ public class BidService {
         }
     }
 
-    private void buyNow (long auctionId, long buyerId, long sellerId, BigDecimal buyNowPrice, LocalDateTime dbNow, Connection connection) throws SQLException {
+    private BuyNowResult buyNow (Auction auction, long buyerId, BigDecimal buyNowPrice, LocalDateTime dbNow, Connection connection) throws SQLException {
+        long auctionId = auction.getId();
+        long sellerId = auction.getSellerId();
         BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
         UserRepository userRepository = repositoryFactory.createUserRepository(connection);
         AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
         PaymentRepository paymentRepository = repositoryFactory.createPaymentRepository(connection);
         //1. Tìm Oldbid, Release Hold và Update Status 
         Optional<Bid> oldWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
+        Long previousWinningUserId = null;
+        Long previousWinningBidId = null;
         if (!oldWinningBid.isEmpty()) {
             Bid oldBid = oldWinningBid.get();
+            previousWinningUserId = oldBid.getBidderId();
+            previousWinningBidId = oldBid.getId();
             userRepository.releaseHoldBalance(oldBid.getBidderId(), oldBid.getBidAmount());
             bidRepository.updateStatus(oldBid.getId(), BidStatus.OUTBID);
         }
@@ -133,7 +146,7 @@ public class BidService {
         );
         bidRepository.save(currentBid);
         ///4. End Auction
-        auctionRepository.completeByBuyNow(auctionId, buyerId);
+        long auctionVersion = auctionRepository.completeByBuyNow(auctionId, buyerId);
         
         // 5. Create held payment
         Payment payment = new Payment(
@@ -146,22 +159,36 @@ public class BidService {
             PaymentStatus.HELD
         );
         paymentRepository.save(payment);
+        return ResultMapper.toBuyNowResult(
+            auction,
+            currentBid,
+            payment,
+            auctionVersion,
+            previousWinningUserId,
+            previousWinningBidId,
+            dbNow
+        );
     }
 
-    private void placeBid (long auctionId, long bidderId, BigDecimal bidAmount, LocalDateTime dbNow, Connection connection) throws SQLException {
+    private PlaceBidResult placeBid (Auction auction, long bidderId, BigDecimal bidAmount, LocalDateTime dbNow, Connection connection) throws SQLException {
+        long auctionId = auction.getId();
         BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
         UserRepository userRepository = repositoryFactory.createUserRepository(connection);
         AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+        //1. Trừ tiền buyer
         userRepository.holdBalance(bidderId, bidAmount);
-        //1. Tìm Oldbid, Release Hold và Update Status 
+        //2. Tìm Oldbid, Release Hold và Update Status 
         Optional<Bid> oldWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
+        Long previousWinningUserId = null;
+        Long previousWinningBidId = null;
         if (!oldWinningBid.isEmpty()) {
             Bid oldBid = oldWinningBid.get();
+            previousWinningUserId = oldBid.getBidderId();
+            previousWinningBidId = oldBid.getId();
             userRepository.releaseHoldBalance(oldBid.getBidderId(), oldBid.getBidAmount());
             bidRepository.updateStatus(oldBid.getId(), BidStatus.OUTBID);
         }
-        
-        //2. Trừ tiền buyer
+        ///3. save bid
         Bid currentBid = new Bid(
             auctionId,
             bidderId,
@@ -172,7 +199,15 @@ public class BidService {
         );
         bidRepository.save(currentBid);
         ///4. Update Auction
-        auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
+        long auctionVersion = auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
+        return ResultMapper.toPlaceBidResult(
+            auction,
+            currentBid,
+            auctionVersion,
+            bidAmount.add(auction.getMinimumBidStep()),
+            previousWinningUserId,
+            previousWinningBidId
+        );
     }
 
     private void validateUserCanBid(User user, BigDecimal bidAmount) throws SQLException {
@@ -199,11 +234,10 @@ public class BidService {
         }
     }
 
-    private boolean canBuyNow(Auction auction, BigDecimal bidAmount) {
-        if (auction.getBuyNowPrice() != null && bidAmount.compareTo(auction.getBuyNowPrice()) > 0) {
-            throw new ValidationException("Bid amount is higher than the Buy Now price, UI must check beforehand");
+    private void checkBuyNow(Auction auction, BigDecimal bidAmount) {
+        if (auction.getBuyNowPrice() != null && bidAmount.compareTo(auction.getBuyNowPrice()) >= 0) {
+            throw new ValidationException("Bid amount is >= the Buy Now price, UI must check beforehand");
         }
-        return auction.getBuyNowPrice() != null && bidAmount.compareTo(auction.getBuyNowPrice()) >= 0;
     }
 
     private void validateMinimumBid(Auction auction, BigDecimal bidAmount) {
@@ -218,7 +252,7 @@ public class BidService {
     Điều này ảnh hưởng lớn đến các thao tác autobid, khi thằng a nó đến thời điểm đặt bid, chưa bid được nma nó đc cộng tiền bởi 1 Auction khác (bị outbid chẳng hạn)
     Flow nên là: lock Auction trước -> validate -> lock user để thay đổi balance
     */
-    public void placeBid(PlaceBidRequest request, ClientSession session) throws SQLException {
+    public PlaceBidResult placeBid(PlaceBidRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
         ValidateBidDTO.validatePlaceBidRequest(request);
@@ -239,29 +273,66 @@ public class BidService {
                 auction = auctionRepository.lockAuctionForUpdate(auctionId)
                     .orElseThrow(() -> new ValidationException("Auction not found"));
                 validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
-
+                
+                checkBuyNow(auction, request.getBidAmount());
+                /* 
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
                 ///vì buynow có thể ít hơn current price + bước nhảy
                 if (!buyNow) {
                     validateMinimumBid(auction, request.getBidAmount());
                 }
+                    */
+                validateMinimumBid(auction, request.getBidAmount());
                 //3. Lock Auction validate xong xuôi rồi mới lock user
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
                 validateUserCanBid(user, request.getBidAmount());
                
-                if (buyNow) {
-                    buyNow(auctionId, session.getUserId(), auction.getSellerId(), auction.getBuyNowPrice(), dbNow, connection);
-                }
-                else {
-                    placeBid(auctionId, session.getUserId(), request.getBidAmount(), dbNow, connection);
-                }
+                PlaceBidResult result = placeBid(auction, session.getUserId(), request.getBidAmount(), dbNow, connection);
                 
                 connection.commit();
+                return result;
             } catch (Exception e) {
                 connection.rollback();
                 throw e;
             } 
+        }
+    }
+
+    public BuyNowResult buyNow(BuyNowRequest request, ClientSession session) throws SQLException {
+        checkSession(session);
+
+        ValidateBidDTO.validateBuyNowRequest(request);
+        try (Connection connection = connectionProvider.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+                UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+
+                Auction auction = auctionRepository.lockAuctionForUpdate(request.getAuctionId())
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
+                long auctionId = auction.getId();
+                LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
+                auctionRepository.syncStatus(auctionId, dbNow);
+                auction = auctionRepository.lockAuctionForUpdate(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
+                validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
+
+                if (auction.getBuyNowPrice() == null) {
+                    throw new ValidationException("Buy Now is not available for this auction");
+                }
+
+                User user = userRepository.lockUserForUpdate(session.getUserId())
+                    .orElseThrow(() -> new ValidationException("User not found"));
+                validateUserCanBid(user, auction.getBuyNowPrice());
+
+                BuyNowResult result = buyNow(auction, session.getUserId(), auction.getBuyNowPrice(), dbNow, connection);
+                connection.commit();
+                return result;
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
         }
     }
 

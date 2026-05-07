@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
@@ -45,11 +46,17 @@ public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final BidService bidService;
+    private final SubscriptionService subscriptionService;
+    
 
-    public RequestDistributor (AuthService authService, AuctionService auctionService, BidService bidService) {
+    public RequestDistributor (AuthService authService, 
+                                AuctionService auctionService, 
+                                BidService bidService, 
+                                SubscriptionService subscriptionService) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.subscriptionService = subscriptionService;
     }
     /*
     switch-case theo type để gọi handler tương ứng

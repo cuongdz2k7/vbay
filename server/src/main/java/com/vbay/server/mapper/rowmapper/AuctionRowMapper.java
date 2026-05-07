@@ -10,7 +10,7 @@ public class AuctionRowMapper {
     private AuctionRowMapper() {}
 
     public static Auction mapAuction(ResultSet rs) throws SQLException {
-        return new Auction(
+        Auction auction = new Auction(
             rs.getLong("id"),
             rs.getLong("product_id"),
             rs.getLong("seller_id"),
@@ -25,5 +25,7 @@ public class AuctionRowMapper {
             rs.getTimestamp("ending_time").toLocalDateTime(),
             AuctionStatus.valueOf(rs.getString("status"))
         );
+        auction.setVersion(rs.getLong("version"));
+        return auction;
     }
 }
