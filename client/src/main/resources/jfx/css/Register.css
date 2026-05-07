@@ -99,7 +99,7 @@
 
 .register-submit-button {
     -fx-background-color: #ff5722;
-    -fx-background-radius: 0;
+    -fx-background-radius: 8;
     -fx-text-fill: #5f1500;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
@@ -181,3 +181,4 @@
     -fx-text-fill: #ffb5a0;
     -fx-opacity: 1;
 }
+

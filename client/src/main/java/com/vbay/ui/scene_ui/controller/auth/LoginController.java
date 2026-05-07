@@ -1,4 +1,4 @@
-package com.vbay.ui.scene.controller.account;
+package com.vbay.ui.scene_ui.controller.auth;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -8,13 +8,14 @@ import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.status.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.scene.SceneManager;
+import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.SVGPath;
 
 public class LoginController {
@@ -70,26 +71,33 @@ public class LoginController {
             passwordField.requestFocus();
             return;
         }
-
+        //Sever Side
         try {
             loginUser(email, password);
-            SceneManager.switchScene("/jfx/scene/account/home.fxml");
-            SceneManager.enterImmersiveMode();
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,
                 "Login failed",
                 exception.getMessage()
             );
+            return; // Stop switch scene improperly
+        }
+        //UI Sides
+        try{
+            SceneManager.switchScene("/jfx/scene/Home.fxml");
+            SceneManager.enterImmersiveMode();
+        }catch ( Exception exception){
+                showMessage(Alert.AlertType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
         }
     }
-
+    //Method Login
     private void loginUser(String email, String password) throws IOException {
+        //Send request
         Request<LoginRequest> request = new Request<>(
             RequestType.LOGIN,
             new LoginRequest("", email, password, "")
         );
-
+        //Return response
         Respond<?> response = SocketClient.getClient().sendMessage(request);
         if (response == null) {
             throw new IOException("No response from server.");
@@ -112,7 +120,7 @@ public class LoginController {
     @FXML
     private void handleSignUp(ActionEvent event) {
         try {
-            SceneManager.switchScene("/jfx/scene/account/register.fxml");
+            SceneManager.switchScene("/jfx/scene/auth/Register.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,

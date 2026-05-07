@@ -14,9 +14,9 @@
 
 .back-btn {
     -fx-background-color: transparent;
-    -fx-background-radius: 12;
+    -fx-background-radius: 8;
     -fx-border-color: #56423a;
-    -fx-border-radius: 12;
+    -fx-border-radius: 8;
     -fx-text-fill: #f5e5df;
     -fx-font-size: 13px;
     -fx-font-weight: 800;
@@ -42,9 +42,9 @@
 
 .live-pill {
     -fx-background-color: rgba(255, 111, 61, 0.14);
-    -fx-background-radius: 999;
+    -fx-background-radius: 6;
     -fx-border-color: #8e4127;
-    -fx-border-radius: 999;
+    -fx-border-radius: 6;
     -fx-padding: 7 12 7 12;
     -fx-text-fill: #ff9d79;
     -fx-font-size: 11px;
@@ -69,7 +69,7 @@
 .place-bid-scroll .scroll-bar:vertical .thumb,
 .asset-panel-scroll .scroll-bar:vertical .thumb {
     -fx-background-color: #40312b;
-    -fx-background-radius: 999;
+    -fx-background-radius: 4;
 }
 
 .place-bid-content {
@@ -96,9 +96,9 @@
 .bid-panel,
 .quick-actions-panel {
     -fx-background-color: rgba(18, 18, 18, 0.94);
-    -fx-background-radius: 22;
+    -fx-background-radius: 12;
     -fx-border-color: #312621;
-    -fx-border-radius: 22;
+    -fx-border-radius: 12;
     -fx-padding: 16;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .hero-image {
-    -fx-background-radius: 18;
+    -fx-background-radius: 10;
 }
 
 .section-title {
@@ -147,17 +147,17 @@
 
 .history-panel {
     -fx-background-color: rgba(255, 255, 255, 0.03);
-    -fx-background-radius: 18;
+    -fx-background-radius: 10;
     -fx-border-color: #312621;
-    -fx-border-radius: 18;
+    -fx-border-radius: 10;
     -fx-padding: 14;
 }
 
 .history-row {
     -fx-background-color: rgba(19, 19, 19, 0.96);
-    -fx-background-radius: 14;
+    -fx-background-radius: 8;
     -fx-border-color: #2f241f;
-    -fx-border-radius: 14;
+    -fx-border-radius: 8;
     -fx-padding: 11 12 11 12;
 }
 
@@ -225,19 +225,19 @@
 
 .auction-progress .track {
     -fx-background-color: #2a211d;
-    -fx-background-radius: 999;
+    -fx-background-radius: 4;
 }
 
 .auction-progress .bar {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff8a5f 0%, #ff5722 100%);
-    -fx-background-radius: 999;
+    -fx-background-radius: 4;
 }
 
 .bid-input {
     -fx-background-color: #161616;
-    -fx-background-radius: 12;
+    -fx-background-radius: 8;
     -fx-border-color: #43322c;
-    -fx-border-radius: 12;
+    -fx-border-radius: 8;
     -fx-text-fill: #f5e5df;
     -fx-prompt-text-fill: #826e67;
     -fx-padding: 11 14 11 14;
@@ -256,7 +256,7 @@
 
 .place-bid-btn {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff7a45 0%, #e04a19 100%);
-    -fx-background-radius: 0;
+    -fx-background-radius: 8;
     -fx-text-fill: #2f130b;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
@@ -276,8 +276,9 @@
 
 .secondary-action-btn {
     -fx-background-color: transparent;
-    -fx-background-radius: 0;
+    -fx-background-radius: 8;
     -fx-border-color: #352a25;
+    -fx-border-radius: 8;
     -fx-border-width: 1;
     -fx-text-fill: #f0e1db;
     -fx-font-size: 11px;
@@ -289,3 +290,4 @@
 .secondary-action-btn:hover {
     -fx-background-color: rgba(255, 255, 255, 0.04);
 }
+

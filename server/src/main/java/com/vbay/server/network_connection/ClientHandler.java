@@ -40,6 +40,7 @@ public class ClientHandler implements Runnable {
                 }
                 if ("exit".equalsIgnoreCase(line)){
                     out.println("Exit current socket");
+                    session.clearSession();
                     break;
                 }
                 Respond<?> response = Distributor.dispatch(line, session);

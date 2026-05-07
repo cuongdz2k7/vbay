@@ -1,7 +1,21 @@
 package com.vbay.shared.status;
 
 public enum ProductType {
+    //Overall
     ELECTRONICS,
-    BOOK,
-    FASHION
+    COLLECTIBLES,
+    ARTS,
+    JEWELRY_WATCHES,
+    SPORTING_GOODS,
+    //Detailed :
+        ///Electronics :
+    MacBooks,Phones,Gaming,Audio,
+        ///Collectibles:
+    Cards,Figures,
+        ///Art:
+    Stamps,Paintbrushes,
+        ///Jewelry + Watches: 
+    Clocks,Earrings,
+        ///Sporting Goods: 
+    Rackets,Pickleball_Rackets
 }
