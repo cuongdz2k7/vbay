@@ -16,6 +16,8 @@ public class ClientSession {
 
     public boolean isAuthenticated() {
         return userId != null;
+        //!= null : True
+        // == null : False
     }
 
     public Long setSession(Long userId, String username, Position position) {
