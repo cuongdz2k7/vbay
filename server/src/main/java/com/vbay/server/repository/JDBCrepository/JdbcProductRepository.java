@@ -135,8 +135,9 @@ public class JdbcProductRepository implements ProductRepository {
         String sql = "SELECT 1 FROM products WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, productId);
-            ResultSet rs = statement.executeQuery();
-            return rs.next();
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
         }
     }
 

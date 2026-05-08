@@ -13,7 +13,7 @@
       maxWidth="240"
       spacing="10"
       styleClass="auction-card"
-      fx:controller="com.vbay.ui.scene.controller.AuctionCardController"
+      fx:controller="com.vbay.ui.scene_ui.controller.card.AuctionCardController"
       onMouseClicked="#handleCardClicked"
       onKeyPressed="#handleCardKeyPressed">
     <children>

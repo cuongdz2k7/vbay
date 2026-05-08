@@ -138,7 +138,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
             SELECT 1
             FROM auctions
             WHERE product_id = ?
-              AND status IN ('SCHEDULED', 'OPEN')
+              AND status IN ('SCHEDULED', 'ACTIVE')
             LIMIT 1
             """;
 
