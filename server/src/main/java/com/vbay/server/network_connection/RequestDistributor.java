@@ -135,6 +135,7 @@ public class RequestDistributor {
         session.setSession(loginResponse.getUserId(), 
                             loginResponse.getUsername(), 
                             loginResponse.getPosition());
+        
         return new Respond<>(requestId, true, "Login successful", loginResponse);
     }
 

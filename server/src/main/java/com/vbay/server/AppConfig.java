@@ -68,9 +68,12 @@ new AppConfig()
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
+        ///business service
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory);
         this.bidService = new BidService(connectionProvider, repositoryFactory);
+
+        ///realtime
         this.subscriptionRegistry = new InMemorySubscriptionRegistry();
         this.realtimeBroadcaster = new RealtimeBroadcaster(subscriptionRegistry);
         this.subscriptionValidator = new RoomSubscriptionValidator(List.of(
