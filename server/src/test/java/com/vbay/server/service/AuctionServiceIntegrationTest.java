@@ -81,9 +81,9 @@ class AuctionServiceIntegrationTest {
             JdbcProductRepository productRepository = new JdbcProductRepository(connection);
             JdbcProductImageRepository imageRepository = new JdbcProductImageRepository(connection);
 
-            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
+            Product product = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
 
-            Product savedProduct = productRepository.findById(productId).orElseThrow();
+            Product savedProduct = productRepository.findById(product.getId()).orElseThrow();
             assertEquals(SELLER_ID, savedProduct.getSellerId());
             assertEquals("iPhone 15", savedProduct.getName());
             assertEquals("Good condition", savedProduct.getDescription());
