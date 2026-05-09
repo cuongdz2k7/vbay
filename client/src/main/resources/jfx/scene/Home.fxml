@@ -51,7 +51,7 @@
 
             <HBox spacing="20" alignment="CENTER_RIGHT">
                 <StackPane>
-                    <Button text="🛒" styleClass="cart-btn"/>
+                    <Button text="🛒" styleClass="cart-btn" onAction="#handleYourInventory"/>
                     <Label text="3" styleClass="cart-badge" StackPane.alignment="TOP_RIGHT"/>
                 </StackPane>
 

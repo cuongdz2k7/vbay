@@ -357,18 +357,28 @@ public class HomeController {
     }
 
     @FXML
+    private void handleYourInventory(ActionEvent event) {
+        try {
+//            SceneManager.switchScene("/jfx/scene/YourInventory.fxml");
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Navigation failed",
+                "Could not open the your inventory scene."
+            );
+        }
+    }
+
+    @FXML
     private void handleCreateAuctions(ActionEvent event) {
         try {
-            showMessage(
-                Alert.AlertType.INFORMATION,
-                "Create auction",
-                "Create auction flow is not connected yet."
-            );
+            SceneManager.switchScene("/jfx/scene/CreateAuction.fxml");
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,
-                "Fail Creation",
-                "Could not create Auction"
+                "Navigation failed",
+                "Could not open the create auctions scene."
             );
         }
     }

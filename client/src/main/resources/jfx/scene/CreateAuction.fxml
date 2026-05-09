@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import java.net.URL?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.vbay.ui.scene_ui.controller.home.CreateAuctionController"
+            prefHeight="900.0" prefWidth="1440.0"
+            styleClass="root-layout">
+
+    <stylesheets>
+        <URL value="@../css/CreateAuction.css"/>
+    </stylesheets>
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="16" styleClass="topbar">
+            <padding>
+                <Insets top="18" right="24" bottom="18" left="24"/>
+            </padding>
+            <Button text="Back" onAction="#handleCancel" styleClass="back-btn"/>
+            <VBox spacing="4">
+                <Label text="Create New Auction" styleClass="page-title"/>
+                <Label text="Fill in the details to list your item for bidding." styleClass="page-subtitle"/>
+            </VBox>
+        </HBox>
+    </top>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="main-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="0" styleClass="create-auction-container">
+                    <VBox maxWidth="800" spacing="32" styleClass="form-card">
+                        <VBox spacing="20">
+                            <!-- Product Basic Info -->
+                            <VBox spacing="8" styleClass="field-group">
+                                <Label text="Item Title" styleClass="field-label"/>
+                                <TextField fx:id="titleField" promptText="What are you selling?" styleClass="text-input"/>
+                            </VBox>
+
+                            <HBox spacing="20">
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Category" styleClass="field-label"/>
+                                    <ComboBox fx:id="categoryComboBox" promptText="Select category" maxWidth="Infinity" styleClass="combo-box"/>
+                                </VBox>
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Condition" styleClass="field-label"/>
+                                    <ComboBox fx:id="conditionComboBox" promptText="Select condition" maxWidth="Infinity" styleClass="combo-box"/>
+                                </VBox>
+                            </HBox>
+
+                            <!-- Pricing Info -->
+                            <HBox spacing="20">
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Starting Bid ($)" styleClass="field-label"/>
+                                    <TextField fx:id="startingBidField" promptText="0.00" styleClass="text-input"/>
+                                </VBox>
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Min Bid Step ($)" styleClass="field-label"/>
+                                    <TextField fx:id="minBidStepField" promptText="1.00" styleClass="text-input"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="20">
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Reserve Price ($)" styleClass="field-label"/>
+                                    <TextField fx:id="reservePriceField" promptText="Optional" styleClass="text-input"/>
+                                </VBox>
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Buy Now Price ($)" styleClass="field-label"/>
+                                    <TextField fx:id="buyNowPriceField" promptText="Optional" styleClass="text-input"/>
+                                </VBox>
+                            </HBox>
+
+                            <!-- Description & Images -->
+                            <VBox spacing="8" styleClass="field-group">
+                                <Label text="Detailed Description" styleClass="field-label"/>
+                                <TextArea fx:id="descriptionArea" promptText="Describe your item in detail..." prefHeight="100" wrapText="true" styleClass="text-input"/>
+                            </VBox>
+
+                            <VBox spacing="8" styleClass="field-group">
+                                <Label text="Product Image URLs (One per line)" styleClass="field-label"/>
+                                <TextArea fx:id="imagesArea" promptText="https://example.com/image.jpg" prefHeight="80" wrapText="true" styleClass="text-input"/>
+                            </VBox>
+
+                            <!-- Timing Info -->
+                            <HBox spacing="20">
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Starting Date" styleClass="field-label"/>
+                                    <DatePicker fx:id="startDatePicker" promptText="Select date (defaults to now)" maxWidth="Infinity" styleClass="date-picker"/>
+                                </VBox>
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Starting Time" styleClass="field-label"/>
+                                    <TextField fx:id="startTimeField" promptText="HH:mm" styleClass="text-input"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="20">
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Ending Date" styleClass="field-label"/>
+                                    <DatePicker fx:id="endDatePicker" promptText="Select date" maxWidth="Infinity" styleClass="date-picker"/>
+                                </VBox>
+                                <VBox spacing="8" styleClass="field-group" HBox.hgrow="ALWAYS">
+                                    <Label text="Ending Time" styleClass="field-label"/>
+                                    <TextField fx:id="endTimeField" promptText="HH:mm" styleClass="text-input"/>
+                                </VBox>
+                            </HBox>
+                        </VBox>
+
+                        <HBox spacing="16" alignment="CENTER_RIGHT">
+                            <Button text="Cancel" onAction="#handleCancel" styleClass="secondary-btn"/>
+                            <Button text="Create Auction" onAction="#handleCreate" styleClass="primary-btn"/>
+                        </HBox>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+</BorderPane>
