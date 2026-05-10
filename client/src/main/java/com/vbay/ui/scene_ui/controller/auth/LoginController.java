@@ -3,8 +3,11 @@ package com.vbay.ui.scene_ui.controller.auth;
 import java.io.IOException;
 import java.net.URI;
 import java.util.regex.Pattern;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.network.SocketClient;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
@@ -21,6 +24,7 @@ import javafx.scene.shape.SVGPath;
 import java.awt.Desktop;
 
 public class LoginController {
+    private static final Logger LOGGER = LoggingUtils.getLogger(LoginController.class);
 
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
@@ -107,7 +111,7 @@ public class LoginController {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response. getMessage() : "Login failed.");
         }
-        System.out.println("Client login successful: " + email);
+        LOGGER.info(() -> "Client login successful: " + email);
     }
 
     @FXML
@@ -126,7 +130,7 @@ public class LoginController {
             ---> URN (Define + Distinguish)
              */
         }catch(Exception exception){
-            exception.printStackTrace();
+            LOGGER.log(Level.WARNING, "Could not open forgot-password link.", exception);
         }
     }
 

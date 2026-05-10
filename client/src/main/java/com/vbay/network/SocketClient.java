@@ -11,12 +11,16 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 
 public class SocketClient {
+    private static final Logger LOGGER = LoggingUtils.getLogger(SocketClient.class);
     private static SocketClient Client;
 
     private Socket socket;
@@ -42,7 +46,7 @@ public class SocketClient {
 
     public synchronized void connect(String host, int port) throws IOException {
         if (isConnected()) {
-            System.out.println("Already connected");
+            LOGGER.info("Socket client is already connected.");
             return;
         }
 
@@ -50,7 +54,7 @@ public class SocketClient {
             socket = new Socket(host, port);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-            System.out.println("Connected to server at " + host + ": " + port);
+            LOGGER.info(() -> "Connected to server at " + host + ":" + port);
             startListening();
         } catch (ConnectException exception) {
             socket = null;
@@ -113,7 +117,7 @@ public class SocketClient {
         out = null;
         socket = null;
         threadlistener = null;
-        System.out.println("Disconnected from the server");
+        LOGGER.info("Disconnected from the server.");
     }
 
 
@@ -128,7 +132,7 @@ public class SocketClient {
                 while (socket != null && !socket.isClosed() && (line = in.readLine()) != null) {
                     Respond<?> respond = JsonUtils.fromJson(line, Respond.class);
                     if (respond == null) {
-                        System.out.println("Invalid response: " + line);
+                        LOGGER.warning("Invalid response: " + line);
                         continue;
                     }
 
@@ -136,12 +140,12 @@ public class SocketClient {
                     if (queue != null) {
                         queue.offer(respond);
                     } else {
-                        System.out.println("No pending request for requestId: " + respond.getRequestId());
+                        LOGGER.warning(() -> "No pending request for requestId: " + respond.getRequestId());
                     }
                 }
             } catch (IOException exception) {
                 if (socket != null && !socket.isClosed()) {
-                    System.out.println("Listener has stopped: " + exception.getMessage());
+                    LOGGER.log(Level.WARNING, "Socket listener has stopped.", exception);
                 }
             }
         }, "socket-client-listener");
