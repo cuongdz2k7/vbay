@@ -135,7 +135,13 @@ public class SocketClient {
                         LOGGER.warning("Invalid response: " + line);
                         continue;
                     }
-
+                    // Logging the respond
+                    LOGGER.info(
+                        "Received response: requestId=" + respond.getRequestId()
+                            + ", status=" + respond.isStatus()
+                            + ", message=" + respond.getMessage()
+                    );
+                    //Remove logged respond
                     BlockingQueue<Respond<?>> queue = pendingResponse.remove(respond.getRequestId());
                     if (queue != null) {
                         queue.offer(respond);
