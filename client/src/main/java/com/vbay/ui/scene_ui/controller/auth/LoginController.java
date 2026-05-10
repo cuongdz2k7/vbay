@@ -1,6 +1,7 @@
 package com.vbay.ui.scene_ui.controller.auth;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.regex.Pattern;
 
 import com.vbay.network.SocketClient;
@@ -17,6 +18,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.SVGPath;
+import java.awt.Desktop;
 
 public class LoginController {
 
@@ -110,11 +112,22 @@ public class LoginController {
 
     @FXML
     private void handleForgotPassword(ActionEvent event) {
-        showMessage(
+        /*showMessage(
             Alert.AlertType.INFORMATION,
             "Forgot password",
             "Password reset flow is not connected yet."
-        );
+        );*/
+        try{
+            String youtubeUrl = "https://youtu.be/dQw4w9WgXcQ?si=KnJkzoJwTT9Y6Qgy";
+            Desktop.getDesktop().browse(new URI(youtubeUrl));
+            /*
+            URI:
+            ---> URL (Define + Address)
+            ---> URN (Define + Distinguish)
+             */
+        }catch(Exception exception){
+            exception.printStackTrace();
+        }
     }
 
     @FXML
