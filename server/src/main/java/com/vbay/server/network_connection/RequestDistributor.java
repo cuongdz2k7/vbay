@@ -90,10 +90,10 @@ public class RequestDistributor {
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
-                case LOGIN -> handleLogin(requestId, payload, session);
-                case LOGOUT -> handleLogout(requestId, session);
-                case REGISTER -> handleRegister(requestId, payload);
-                case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
+                case LOGIN -> authService.handleLogin(requestId, payload, session);
+                case LOGOUT -> authService.handleLogout(requestId, session);
+                case REGISTER -> authService.handleRegister(requestId, payload);
+                case CREATE_AUCTION -> auctionService.handleCreateAuction(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -106,50 +106,6 @@ public class RequestDistributor {
             e.printStackTrace();
             return new Respond<>(requestId, false, "Unexpected error", null);
         }
-    }
-
-    
-
-    
-    ///bỏ chuyển rawString sang authservice
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
-        if (session.isAuthenticated()) {
-            throw new AuthenticationException("Client is already logged in");
-        }
-        LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
-        if (loginRequest == null) {
-            return new Respond<>(requestId, false, "Invalid login request", null);
-        }
-        LoginResponse loginResponse = authService.login(loginRequest); ///nếu catch được exception thì dừng luôn ở đây
-        session.setSession(loginResponse.getUserId(), 
-                            loginResponse.getUsername(), 
-                            loginResponse.getPosition());
-        return new Respond<>(requestId, true, "Login successful", loginResponse);
-    }
-    /// LogoutResponse not Available
-    private Respond<Void> handleLogout(String requestId, ClientSession session) {
-        if (session == null || !session.isAuthenticated()) {
-            return new Respond<>(requestId, true, "Client is already logged out", null);
-        }
-        session.clearSession();
-        return new Respond<>(requestId, true, "Logout successful", null);
-    }
-
-    private Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
-        RegisterRequest registerRequest = JsonUtils.fromJson(payload, RegisterRequest.class);
-        if (registerRequest == null) {
-            return new Respond<>(requestId, false, "Invalid register request", null);
-        }
-        authService.register(registerRequest);
-        return new Respond<>(requestId, true, "Register successful", null);
-    }
-    private Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
-        if (createAuctionRequest == null) {
-            return new Respond<>(requestId, false, "Invalid create auction request", null);
-        }
-        auctionService.createAuction(createAuctionRequest, session);
-        return new Respond<>(requestId, true, "Auction created successfully", null);
     }
     
 }
