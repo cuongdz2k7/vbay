@@ -4,13 +4,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.vbay.server.model.Auction;
-import com.vbay.shared.enums.shared_status.AuctionStatus;
+import com.vbay.shared.enums.auction.AuctionStatus;
+
 
 public class AuctionRowMapper {
     private AuctionRowMapper() {}
 
     public static Auction mapAuction(ResultSet rs) throws SQLException {
-        return new Auction(
+        Auction auction = new Auction(
             rs.getLong("id"),
             rs.getLong("product_id"),
             rs.getLong("seller_id"),
@@ -25,5 +26,7 @@ public class AuctionRowMapper {
             rs.getTimestamp("ending_time").toLocalDateTime(),
             AuctionStatus.valueOf(rs.getString("status"))
         );
+        auction.setVersion(rs.getLong("version"));
+        return auction;
     }
 }

@@ -37,8 +37,5 @@ public enum RequestType {
 
     // Seller
     CREATE_AUCTION,
-    SET_INITIAL_PRICE,
-    SET_STEP_PRICE,
-    SET_AUCTION_TIME,
     CANCEL_AUCTION
 }

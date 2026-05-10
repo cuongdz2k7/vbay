@@ -1,7 +1,6 @@
 package com.vbay.server.network_connection;
 
-import com.vbay.shared.enums.Position;
-
+import com.vbay.shared.enums.auth.Position;
 
 public class ClientSession {
     private Long userId;
@@ -16,6 +15,8 @@ public class ClientSession {
 
     public boolean isAuthenticated() {
         return userId != null;
+        //!= null : True
+        // == null : False
     }
 
     public Long setSession(Long userId, String username, Position position) {

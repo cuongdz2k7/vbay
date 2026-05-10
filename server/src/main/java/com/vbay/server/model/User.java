@@ -3,8 +3,9 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.UserStatus;
+import com.vbay.shared.enums.auth.Position;
+import com.vbay.shared.enums.auth.UserStatus;
+
 
 public class User {
     private long id;
@@ -17,6 +18,7 @@ public class User {
     private UserStatus status;
     private BigDecimal availableBalance;
     private BigDecimal holdBalance;
+    private long version;
 
     public User(
             String username,
@@ -98,6 +100,10 @@ public class User {
         return holdBalance;
     }
 
+    public long getVersion() {
+        return version;
+    }
+
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }
@@ -148,6 +154,10 @@ public class User {
 
     public void setHoldBalance(BigDecimal holdBalance) {
         this.holdBalance = holdBalance;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
     }
 
 }

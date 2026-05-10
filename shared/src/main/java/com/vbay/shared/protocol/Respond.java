@@ -1,6 +1,9 @@
 package com.vbay.shared.protocol;
+import com.vbay.shared.enums.MessageType;
+
 
 public class Respond<T> {
+    MessageType messageType = MessageType.RESPONSE;
     String requestId; // ID của yêu cầu mà phản hồi này trả về
     boolean status; 
     String message; // Thông điệp mô tả kết quả của phản hồi

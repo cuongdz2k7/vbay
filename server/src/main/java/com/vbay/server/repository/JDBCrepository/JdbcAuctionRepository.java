@@ -64,7 +64,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status
+                   starting_time, ending_time, status, version
             FROM auctions
             WHERE id = ?
             """;
@@ -87,7 +87,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status
+                   starting_time, ending_time, status, version
             FROM auctions
             WHERE seller_id = ?
             ORDER BY id DESC
@@ -112,7 +112,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status
+                   starting_time, ending_time, status, version
             FROM auctions
             WHERE product_id = ?
             ORDER BY id DESC
@@ -156,7 +156,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
         SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                 starting_price, current_price, reserve_price, buy_now_price,
-                starting_time, ending_time, status
+                starting_time, ending_time, status, version
         FROM auctions
         WHERE id = ?
         FOR UPDATE
@@ -191,7 +191,8 @@ public class JdbcAuctionRepository implements AuctionRepository {
     private void activateIfDue(long auctionId, LocalDateTime dbNow) throws SQLException {
          String sql = """
             UPDATE auctions
-            SET status = 'ACTIVE'
+            SET status = 'ACTIVE',
+                version = version + 1
             WHERE id = ?
             AND status = 'SCHEDULED'
             AND starting_time <= ?
@@ -213,7 +214,8 @@ public class JdbcAuctionRepository implements AuctionRepository {
     private void endIfExpired (long auctionId, LocalDateTime dbNow) throws SQLException {
          String sql = """
             UPDATE auctions
-            SET status = 'ENDED'
+            SET status = 'ENDED',
+                version = version + 1
             WHERE id = ?
             AND status IN ('SCHEDULED', 'ACTIVE')
             AND ending_time <= ?
@@ -227,11 +229,12 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
     @Override
-    public void updateCurrentBid(long auctionId, BigDecimal currentBid, long winningUserId) throws SQLException {
+    public long updateCurrentBid(long auctionId, BigDecimal currentBid, long winningUserId) throws SQLException {
         String sql = """
             UPDATE auctions
             SET current_price = ?,
-                winner_user_id = ?
+                winner_user_id = ?,
+                version = version + 1
             WHERE id = ?
             """;
 
@@ -241,16 +244,18 @@ public class JdbcAuctionRepository implements AuctionRepository {
             statement.setLong(3, auctionId);
             statement.executeUpdate();
         }
+        return findVersionById(auctionId);
     }
 
     @Override
-    public void completeByBuyNow(long auctionId, long buyerId) throws SQLException {
+    public long completeByBuyNow(long auctionId, long buyerId) throws SQLException {
         String sql = """
             UPDATE auctions
             SET current_price = buy_now_price,
                 final_price = buy_now_price,
                 winner_user_id = ?,
-                status = 'ENDED'
+                status = 'ENDED',
+                version = version + 1
             WHERE id = ?
             """;
 
@@ -258,6 +263,20 @@ public class JdbcAuctionRepository implements AuctionRepository {
             statement.setLong(1, buyerId);
             statement.setLong(2, auctionId);
             statement.executeUpdate();
+        }
+        return findVersionById(auctionId);
+    }
+
+    private long findVersionById(long auctionId) throws SQLException {
+        String sql = "SELECT version FROM auctions WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("Auction not found while reading version");
+                }
+                return rs.getLong("version");
+            }
         }
     }
     

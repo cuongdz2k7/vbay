@@ -8,6 +8,7 @@ import java.util.TimeZone;
 import com.vbay.server.databaseManager.DatabaseInitializer;
 import com.vbay.server.network_connection.ClientHandler;
 import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.subscription.SubscriptionService;
 
 public class ServerApplication {
     private static final int PORT = 3618;
@@ -33,13 +34,15 @@ public class ServerApplication {
 
             AppConfig appConfig = new AppConfig();
             RequestDistributor distributor = appConfig.getRequestDistributor();
+            SubscriptionService subscriptionService = appConfig.getSubscriptionService();
+
 
             System.out.println("Port: " + PORT);
             System.out.println("Waiting for clients...");
             while(true) {
                 Socket socket = serverSocket.accept();
                 System.out.println("Client connected");
-                Thread newThread = new Thread(new ClientHandler(socket, distributor));
+                Thread newThread = new Thread(new ClientHandler(socket, distributor, subscriptionService));
                 newThread.start();
             }
         } catch (IOException exception) {

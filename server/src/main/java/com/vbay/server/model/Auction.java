@@ -3,7 +3,8 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.enums.shared_status.AuctionStatus;
+import com.vbay.shared.enums.auction.AuctionStatus;
+
 public class Auction {
     // Base
     private long id;
@@ -20,6 +21,7 @@ public class Auction {
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private AuctionStatus status;
+    private long version;
 
     //Constructor (Create new auction) để lưu vào database
     public Auction(long productId, long sellerId, BigDecimal startingPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
@@ -110,6 +112,9 @@ public class Auction {
     public AuctionStatus getStatus(){
         return this.status;
     }
+    public long getVersion() {
+        return version;
+    }
     public boolean isActive(){
         return this.status.equals(AuctionStatus.ACTIVE);
     }
@@ -158,6 +163,9 @@ public class Auction {
     }
     public void setStatus(AuctionStatus new_status){
         this.status = new_status;
+    }
+    public void setVersion(long version) {
+        this.version = version;
     }
 
 }

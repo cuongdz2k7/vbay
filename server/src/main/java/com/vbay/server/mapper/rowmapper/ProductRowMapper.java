@@ -3,13 +3,13 @@ package com.vbay.server.mapper.rowmapper;
 import java.util.List;
 
 import com.vbay.server.model.Product;
-import com.vbay.shared.enums.shared_status.ProductStatus;
+import com.vbay.shared.enums.product.ProductStatus;
 
 public class ProductRowMapper {
     private ProductRowMapper() {}
     ///result set không có trường images, nên cần phải query thêm để lấy images sau đó set vào product
     public static Product mapProduct(java.sql.ResultSet rs) throws java.sql.SQLException {
-        return new Product(
+        Product product = new Product(
                     rs.getLong("id"),
                     rs.getLong("seller_id"),
                     rs.getString("name"),
@@ -21,5 +21,7 @@ public class ProductRowMapper {
                     rs.getTimestamp("created_at").toLocalDateTime(),
                     rs.getTimestamp("updated_at").toLocalDateTime()
                 );
+        product.setVersion(rs.getLong("version"));
+        return product;
     }
 }

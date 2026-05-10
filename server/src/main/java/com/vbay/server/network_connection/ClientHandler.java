@@ -6,52 +6,52 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.shared.protocol.Respond;
 
 // Listening
 public class ClientHandler implements Runnable {
     private final Socket socket; 
-    private final RequestDistributor Distributor;
+    private final RequestDistributor distributor;
+    private final SubscriptionService subscriptionService;
 
     private final ClientSession session = new ClientSession();
     
-    ///ClientSession
-    
     //Constructor
-    public ClientHandler(Socket socket, RequestDistributor Distributor) {
+    public ClientHandler(Socket socket, RequestDistributor distributor, SubscriptionService subscriptionService) {
         this.socket = socket;
-        this.Distributor = Distributor;
+        this.distributor = distributor;
+        this.subscriptionService = subscriptionService;
     }
 
     @Override
     public void run() {
         System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
         try (
-            Socket clientsocket = socket;
+            Socket clientsocket = socket; ///tạo con trỏ đến socket để try-with-resources
             BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream())); // client gui request
             PrintWriter out = new PrintWriter(clientsocket.getOutputStream(), true) // client nhan response
         ) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.trim().isEmpty()){
-                    System.out.println("Empty request");
-                    continue;
+            ClientConnection clientConnection = new ClientConnection(session, out);
+            try {
+                String line;
+                while ((line = in.readLine()) != null) { /// = null khi không kết nối đc tới phía client nữa
+                    if (line.isBlank()) {
+                        continue;
+                    }
+
+                    Respond<?> response = distributor.dispatch(line, session);
+                    clientConnection.send(response);
                 }
-                if ("exit".equalsIgnoreCase(line)){
-                    out.println("Exit current socket");
-                    session.clearSession();
-                    break;
-                }
-                Respond<?> response = Distributor.dispatch(line, session);
-                String jsonResponse = JsonUtils.toJson(response);
-                out.println(jsonResponse);
+            } finally {
+                subscriptionService.disconnect(clientConnection);
             }
         } catch (IOException exception) {
             System.err.println("Client connection error: " + exception.getMessage());
         }
         finally{
             System.out.println("Client disconnected: " +socket.getInetAddress().getHostAddress());
+            session.clearSession();
         }
     }
 }
