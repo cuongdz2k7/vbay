@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
@@ -26,6 +27,7 @@ import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.validation.ValidationUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
@@ -50,6 +52,7 @@ import com.vbay.shared.enums.shared_status.PaymentStatus;
 
 public class AuctionService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
+    private static final Logger LOGGER = LoggingUtils.getLogger(AuctionService.class);
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
 
@@ -146,6 +149,7 @@ public class AuctionService {
         productRepository.save(product);
         ///getid đúng vì productRepository.save đã đồng thời set id cho product rồi
         productImageRepository.saveAll(product.getId(), Images);
+        LOGGER.info("Product's Created");
         return product.getId();
     }
 
@@ -178,6 +182,7 @@ public class AuctionService {
                 );
                 auctionRepository.save(auction);
                 connection.commit();
+                LOGGER.info("Auction's created");
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
