@@ -32,6 +32,7 @@ import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
 import com.vbay.shared.enums.BidSource;
 import com.vbay.shared.enums.PaymentType;
+import com.vbay.shared.enums.shared_status.AuctionStatus;
 import com.vbay.shared.enums.shared_status.BidStatus;
 import com.vbay.shared.enums.shared_status.PaymentStatus;
 
@@ -349,7 +350,10 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
     }
 
     private void validateAuctionCanReceiveBid(Auction auction, long userId, LocalDateTime dbNow) throws SQLException {
-        if (!auction.getStatus().isClosedForBidding()) {
+        if (auction.getStatus().isClosedForBidding()) {
+            throw new ValidationException("Auction cannot receive bids");
+        }
+        if (auction.getStatus() != AuctionStatus.ACTIVE) {
             throw new ValidationException("Auction cannot receive bids");
         }
         if (dbNow.isBefore(auction.getStartingTime())) {
@@ -388,6 +392,7 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
         ///Authentication/Authorization check:
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
+            boolean balanceOrBidChanged = false;
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
@@ -398,6 +403,9 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
                 long auctionId = auction.getId();
                 //2. lấy thời gian hiện tại -> đặt nó là thời gian đặt bid, phải dùng dbTimezone do rule quyết định lấy time trong DB làm mốc chuẩn
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
+                auctionRepository.syncStatus(auctionId, dbNow);
+                auction = auctionRepository.lockAuctionForUpdate(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
                 validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
 
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
@@ -409,7 +417,8 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
                 validateUserCanBid(user, request.getBidAmount());
-               
+
+                balanceOrBidChanged = true;
                 if (buyNow) {
                     buyNow(auctionId, session.getUserId(), auction.getSellerId(), auction.getBuyNowPrice(), dbNow, connection);
                 }
@@ -419,7 +428,11 @@ Vì hold_balance nên dùng cho bid đang có thể bị outbid. Còn buy now đ
                 
                 connection.commit();
             } catch (Exception e) {
-                connection.rollback();
+                if (balanceOrBidChanged) {
+                    connection.rollback();
+                } else {
+                    connection.commit();
+                }
                 throw e;
             } 
         }

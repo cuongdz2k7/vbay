@@ -5,12 +5,16 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.protocol.Respond;
 
 // Listening
 public class ClientHandler implements Runnable {
+    private static final Logger LOGGER = LoggingUtils.getLogger(ClientHandler.class);
     private final Socket socket; 
     private final RequestDistributor Distributor;
 
@@ -26,7 +30,8 @@ public class ClientHandler implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Client connected: " + socket.getInetAddress().getHostAddress());
+        String clientAddress = socket.getInetAddress().getHostAddress();
+        LOGGER.info(() -> "Client connected: " + clientAddress);
         try (
             Socket clientsocket = socket;
             BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream())); // client gui request
@@ -35,7 +40,7 @@ public class ClientHandler implements Runnable {
             String line;
             while ((line = in.readLine()) != null) {
                 if (line.trim().isEmpty()){
-                    System.out.println("Empty request");
+                    LOGGER.warning(() -> "Empty request from " + clientAddress);
                     continue;
                 }
                 if ("exit".equalsIgnoreCase(line)){
@@ -48,10 +53,10 @@ public class ClientHandler implements Runnable {
                 out.println(jsonResponse);
             }
         } catch (IOException exception) {
-            System.err.println("Client connection error: " + exception.getMessage());
+            LOGGER.log(Level.WARNING, "Client connection error for " + clientAddress, exception);
         }
         finally{
-            System.out.println("Client disconnected: " +socket.getInetAddress().getHostAddress());
+            LOGGER.info(() -> "Client disconnected: " + clientAddress);
         }
     }
 }
