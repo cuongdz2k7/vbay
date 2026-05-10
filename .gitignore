@@ -16,6 +16,8 @@ server/target/
 
 # Log files
 *.log
+*.lck
+logs/
 
 # BlueJ files
 *.ctxt
