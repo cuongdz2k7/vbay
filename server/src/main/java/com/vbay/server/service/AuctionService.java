@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.google.gson.JsonElement;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -27,6 +28,7 @@ import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.validation.ValidationUtils;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
@@ -37,6 +39,7 @@ import com.vbay.shared.enums.PaymentType;
 import com.vbay.shared.enums.shared_status.AuctionStatus;
 import com.vbay.shared.enums.shared_status.BidStatus;
 import com.vbay.shared.enums.shared_status.PaymentStatus;
+import com.vbay.shared.protocol.Respond;
 
 
  /*
@@ -65,6 +68,16 @@ public class AuctionService {
         if (session == null || !session.isAuthenticated()) {
             throw new AuthenticationException("User must be logged in to perform this action");
         }
+    }
+
+    public Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        CreateAuctionRequest request = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
+        if (request == null) {
+            throw new ValidationException("Invalid create auction payload");
+        }
+
+        createAuction(request, session);
+        return new Respond<>(requestId, true, "Auction created successfully", null);
     }
 
 
