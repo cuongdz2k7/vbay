@@ -27,7 +27,6 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
-import com.vbay.server.realtime.handler.AuctionCreatedRealtimeHandler;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -68,14 +67,34 @@ new AppConfig()
 */
     public AppConfig() {
         this(DatabaseConnection::getConnection, 
-            new JdbcRepositoryFactory(), 
+            new ImageStorageService(), 
             new Argon2PasswordHasher());
+    }
+
+    public AppConfig(
+            ConnectionProvider connectionProvider,
+            ImageStorageService imageStorageService,
+            PasswordHasher passwordHasher) {
+        this(
+            connectionProvider,
+            new JdbcRepositoryFactory(imageStorageService),
+            passwordHasher,
+            imageStorageService
+        );
     }
 
     public AppConfig(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
             PasswordHasher passwordHasher) {
+        this(connectionProvider, repositoryFactory, passwordHasher, new ImageStorageService());
+    }
+
+    private AppConfig(
+            ConnectionProvider connectionProvider,
+            RepositoryFactory repositoryFactory,
+            PasswordHasher passwordHasher,
+            ImageStorageService imageStorageService) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
@@ -102,9 +121,13 @@ new AppConfig()
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.imageStorageService = new ImageStorageService();
-        
-        this.requestDistributor = new RequestDistributor(authService, auctionService, bidService, subscriptionService, imageStorageService);
+        this.imageStorageService = imageStorageService;
+        this.requestDistributor = new RequestDistributor(
+            authService, 
+            auctionService, 
+            bidService, 
+            subscriptionService, 
+            imageStorageService);
     }
 
     public RealtimeBroadcaster getRealtimeBroadcaster() {

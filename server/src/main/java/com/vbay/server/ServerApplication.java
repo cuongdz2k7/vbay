@@ -9,17 +9,20 @@ import com.vbay.server.databaseManager.DatabaseInitializer;
 import com.vbay.server.network_connection.ClientHandler;
 import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.realtime.subscription.SubscriptionService;
+import com.vbay.server.upload.ImageHttpServer;
 
 public class ServerApplication {
     private static final int PORT = 3618;
 
     public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        ImageHttpServer imageHttpServer = new ImageHttpServer();
         
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("Server is shutting down - Ensuring all data is saved to database");
 
             try {
+                imageHttpServer.stop();
                 System.out.println("Database connections closed successfully");
                 System.out.println("All pending data saved to database");
             } catch (Exception e) {
@@ -31,6 +34,7 @@ public class ServerApplication {
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             DatabaseInitializer.init();
+            imageHttpServer.start();
 
             AppConfig appConfig = new AppConfig();
             RequestDistributor distributor = appConfig.getRequestDistributor();

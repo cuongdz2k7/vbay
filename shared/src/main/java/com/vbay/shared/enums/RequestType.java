@@ -25,6 +25,7 @@ public enum RequestType {
     // Bidder
     JOIN_AUCTION,
     PLACE_BID,
+    BUY_NOW,
     AUTO_BID,
     CANCEL_BID,
     WATCH_AUCTION,

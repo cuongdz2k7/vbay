@@ -12,6 +12,7 @@ public class ValidateBidDTO {
 
     private static void validateBidMoneyFields(PlaceBidRequest request) {
         ValidationUtils.requirePositive(request.getBidAmount(), "Bid amount must be a positive number");
+        ValidationUtils.requireMoneyScale(request.getBidAmount(), "Bid amount");
     }
 
     public static void validatePlaceBidRequest(PlaceBidRequest request) {

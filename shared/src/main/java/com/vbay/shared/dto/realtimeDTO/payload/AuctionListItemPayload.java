@@ -2,16 +2,24 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class AuctionListItemPayload {
     private long auctionId;
     private long auctionVersion;
+    private long productId;
     private long sellerId;
     private String title;
+    private String description;
+    private String productName;
     private long categoryId;
     private String status;
+    private BigDecimal startingPrice;
     private BigDecimal currentPrice;
-    private String thumbnailBase64;
+    private BigDecimal minimumBidStep;
+    private BigDecimal buyNowPrice;
+    private String thumbnailUrl;
+    private List<String> imageUrls;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
@@ -22,23 +30,37 @@ public class AuctionListItemPayload {
     public AuctionListItemPayload(
             long auctionId,
             long auctionVersion,
+            long productId,
             long sellerId,
             String title,
+            String description,
+            String productName,
             long categoryId,
             String status,
+            BigDecimal startingPrice,
             BigDecimal currentPrice,
-            String thumbnailBase64,
+            BigDecimal minimumBidStep,
+            BigDecimal buyNowPrice,
+            String thumbnailUrl,
+            List<String> imageUrls,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             LocalDateTime updatedAt) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
+        this.productId = productId;
         this.sellerId = sellerId;
         this.title = title;
+        this.description = description;
+        this.productName = productName;
         this.categoryId = categoryId;
         this.status = status;
+        this.startingPrice = startingPrice;
         this.currentPrice = currentPrice;
-        this.thumbnailBase64 = thumbnailBase64;
+        this.minimumBidStep = minimumBidStep;
+        this.buyNowPrice = buyNowPrice;
+        this.thumbnailUrl = thumbnailUrl;
+        this.imageUrls = imageUrls;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
@@ -60,6 +82,14 @@ public class AuctionListItemPayload {
         this.auctionVersion = auctionVersion;
     }
 
+    public long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(long productId) {
+        this.productId = productId;
+    }
+
     public long getSellerId() {
         return sellerId;
     }
@@ -74,6 +104,22 @@ public class AuctionListItemPayload {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public long getCategoryId() {
@@ -92,6 +138,14 @@ public class AuctionListItemPayload {
         this.status = status;
     }
 
+    public BigDecimal getStartingPrice() {
+        return startingPrice;
+    }
+
+    public void setStartingPrice(BigDecimal startingPrice) {
+        this.startingPrice = startingPrice;
+    }
+
     public BigDecimal getCurrentPrice() {
         return currentPrice;
     }
@@ -100,12 +154,36 @@ public class AuctionListItemPayload {
         this.currentPrice = currentPrice;
     }
 
-    public String getThumbnailBase64() {
-        return thumbnailBase64;
+    public BigDecimal getMinimumBidStep() {
+        return minimumBidStep;
     }
 
-    public void setThumbnailUrl(String thumbnailBase64) {
-        this.thumbnailBase64 = thumbnailBase64;
+    public void setMinimumBidStep(BigDecimal minimumBidStep) {
+        this.minimumBidStep = minimumBidStep;
+    }
+
+    public BigDecimal getBuyNowPrice() {
+        return buyNowPrice;
+    }
+
+    public void setBuyNowPrice(BigDecimal buyNowPrice) {
+        this.buyNowPrice = buyNowPrice;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
 
     public LocalDateTime getStartingTime() {

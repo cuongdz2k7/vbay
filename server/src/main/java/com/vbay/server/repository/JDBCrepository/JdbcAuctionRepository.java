@@ -15,15 +15,22 @@ import java.util.Optional;
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 
 
 public class JdbcAuctionRepository implements AuctionRepository {
     private final Connection connection;
+    private final ImageStorageService imageStorageService;
 
     public JdbcAuctionRepository(Connection connection) {
+        this(connection, new ImageStorageService());
+    }
+
+    public JdbcAuctionRepository(Connection connection, ImageStorageService imageStorageService) {
         this.connection = connection;
+        this.imageStorageService = imageStorageService;
     }
 
     @Override
@@ -277,18 +284,29 @@ public class JdbcAuctionRepository implements AuctionRepository {
             SELECT
                 a.id AS auction_id,
                 a.version AS auction_version,
+                a.product_id,
                 a.seller_id,
                 a.title,
+                a.description,
+                p.name AS product_name,
                 p.category_id,
                 a.status,
+                a.starting_price,
                 a.current_price,
-                pi.image_url AS thumbnail_url,
+                a.minimum_bid_step,
+                a.buy_now_price,
+                (
+                    SELECT image_url
+                    FROM product_images
+                    WHERE product_id = p.id
+                    ORDER BY is_thumbnail DESC, id ASC
+                    LIMIT 1
+                ) AS thumbnail_url,
                 a.starting_time,
                 a.ending_time,
                 a.updated_at
             FROM auctions a
             JOIN products p ON p.id = a.product_id
-            LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_thumbnail = TRUE
             WHERE 1 = 1
             """);
 
@@ -332,16 +350,46 @@ public class JdbcAuctionRepository implements AuctionRepository {
         return new AuctionListItemPayload(
             rs.getLong("auction_id"),
             rs.getLong("auction_version"),
+            rs.getLong("product_id"),
             rs.getLong("seller_id"),
             rs.getString("title"),
+            rs.getString("description"),
+            rs.getString("product_name"),
             rs.getLong("category_id"),
             rs.getString("status"),
+            rs.getBigDecimal("starting_price"),
             rs.getBigDecimal("current_price"),
-            rs.getString("thumbnail_url"),
+            rs.getBigDecimal("minimum_bid_step"),
+            rs.getBigDecimal("buy_now_price"),
+            imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url")),
+            findProductImageUrls(rs.getLong("product_id")),
             rs.getTimestamp("starting_time").toLocalDateTime(),
             rs.getTimestamp("ending_time").toLocalDateTime(),
             rs.getTimestamp("updated_at").toLocalDateTime()
         );
+    }
+
+    private List<String> findProductImageUrls(long productId) throws SQLException {
+        String sql = """
+            SELECT image_url
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY is_thumbnail DESC, id ASC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, productId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<String> imageUrls = new ArrayList<>();
+                while (rs.next()) {
+                    String publicUrl = imageStorageService.toPublicImageUrl(rs.getString("image_url"));
+                    if (publicUrl != null && !publicUrl.isBlank()) {
+                        imageUrls.add(publicUrl);
+                    }
+                }
+                return imageUrls;
+            }
+        }
     }
 
     private long findVersionById(long auctionId) throws SQLException {

@@ -40,4 +40,10 @@ public class ValidationUtils {
             throw new ValidationException(message);
         }
     }
+
+    public static void requireMoneyScale(BigDecimal value, String fieldName) {
+        if (value != null && value.stripTrailingZeros().scale() > 2) {
+            throw new ValidationException(fieldName + " cannot have more than 2 decimal places");
+        }
+    }
 }

@@ -11,9 +11,11 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
+import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
@@ -119,6 +121,7 @@ public class RequestDistributor {
                 case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
+                case BUY_NOW -> handleBuyNow(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
                 case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
@@ -226,7 +229,7 @@ public class RequestDistributor {
         if (uploadRequest == null) {
             return new Respond<>(requestId, false, "Invalid upload image request", null);
         }
-        String imageUrl = imageStorageService.saveBase64Image(uploadRequest);
+        String imageUrl = imageStorageService.storeUploadedImage(uploadRequest);
         return new Respond<>(requestId, true, "Image uploaded successfully", imageUrl);
     }
 
@@ -246,6 +249,15 @@ public class RequestDistributor {
         }
         bidService.placeBid(placeBidRequest, session);
         return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
+
+    private Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        BuyNowRequest buyNowRequest = JsonUtils.fromJson(payload, BuyNowRequest.class);
+        if (buyNowRequest == null) {
+            return new Respond<>(requestId, false, "Invalid buy now request", null);
+        }
+        bidService.buyNow(buyNowRequest, session);
+        return new Respond<>(requestId, true, "Buy now completed successfully", null);
     }
     
 }

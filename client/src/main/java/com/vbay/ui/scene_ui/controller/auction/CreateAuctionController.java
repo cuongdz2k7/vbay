@@ -3,7 +3,6 @@ package com.vbay.ui.scene_ui.controller.auction;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -22,6 +21,7 @@ import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene_ui.SceneManager;
+import com.vbay.ui.util.MoneyInput;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -104,6 +104,10 @@ public class CreateAuctionController {
     private void initialize() {
         configureDatePicker(startingDatePicker);
         configureDatePicker(endingDatePicker);
+        MoneyInput.install(startingPriceField);
+        MoneyInput.install(minimumBidStepField);
+        MoneyInput.install(reservePriceField);
+        MoneyInput.install(buyNowPriceField);
     }
 
     public void setOnBack(Runnable onBack) {
@@ -375,7 +379,7 @@ public class CreateAuctionController {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " is required.");
         }
-        BigDecimal money = parseMoney(value, fieldName);
+        BigDecimal money = MoneyInput.parse(value, fieldName);
         if (money.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(fieldName + " must be greater than 0.");
         }
@@ -388,21 +392,12 @@ public class CreateAuctionController {
         if (value == null || value.isBlank()) {
             return null;
         }
-        BigDecimal money = parseMoney(value, fieldName);
+        BigDecimal money = MoneyInput.parse(value, fieldName);
         if (money.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(fieldName + " must be greater than 0.");
         }
         textField.setText(money.toPlainString());
         return money;
-    }
-
-    private BigDecimal parseMoney(String rawValue, String fieldName) {
-        String normalized = rawValue.trim().replace(",", "");
-        try {
-            return new BigDecimal(normalized).setScale(2, RoundingMode.DOWN);
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(fieldName + " must be a valid number.");
-        }
     }
 
     private LocalDateTime requireDateTime(DatePicker datePicker, TextField timeField, String fieldName) {

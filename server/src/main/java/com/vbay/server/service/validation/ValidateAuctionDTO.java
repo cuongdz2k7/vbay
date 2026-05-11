@@ -35,6 +35,10 @@ public class ValidateAuctionDTO {
     private static void validateAuctionMoneyFields(CreateAuctionRequest auction) {
         ValidationUtils.requirePositive(auction.getStartingPrice(), "Starting price must be a positive number");
         ValidationUtils.requirePositive(auction.getMinimumBidStep(), "Minimum bid step must be a positive number");
+        ValidationUtils.requireMoneyScale(auction.getStartingPrice(), "Starting price");
+        ValidationUtils.requireMoneyScale(auction.getMinimumBidStep(), "Minimum bid step");
+        ValidationUtils.requireMoneyScale(auction.getReservePrice(), "Reserve price");
+        ValidationUtils.requireMoneyScale(auction.getBuyNowPrice(), "Buy now price");
     }
 
     private static void validateAuctionTimeFields(CreateAuctionRequest auction) {

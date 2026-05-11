@@ -1,7 +1,9 @@
 package com.vbay.ui.scene_ui.controller.home;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,7 @@ import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.model.MockProductCatalog;
+import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
@@ -57,6 +59,8 @@ public class HomeController {
     private static final String CATEGORY_COLLECTIBLES = "Collectibles";
     private static final String CATEGORY_ARTS = "Arts";
     private static final String CATEGORY_JEWELRY_WATCHES = "Jewelry & Watches";
+    private static final DateTimeFormatter AUCTION_END_DATE_FORMAT =
+        DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm");
 
 
     @FXML
@@ -96,7 +100,6 @@ public class HomeController {
 
     private final Map<Button, String> moduleButtons = new LinkedHashMap<>();
 
-    private Map<String, List<Product>> productsByCategory;
     private String activeView = VIEW_HOME;
     private String activeCategory = CATEGORY_ALL;
     private Node homeCenter;
@@ -120,7 +123,6 @@ public class HomeController {
         homeBottom = homeRoot.getBottom();
         currentUserId = ClientAuthSession.getUserId();
 
-        productsByCategory = initializeCategoryData();
         initializeNavigationMaps();
         subscribeRealtimeListener();
         subscribeServerRooms();
@@ -385,9 +387,9 @@ public class HomeController {
         }
     }
 
-    public void handleCardClick(Product product) {
+    public void handleCardClick(Auction auction) {
         try {
-            SceneManager.switchScene("/jfx/scene/bid/Bid.fxml", product);
+            SceneManager.switchScene("/jfx/scene/bid/Bid.fxml", auction);
         } catch (Exception exception) {
             showMessage(
                 Alert.AlertType.ERROR,
@@ -417,51 +419,6 @@ public class HomeController {
         moduleButtons.put(myAuctionModuleButton, VIEW_MY_AUCTION);
     }
 
-    private Map<String, List<Product>> initializeCategoryData() {
-        Map<String, List<Product>> source = MockProductCatalog.categoryData();
-        Map<String, List<Product>> data = new LinkedHashMap<>();
-        data.put(
-            CATEGORY_ELECTRONICS,
-            combine(
-                source.getOrDefault(MockProductCatalog.ELECTRONICS_MACBOOKS, List.of()),
-                source.getOrDefault(MockProductCatalog.ELECTRONICS_PHONES, List.of()),
-                source.getOrDefault(MockProductCatalog.ELECTRONICS_GAMING, List.of()),
-                source.getOrDefault(MockProductCatalog.ELECTRONICS_AUDIO, List.of())
-            )
-        );
-        data.put(
-            CATEGORY_COLLECTIBLES,
-            combine(
-                source.getOrDefault(MockProductCatalog.COLLECTIBLES_CARDS, List.of()),
-                source.getOrDefault(MockProductCatalog.COLLECTIBLES_FIGURES, List.of())
-            )
-        );
-        data.put(
-            CATEGORY_ARTS,
-            combine(
-                source.getOrDefault(MockProductCatalog.ART_STAMPS, List.of()),
-                source.getOrDefault(MockProductCatalog.ART_PAINTBRUSHES, List.of())
-            )
-        );
-        data.put(
-            CATEGORY_JEWELRY_WATCHES,
-            combine(
-                source.getOrDefault(MockProductCatalog.JEWELRY_CLOCKS, List.of()),
-                source.getOrDefault(MockProductCatalog.JEWELRY_EARRINGS, List.of())
-            )
-        );
-        return Map.copyOf(data);
-    }
-
-    @SafeVarargs
-    private final List<Product> combine(List<Product>... productLists) {
-        List<Product> combined = new ArrayList<>();
-        for (List<Product> products : productLists) {
-            combined.addAll(products);
-        }
-        return List.copyOf(combined);
-    }
-
     private void selectView(String view) {
         activeView = view;
         if (VIEW_HOME.equals(view)) {
@@ -488,56 +445,6 @@ public class HomeController {
         }
     }
 
-    private List<Product> filteredProductsForActiveView() {
-        List<Product> baseProducts = switch (activeView) {
-            case VIEW_COMING_SOON -> comingSoonProducts();
-            case VIEW_LIVE_AUCTION -> allCategoryProducts();
-            case VIEW_BID_HISTORY -> bidHistoryProducts();
-            case VIEW_MY_AUCTION -> myAuctionProducts();
-            default -> allCategoryProducts();
-        };
-
-        if (CATEGORY_ALL.equals(activeCategory)) {
-            return baseProducts;
-        }
-
-        List<Product> categoryProducts = productsByCategory.getOrDefault(activeCategory, List.of());
-        return baseProducts.stream()
-            .filter(categoryProducts::contains)
-            .toList();
-    }
-
-    private List<Product> comingSoonProducts() {
-        return combine(
-            productsByCategory.getOrDefault(CATEGORY_ARTS, List.of()),
-            productsByCategory.getOrDefault(CATEGORY_JEWELRY_WATCHES, List.of()),
-            productsByCategory.getOrDefault(CATEGORY_COLLECTIBLES, List.of()).stream().limit(2).toList()
-        );
-    }
-
-    private List<Product> bidHistoryProducts() {
-        return allCategoryProducts().stream()
-            .skip(2)
-            .limit(6)
-            .toList();
-    }
-
-    private List<Product> myAuctionProducts() {
-        return combine(
-            productsByCategory.getOrDefault(CATEGORY_COLLECTIBLES, List.of()).stream().limit(1).toList(),
-            productsByCategory.getOrDefault(CATEGORY_ARTS, List.of()).stream().limit(2).toList(),
-            productsByCategory.getOrDefault(CATEGORY_ELECTRONICS, List.of()).stream().limit(1).toList()
-        );
-    }
-
-    private List<Product> allCategoryProducts() {
-        List<Product> products = new ArrayList<>();
-        for (List<Product> categoryProducts : productsByCategory.values()) {
-            products.addAll(categoryProducts);
-        }
-        return List.copyOf(products);
-    }
-
     private String subtitleForSidebar() {
         if (CATEGORY_ALL.equals(activeCategory)) {
             return activeView.toLowerCase();
@@ -562,19 +469,6 @@ public class HomeController {
         }
     }
 
-    private void renderProducts(List<Product> products) {
-        productFlow.getChildren().clear();
-
-        boolean isEmpty = products.isEmpty();
-        emptyStateLabel.setText(emptyMessage());
-        emptyStateLabel.setVisible(isEmpty);
-        emptyStateLabel.setManaged(isEmpty);
-
-        for (Product product : products) {
-            productFlow.getChildren().add(createProductCard(product));
-        }
-    }
-
     private void renderAuctionItems(List<AuctionListItemPayload> auctions) {
         productFlow.getChildren().clear();
 
@@ -584,7 +478,7 @@ public class HomeController {
         emptyStateLabel.setManaged(isEmpty);
 
         for (AuctionListItemPayload auction : auctions) {
-            productFlow.getChildren().add(createProductCard(toProduct(auction)));
+            productFlow.getChildren().add(createAuctionCard(toAuction(auction)));
         }
     }
 
@@ -595,7 +489,7 @@ public class HomeController {
             comingSoonPreviewFlow,
             comingSoonPreviewAuctions.values().stream()
                 .sorted(this::compareAuction)
-                .map(this::toProduct)
+                .map(this::toAuction)
                 .toList()
         );
 
@@ -603,44 +497,86 @@ public class HomeController {
             liveAuctionPreviewFlow,
             livePreviewAuctions.values().stream()
                 .sorted(this::compareAuction)
-                .map(this::toProduct)
+                .map(this::toAuction)
                 .toList()
         );
     }
 
-    private void renderPreviewFlow(FlowPane flowPane, List<Product> products) {
+    private void renderPreviewFlow(FlowPane flowPane, List<Auction> auctions) {
         flowPane.getChildren().clear();
-        for (Product product : products) {
-            flowPane.getChildren().add(createProductCard(product));
+        for (Auction auction : auctions) {
+            flowPane.getChildren().add(createAuctionCard(auction));
         }
     }
 
-    private List<Product> filteredProducts(List<Product> products) {
-        if (CATEGORY_ALL.equals(activeCategory)) {
-            return products;
-        }
-        List<Product> categoryProducts = productsByCategory.getOrDefault(activeCategory, List.of());
-        return products.stream()
-            .filter(categoryProducts::contains)
-            .toList();
-    }
-
-    private Product toProduct(AuctionListItemPayload payload) {
-        String price = payload.getCurrentPrice() == null ? "-" : payload.getCurrentPrice().toPlainString();
-        String imagePath = payload.getThumbnailBase64() == null || payload.getThumbnailBase64().isBlank()
+    private Auction toAuction(AuctionListItemPayload payload) {
+        String price = formatMoney(payload.getCurrentPrice());
+        String startingPrice = formatMoney(payload.getStartingPrice());
+        String minimumBidStep = formatMoney(payload.getMinimumBidStep());
+        String imagePath = payload.getThumbnailUrl() == null || payload.getThumbnailUrl().isBlank()
             ? "/jfx/image/products/collectibles.png"
-            : payload.getThumbnailBase64();
+            : payload.getThumbnailUrl();
+        List<String> imageUrls = payload.getImageUrls() == null || payload.getImageUrls().isEmpty()
+            ? List.of(imagePath)
+            : payload.getImageUrls();
+        String description = payload.getDescription() == null || payload.getDescription().isBlank()
+            ? "Auction #" + payload.getAuctionId()
+            : payload.getDescription();
 
-        return new Product(
-            payload.getTitle(),
-            "Auction #" + payload.getAuctionId(),
+        Product product = new Product(
+            payload.getProductId(),
+            payload.getProductName() == null || payload.getProductName().isBlank() ? payload.getTitle() : payload.getProductName(),
+            description,
+            payload.getCategoryId(),
             price,
-            price,
-            "-",
-            "Ends " + payload.getEndingTime(),
+            startingPrice,
+            minimumBidStep,
+            formatAuctionEndTime(payload.getEndingTime()),
             0.5,
             imagePath
         );
+
+        return new Auction(
+            payload.getAuctionId(),
+            payload.getAuctionVersion(),
+            payload.getSellerId(),
+            payload.getTitle(),
+            description,
+            payload.getStatus(),
+            payload.getStartingPrice(),
+            payload.getCurrentPrice(),
+            payload.getMinimumBidStep(),
+            payload.getBuyNowPrice(),
+            payload.getStartingTime(),
+            payload.getEndingTime(),
+            imageUrls,
+            product
+        );
+    }
+
+    private String formatMoney(java.math.BigDecimal amount) {
+        return amount == null ? "-" : amount.toPlainString();
+    }
+
+    private String formatAuctionEndTime(LocalDateTime endingTime) {
+        if (endingTime == null) {
+            return "Ends -";
+        }
+
+        Duration remaining = Duration.between(LocalDateTime.now(), endingTime);
+        if (remaining.isNegative() || remaining.isZero()) {
+            return "Ended";
+        }
+
+        if (remaining.compareTo(Duration.ofHours(24)) < 0) {
+            long seconds = remaining.getSeconds();
+            long hours = seconds / 3600;
+            long minutes = (seconds % 3600) / 60;
+            long remainingSeconds = seconds % 60;
+            return String.format("Ends %02d:%02d:%02d", hours, minutes, remainingSeconds);
+        }
+
+        return "Ends: " + endingTime.format(AUCTION_END_DATE_FORMAT);
     }
 
     private int compareAuction(AuctionListItemPayload left, AuctionListItemPayload right) {
@@ -707,12 +643,12 @@ public class HomeController {
         }
     }
 
-    private Node createProductCard(Product product) {
+    private Node createAuctionCard(Auction auction) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/jfx/scene/AuctionCard.fxml"));
             Node card = loader.load();
             AuctionCardController controller = loader.getController();
-            controller.setProduct(product);
+            controller.setAuction(auction);
             controller.setOnSelected(this::handleCardClick);
             return card;
         } catch (IOException exception) {

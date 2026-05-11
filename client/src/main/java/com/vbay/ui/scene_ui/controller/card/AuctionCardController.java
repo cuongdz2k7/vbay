@@ -2,6 +2,7 @@ package com.vbay.ui.scene_ui.controller.card;
 
 import java.util.function.Consumer;
 
+import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.util.ProductImageLoader;
 
@@ -32,26 +33,27 @@ public class AuctionCardController {
     @FXML
     private ProgressBar progressBar;
 
-    private Product product;
-    private Consumer<Product> onSelected;
+    private Auction auction;
+    private Consumer<Auction> onSelected;
 
     @FXML
     private void initialize() {
         cardRoot.setFocusTraversable(true);
     }
 
-    public void setProduct(Product product) {
-        this.product = product;
-        titleLabel.setText(product.getTitle());
+    public void setAuction(Auction auction) {
+        this.auction = auction;
+        Product product = auction.getProduct();
+        titleLabel.setText(auction.getTitle());
         priceLabel.setText("Current Bid  " + product.getPrice());
         startingPriceLabel.setText("Starting Price  " + product.getStartingPrice());
         bidStepLabel.setText("Step  " + product.getBidStep());
         timeLabel.setText(product.getTimeLeft());
         progressBar.setProgress(product.getProgress());
-        productImageView.setImage(ProductImageLoader.load(product.getImagePath()));
+        ProductImageLoader.loadCover(productImageView, product.getImagePath());
     }
 
-    public void setOnSelected(Consumer<Product> onSelected) {
+    public void setOnSelected(Consumer<Auction> onSelected) {
         this.onSelected = onSelected;
     }
 
@@ -69,8 +71,8 @@ public class AuctionCardController {
     }
 
     private void notifySelection() {
-        if (product != null && onSelected != null) {
-            onSelected.accept(product);
+        if (auction != null && onSelected != null) {
+            onSelected.accept(auction);
         }
     }
 }

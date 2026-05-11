@@ -1,10 +1,10 @@
 package com.vbay.ui.util;
 
-import java.io.ByteArrayInputStream;
 import java.net.URL;
-import java.util.Base64;
 
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.geometry.Rectangle2D;
 
 public final class ProductImageLoader {
     private static final String DEFAULT_PRODUCT_IMAGE = "/jfx/image/logo_Hust.png";
@@ -13,30 +13,57 @@ public final class ProductImageLoader {
     }
 
     public static Image load(String imagePath) {
-        if (isBase64Image(imagePath)) {
-            return loadBase64(imagePath);
+        if (isHttpUrl(imagePath)) {
+            return new Image(imagePath, true);
         }
 
         URL imageUrl = resolve(imagePath);
         return new Image(imageUrl.toExternalForm(), true);
     }
 
-    private static boolean isBase64Image(String imagePath) {
-        if (imagePath == null || imagePath.isBlank()) {
-            return false;
-        }
-        return imagePath.startsWith("data:image/") || imagePath.length() > 200;
+    public static void loadCover(ImageView imageView, String imagePath) {
+        Image image = load(imagePath);
+        imageView.setImage(image);
+        imageView.setPreserveRatio(false);
+        applyCoverViewport(imageView, image);
+
+        image.widthProperty().addListener((observable, oldValue, newValue) -> applyCoverViewport(imageView, image));
+        image.heightProperty().addListener((observable, oldValue, newValue) -> applyCoverViewport(imageView, image));
+        imageView.fitWidthProperty().addListener((observable, oldValue, newValue) -> applyCoverViewport(imageView, image));
+        imageView.fitHeightProperty().addListener((observable, oldValue, newValue) -> applyCoverViewport(imageView, image));
     }
 
-    private static Image loadBase64(String imageBase64) {
-        String normalized = imageBase64;
-        int commaIndex = normalized.indexOf(',');
-        if (normalized.startsWith("data:image/") && commaIndex >= 0) {
-            normalized = normalized.substring(commaIndex + 1);
+    private static void applyCoverViewport(ImageView imageView, Image image) {
+        double imageWidth = image.getWidth();
+        double imageHeight = image.getHeight();
+        double viewWidth = imageView.getFitWidth();
+        double viewHeight = imageView.getFitHeight();
+
+        if (imageWidth <= 0 || imageHeight <= 0 || viewWidth <= 0 || viewHeight <= 0) {
+            return;
         }
 
-        byte[] bytes = Base64.getDecoder().decode(normalized);
-        return new Image(new ByteArrayInputStream(bytes));
+        double imageRatio = imageWidth / imageHeight;
+        double viewRatio = viewWidth / viewHeight;
+        double viewportWidth = imageWidth;
+        double viewportHeight = imageHeight;
+        double viewportX = 0;
+        double viewportY = 0;
+
+        if (imageRatio > viewRatio) {
+            viewportWidth = imageHeight * viewRatio;
+            viewportX = (imageWidth - viewportWidth) / 2;
+        } else if (imageRatio < viewRatio) {
+            viewportHeight = imageWidth / viewRatio;
+            viewportY = (imageHeight - viewportHeight) / 2;
+        }
+
+        imageView.setViewport(new Rectangle2D(viewportX, viewportY, viewportWidth, viewportHeight));
+    }
+
+    private static boolean isHttpUrl(String imagePath) {
+        return imagePath != null
+            && (imagePath.startsWith("http://") || imagePath.startsWith("https://"));
     }
 
     private static URL resolve(String imagePath) {

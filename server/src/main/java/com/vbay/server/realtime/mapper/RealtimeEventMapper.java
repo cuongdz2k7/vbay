@@ -1,5 +1,7 @@
 package com.vbay.server.realtime.mapper;
 
+import java.util.List;
+
 import com.vbay.server.realtime.domain.AuctionCreatedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
@@ -69,12 +71,19 @@ public class RealtimeEventMapper {
         AuctionListItemPayload payload = new AuctionListItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
+            result.getProductId(),
             result.getSellerId(),
+            result.getTitle(),
+            null,
             result.getTitle(),
             result.getCategoryId(),
             result.getStatus().name(),
+            result.getStartingPrice(),
             result.getCurrentPrice(),
+            result.getMinimumBidStep(),
             null,
+            null,
+            List.of(),
             result.getStartingTime(),
             result.getEndingTime(),
             event.occurredAt()
