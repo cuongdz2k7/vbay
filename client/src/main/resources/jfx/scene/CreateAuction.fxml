@@ -28,7 +28,7 @@
             xmlns:fx="http://javafx.com/fxml"
             prefWidth="1440" prefHeight="900"
             styleClass="create-auction-root"
-            fx:controller="com.vbay.ui.scene_ui.controller.CreateAuctionController">
+            fx:controller="com.vbay.ui.scene_ui.controller.auction.CreateAuctionController">
 
     <fx:define>
         <ToggleGroup fx:id="conditionGroup"/>
@@ -85,13 +85,13 @@
 
                                 <VBox spacing="8" GridPane.columnIndex="1">
                                     <Label text="Category" styleClass="field-label"/>
-                                    <ComboBox fx:id="categoryComboBox" maxWidth="Infinity" value="Industrial Hardware" styleClass="line-combo">
+                                    <ComboBox fx:id="categoryComboBox" maxWidth="Infinity" value="Electronics" styleClass="line-combo">
                                         <items>
                                             <FXCollections fx:factory="observableArrayList">
-                                                <String fx:value="Industrial Hardware"/>
-                                                <String fx:value="Precision Optics"/>
-                                                <String fx:value="Aerospace Components"/>
-                                                <String fx:value="Collector Technology"/>
+                                                <String fx:value="Electronics"/>
+                                                <String fx:value="Collectibles"/>
+                                                <String fx:value="Arts"/>
+                                                <String fx:value="Jewelry &amp; Watches"/>
                                             </FXCollections>
                                         </items>
                                     </ComboBox>
@@ -189,12 +189,12 @@
                                     <VBox spacing="8" GridPane.columnIndex="0">
                                         <Label text="COMMENCEMENT" styleClass="mini-label"/>
                                         <DatePicker fx:id="startingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
-                                        <TextField fx:id="startingTimeField" promptText="HH:mm" styleClass="line-input"/>
+                                        <TextField fx:id="startingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
                                     </VBox>
                                     <VBox spacing="8" GridPane.columnIndex="1">
                                         <Label text="TERMINATION" styleClass="mini-label"/>
                                         <DatePicker fx:id="endingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
-                                        <TextField fx:id="endingTimeField" promptText="HH:mm" styleClass="line-input"/>
+                                        <TextField fx:id="endingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
                                     </VBox>
                                 </GridPane>
                             </VBox>

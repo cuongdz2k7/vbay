@@ -69,11 +69,13 @@ public class RealtimeEventMapper {
         AuctionListItemPayload payload = new AuctionListItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
+            result.getSellerId(),
             result.getTitle(),
-            String.valueOf(result.getCategoryId()),
+            result.getCategoryId(),
             result.getStatus().name(),
             result.getCurrentPrice(),
             null,
+            result.getStartingTime(),
             result.getEndingTime(),
             event.occurredAt()
         );

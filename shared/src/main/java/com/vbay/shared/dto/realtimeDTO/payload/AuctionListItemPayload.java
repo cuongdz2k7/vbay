@@ -6,11 +6,13 @@ import java.time.LocalDateTime;
 public class AuctionListItemPayload {
     private long auctionId;
     private long auctionVersion;
+    private long sellerId;
     private String title;
-    private String categoryId;
+    private long categoryId;
     private String status;
     private BigDecimal currentPrice;
-    private String thumbnailUrl;
+    private String thumbnailBase64;
+    private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
 
@@ -20,20 +22,24 @@ public class AuctionListItemPayload {
     public AuctionListItemPayload(
             long auctionId,
             long auctionVersion,
+            long sellerId,
             String title,
-            String categoryId,
+            long categoryId,
             String status,
             BigDecimal currentPrice,
-            String thumbnailUrl,
+            String thumbnailBase64,
+            LocalDateTime startingTime,
             LocalDateTime endingTime,
             LocalDateTime updatedAt) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
+        this.sellerId = sellerId;
         this.title = title;
         this.categoryId = categoryId;
         this.status = status;
         this.currentPrice = currentPrice;
-        this.thumbnailUrl = thumbnailUrl;
+        this.thumbnailBase64 = thumbnailBase64;
+        this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
     }
@@ -54,6 +60,14 @@ public class AuctionListItemPayload {
         this.auctionVersion = auctionVersion;
     }
 
+    public long getSellerId() {
+        return sellerId;
+    }
+
+    public void setSellerId(long sellerId) {
+        this.sellerId = sellerId;
+    }
+
     public String getTitle() {
         return title;
     }
@@ -62,11 +76,11 @@ public class AuctionListItemPayload {
         this.title = title;
     }
 
-    public String getCategoryId() {
+    public long getCategoryId() {
         return categoryId;
     }
 
-    public void setCategoryId(String categoryId) {
+    public void setCategoryId(long categoryId) {
         this.categoryId = categoryId;
     }
 
@@ -86,12 +100,20 @@ public class AuctionListItemPayload {
         this.currentPrice = currentPrice;
     }
 
-    public String getThumbnailUrl() {
-        return thumbnailUrl;
+    public String getThumbnailBase64() {
+        return thumbnailBase64;
     }
 
-    public void setThumbnailUrl(String thumbnailUrl) {
-        this.thumbnailUrl = thumbnailUrl;
+    public void setThumbnailUrl(String thumbnailBase64) {
+        this.thumbnailBase64 = thumbnailBase64;
+    }
+
+    public LocalDateTime getStartingTime() {
+        return startingTime;
+    }
+
+    public void setStartingTime(LocalDateTime startingTime) {
+        this.startingTime = startingTime;
     }
 
     public LocalDateTime getEndingTime() {

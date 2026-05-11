@@ -3,8 +3,11 @@ package com.vbay.ui.scene_ui.controller.auth;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
+import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -104,6 +107,10 @@ public class LoginController {
         }
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response. getMessage() : "Login failed.");
+        }
+        LoginResponse loginResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), LoginResponse.class);
+        if (loginResponse != null) {
+            ClientAuthSession.setLoginResponse(loginResponse);
         }
         System.out.println("Client login successful: " + email);
     }

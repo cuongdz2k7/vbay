@@ -13,12 +13,15 @@ import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.dto.productDTO.UploadImageRequest;
+import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
@@ -71,7 +74,7 @@ public class RequestDistributor {
     */
 
     ///dispatch
-    public Respond<?> dispatch (String rawRequest, ClientSession session) {
+    public Respond<?> dispatch (String rawRequest, ClientSession session, ClientConnection connection) {
         ///refactoring lại cái chỗ này, tách riêng phần parse requestId và type ra, sau đó mới switch-case theo type để gọi handler tương ứng
         ///code smell ở chỗ này.
         JsonObject root;
@@ -99,6 +102,8 @@ public class RequestDistributor {
             return new Respond<>(requestId, false, "Invalid request type", null);
         }
 
+        JsonElement payload = root.get("payload");
+
         RequestType type;
         try {
             type = RequestType.valueOf(typeRaw);
@@ -106,7 +111,6 @@ public class RequestDistributor {
             return new Respond<>(requestId, false, "Unsupported request type: " + typeRaw, null);
         }
 
-        JsonElement payload = root.get("payload");
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
@@ -116,6 +120,9 @@ public class RequestDistributor {
                 case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
+                case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
+                case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
+                case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -130,10 +137,55 @@ public class RequestDistributor {
         }
     }
 
-    
 
+    private Respond<AuctionListResponse> handleGetAuctionList(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        AuctionListRequest request = JsonUtils.fromJson(payload, AuctionListRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction list request", null);
+        }
+
+        AuctionListResponse response = auctionService.getAuctionList(request, session);
+        return new Respond<>(requestId, true, "Auction list loaded", response);
+    }
+
+    ///
+    private Respond<Void> handleSubscribeRoom(
+        String requestId,
+        JsonElement payload,
+        ClientSession session,
+        ClientConnection connection
+    ) {
+
+        Room room = JsonUtils.fromJson(payload, Room.class);
+        if (room == null) {
+            return new Respond<>(requestId, false, "Invalid room", null);
+        }
+
+        subscriptionService.subscribe(room, session, connection);
+        return new Respond<>(requestId, true, "Subscribed room successfully", null);
+    }
     
-    ///bỏ chuyển rawString sang authservice
+    private Respond<Void> handleUnsubscribeRoom(
+        String requestId,
+        JsonElement payload,
+        ClientSession session,
+        ClientConnection connection) {
+
+        Room room = JsonUtils.fromJson(payload, Room.class);
+        if (room == null) {
+            return new Respond<>(requestId, false, "Invalid unsubscribe room request", null);
+        }
+
+        subscriptionService.unsubscribe(room, session, connection);
+        return new Respond<>(requestId, true, "Unsubscribed room successfully", null);
+    }
+
+
+
     private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
         if (session.isAuthenticated()) {
             throw new AuthenticationException("Client is already logged in");

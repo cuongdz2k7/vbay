@@ -8,6 +8,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.RealtimeEvent;
 
+/*
+Client dispatcher subscription
+   Controller -> SocketClient:
+   Nếu client nhận được event AUCTION_STATE_UPDATED thì gọi method của nó
+Cái map trong dispatcher là:
+    RealtimeEventType -> các listener/controller muốn nghe type đó
+
+
+*/
+
 public class RealtimeEventDispatcher {
     private final Map<RealtimeEventType, List<RealtimeEventListener<?>>> listeners = new ConcurrentHashMap<>();
 

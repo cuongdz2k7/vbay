@@ -6,22 +6,26 @@ import java.util.List;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
+import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.AuctionCreatedDomainEvent;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
-import com.vbay.server.realtime.domain.AuctionCreatedDomainEvent;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
+import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
-import com.vbay.server.realtime.publisher.DomainEventPublisher;
+import com.vbay.shared.enums.auction.AuctionStatus;
 
 
  /*
@@ -53,6 +57,8 @@ Rule sửa starting time, ending time : comming soon... (bài tập lớn sẽ k
 */
 
 public class AuctionService {
+    private static final int MAX_AUCTION_LIST_LIMIT = 500;
+
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
@@ -122,6 +128,50 @@ public class AuctionService {
                 throw e;
             }
         }
+    }
+
+    public AuctionListResponse getAuctionList(AuctionListRequest request, ClientSession session) throws SQLException {
+        checkSession(session);
+        normalizeAuctionListRequest(request);
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            return new AuctionListResponse(auctionRepository.findAuctionList(request));
+        }
+    }
+
+    private void normalizeAuctionListRequest(AuctionListRequest request) {
+        if (request == null) {
+            throw new ValidationException("Auction list request is required");
+        }
+
+        request.setStatus(normalizeBlank(request.getStatus()));
+
+        if (request.getStatus() != null) {
+            try {
+                AuctionStatus.valueOf(request.getStatus());
+            } catch (IllegalArgumentException exception) {
+                throw new ValidationException("Invalid auction status: " + request.getStatus());
+            }
+        }
+
+        Integer limit = request.getLimit();
+        if (limit == null) {
+            return;
+        }
+
+        if (limit <= 0) {
+            request.setLimit(null);
+            return;
+        }
+
+        if (limit > MAX_AUCTION_LIST_LIMIT) {
+            request.setLimit(MAX_AUCTION_LIST_LIMIT);
+        }
+    }
+
+    private String normalizeBlank(String value) {
+        return value == null || value.isBlank() ? null : value;
     }
 
 }

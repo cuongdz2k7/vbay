@@ -15,5 +15,8 @@ public class ProductImageDTO {
         return isThumbnail;
     }
 
+    public void setThumbnail(boolean thumbnail) {
+        isThumbnail = thumbnail;
+    }
 
 }

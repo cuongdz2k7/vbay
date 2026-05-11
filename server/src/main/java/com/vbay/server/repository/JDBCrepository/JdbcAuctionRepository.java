@@ -8,11 +8,15 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 
 
 public class JdbcAuctionRepository implements AuctionRepository {
@@ -265,6 +269,79 @@ public class JdbcAuctionRepository implements AuctionRepository {
             statement.executeUpdate();
         }
         return findVersionById(auctionId);
+    }
+
+    @Override
+    public List<AuctionListItemPayload> findAuctionList(AuctionListRequest request) throws SQLException {
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+                a.id AS auction_id,
+                a.version AS auction_version,
+                a.seller_id,
+                a.title,
+                p.category_id,
+                a.status,
+                a.current_price,
+                pi.image_url AS thumbnail_url,
+                a.starting_time,
+                a.ending_time,
+                a.updated_at
+            FROM auctions a
+            JOIN products p ON p.id = a.product_id
+            LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_thumbnail = TRUE
+            WHERE 1 = 1
+            """);
+
+        List<Object> parameters = new ArrayList<>();
+        if (request.getStatus() != null) {
+            sql.append(" AND a.status = ?");
+            parameters.add(request.getStatus());
+        }
+        if (request.getCategoryId() != null) {
+            sql.append(" AND p.category_id = ?");
+            parameters.add(request.getCategoryId());
+        }
+        if (request.getSellerId() != null) {
+            sql.append(" AND a.seller_id = ?");
+            parameters.add(request.getSellerId());
+        }
+
+        sql.append(" ORDER BY a.starting_time DESC, a.id DESC");
+
+        if (request.getLimit() != null) {
+            sql.append(" LIMIT ?");
+            parameters.add(request.getLimit());
+        }
+
+        try (PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < parameters.size(); i++) {
+                statement.setObject(i + 1, parameters.get(i));
+            }
+
+            try (ResultSet rs = statement.executeQuery()) {
+                List<AuctionListItemPayload> items = new ArrayList<>();
+                while (rs.next()) {
+                    items.add(mapAuctionListItem(rs));
+                }
+                return items;
+            }
+        }
+    }
+
+    private AuctionListItemPayload mapAuctionListItem(ResultSet rs) throws SQLException {
+        return new AuctionListItemPayload(
+            rs.getLong("auction_id"),
+            rs.getLong("auction_version"),
+            rs.getLong("seller_id"),
+            rs.getString("title"),
+            rs.getLong("category_id"),
+            rs.getString("status"),
+            rs.getBigDecimal("current_price"),
+            rs.getString("thumbnail_url"),
+            rs.getTimestamp("starting_time").toLocalDateTime(),
+            rs.getTimestamp("ending_time").toLocalDateTime(),
+            rs.getTimestamp("updated_at").toLocalDateTime()
+        );
     }
 
     private long findVersionById(long auctionId) throws SQLException {

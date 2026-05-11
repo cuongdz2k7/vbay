@@ -19,7 +19,7 @@ public class ValidateAuctionDTO {
         ValidationUtils.requireNotEmpty(product.getImages(), "At least one product image is required");
         long hasThumbnail = product.getImages().stream().filter(ProductImageDTO::isThumbnail).count();
         if (hasThumbnail == 0) {
-            throw new ValidationException("At least one product image must be marked as thumbnail");
+            product.getImages().get(0).setThumbnail(true);
         }
         if (hasThumbnail > 1) {
             throw new ValidationException("Only one product image can be marked as thumbnail");
@@ -46,11 +46,6 @@ public class ValidateAuctionDTO {
     }
 
     private static void validateAuctionBusinessRules(CreateAuctionRequest auction) {
-        if (auction.getBuyNowPrice() != null
-                && auction.getBuyNowPrice().compareTo(BigDecimal.ZERO) > 0
-                && auction.getBuyNowPrice().compareTo(auction.getStartingPrice()) < 0) {
-            throw new ValidationException("Buy now price must be greater than or equal to starting price");
-        }
         if (auction.getReservePrice() != null
                 && auction.getReservePrice().compareTo(BigDecimal.ZERO) > 0
                 && auction.getReservePrice().compareTo(auction.getStartingPrice()) < 0) {
@@ -60,8 +55,8 @@ public class ValidateAuctionDTO {
                 && auction.getReservePrice().compareTo(BigDecimal.ZERO) > 0
                 && auction.getBuyNowPrice() != null
                 && auction.getBuyNowPrice().compareTo(BigDecimal.ZERO) > 0
-                && auction.getReservePrice().compareTo(auction.getBuyNowPrice()) < 0) {
-            throw new ValidationException("Reserve price must be greater than or equal to buy now price");
+                && auction.getBuyNowPrice().compareTo(auction.getReservePrice()) < 0) {
+            throw new ValidationException("Buy now price must be greater than or equal to reserve price");
         }
     }
 

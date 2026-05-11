@@ -351,6 +351,76 @@
     -fx-font-weight: 700;
 }
 
+.category-filter-combo {
+    -fx-background-color: #1a1c1c;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.42);
+    -fx-border-radius: 0;
+    -fx-padding: 3 6 3 6;
+    -fx-cursor: hand;
+    -fx-effect: null;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.category-filter-combo:focused,
+.category-filter-combo:showing {
+    -fx-background-color: #151717;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.68);
+    -fx-effect: null;
+}
+
+.category-filter-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e3e2e2;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.category-filter-combo .arrow {
+    -fx-background-color: #d95f1a;
+}
+
+.category-filter-combo .combo-box-popup .list-view {
+    -fx-background-color: #0d0f0f;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.5);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(217, 95, 26, 0.2), 8, 0.12, 0, 2);
+    -fx-padding: 6 0 6 0;
+}
+
+.category-filter-combo .combo-box-popup .list-cell {
+    -fx-background-color: #0d0f0f;
+    -fx-text-fill: rgba(224, 192, 178, 0.75);
+    -fx-padding: 9 12 9 12;
+}
+
+.category-filter-combo .combo-box-popup .list-cell:hover {
+    -fx-background-color: rgba(217, 95, 26, 0.16);
+    -fx-text-fill: #ffb595;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #0d0f0f;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.5);
+    -fx-effect: dropshadow(gaussian, rgba(217, 95, 26, 0.18), 7, 0.1, 0, 2);
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #0d0f0f;
+    -fx-text-fill: rgba(224, 192, 178, 0.75);
+}
+
+.combo-box-popup .list-view .list-cell:hover,
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: rgba(217, 95, 26, 0.16);
+    -fx-text-fill: #ffb595;
+}
+
 .live-heading-row {
     -fx-border-color: transparent transparent rgba(89, 66, 56, 0.45) transparent;
     -fx-border-width: 0 0 1 0;
@@ -359,6 +429,47 @@
 
 .auction-grid {
     -fx-background-color: transparent;
+}
+
+.home-section {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.32) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 22 0;
+}
+
+.home-section-header {
+    -fx-padding: 0 0 2 0;
+}
+
+.home-section-title {
+    -fx-text-fill: #e3e2e2;
+    -fx-font-family: "Noto Serif", "Georgia", serif;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
+}
+
+.home-section-subtitle {
+    -fx-text-fill: rgba(224, 192, 178, 0.56);
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.section-view-all-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.42);
+    -fx-border-radius: 0;
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+    -fx-padding: 6 12 6 12;
+    -fx-cursor: hand;
+}
+
+.section-view-all-btn:hover {
+    -fx-background-color: rgba(217, 95, 26, 0.1);
+    -fx-border-color: rgba(217, 95, 26, 0.78);
 }
 
 .auction-card {
@@ -532,4 +643,21 @@
 
 .portfolio-link:hover {
     -fx-text-fill: #d95f1a;
+}
+
+.portfolio-mini-link {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(217, 95, 26, 0.35);
+    -fx-border-radius: 0;
+    -fx-background-radius: 0;
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 9px;
+    -fx-font-weight: 900;
+    -fx-padding: 4 8 4 8;
+    -fx-cursor: hand;
+}
+
+.portfolio-mini-link:hover {
+    -fx-background-color: rgba(217, 95, 26, 0.1);
+    -fx-border-color: #d95f1a;
 }

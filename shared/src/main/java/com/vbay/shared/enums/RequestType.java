@@ -19,6 +19,8 @@ public enum RequestType {
     GET_AUCTION_DETAIL,
     SEARCH_AUCTION,
     FILTER_AUCTION,
+    SUBSCRIBE_ROOM,
+    UNSUBSCRIBE_ROOM,
 
     // Bidder
     JOIN_AUCTION,
@@ -38,5 +40,7 @@ public enum RequestType {
     // Seller
     UPLOAD_IMAGE,
     CREATE_AUCTION,
-    CANCEL_AUCTION
+    CANCEL_AUCTION,
+    
+
 }

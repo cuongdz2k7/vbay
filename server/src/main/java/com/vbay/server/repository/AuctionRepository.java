@@ -3,9 +3,12 @@ package com.vbay.server.repository;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.model.Auction;
+import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 
 public interface AuctionRepository {
     Auction save(Auction auction) throws SQLException;
@@ -20,5 +23,6 @@ public interface AuctionRepository {
                             BigDecimal currentBid, 
                             long winningUserId) throws SQLException;   
     long completeByBuyNow(long auctionId, long buyerId) throws SQLException;
+    List<AuctionListItemPayload> findAuctionList(AuctionListRequest request) throws SQLException;
     
 }

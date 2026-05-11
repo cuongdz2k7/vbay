@@ -61,12 +61,13 @@ public class CreateAuctionController {
     private static final double PREVIEW_SIZE = 72;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/uuuu")
         .withResolverStyle(ResolverStyle.STRICT);
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
 
     private final ImageUploadClient imageUploadClient = new ImageUploadClient();
     private final List<File> selectedImageFiles = new ArrayList<>();
 
     private Runnable onBack;
+    private Runnable onAuctionCreated;
 
     @FXML
     private HBox imagePreviewContainer;
@@ -109,6 +110,10 @@ public class CreateAuctionController {
         this.onBack = onBack;
     }
 
+    public void setOnAuctionCreated(Runnable onAuctionCreated) {
+        this.onAuctionCreated = onAuctionCreated;
+    }
+
     @FXML
     private void handleBack(ActionEvent event) {
         if (onBack != null) {
@@ -144,6 +149,9 @@ public class CreateAuctionController {
                 "Auction created",
                 "Auction created successfully."
             );
+            if (onAuctionCreated != null) {
+                onAuctionCreated.run();
+            }
         } catch (IllegalArgumentException exception) {
             showMessage(Alert.AlertType.WARNING, "Invalid auction data", exception.getMessage());
         } catch (IOException exception) {
@@ -273,9 +281,7 @@ public class CreateAuctionController {
         LocalDateTime startingTime = requireDateTime(startingDatePicker, startingTimeField, "Starting date/time");
         LocalDateTime endingTime = requireDateTime(endingDatePicker, endingTimeField, "Ending date/time");
 
-        if (!startingTime.isBefore(endingTime)) {
-            throw new IllegalArgumentException("Starting date/time must be before ending date/time.");
-        }
+        validateAuctionBusinessRules(startingPrice, reservePrice, buyNowPrice, startingTime, endingTime);
 
         return new AuctionFormInput(
             productName,
@@ -291,6 +297,25 @@ public class CreateAuctionController {
             endingTime,
             resolveCategoryId(categoryComboBox.getValue())
         );
+    }
+
+    private void validateAuctionBusinessRules(
+            BigDecimal startingPrice,
+            BigDecimal reservePrice,
+            BigDecimal buyNowPrice,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime) {
+        if (reservePrice != null && reservePrice.compareTo(startingPrice) < 0) {
+            throw new IllegalArgumentException("Reserve price must be greater than or equal to starting price.");
+        }
+
+        if (reservePrice != null && buyNowPrice != null && buyNowPrice.compareTo(reservePrice) < 0) {
+            throw new IllegalArgumentException("Buy now price must be greater than or equal to reserve price.");
+        }
+
+        if (!startingTime.isBefore(endingTime)) {
+            throw new IllegalArgumentException("Starting date/time must be before ending date/time.");
+        }
     }
 
     private CreateAuctionRequest buildCreateAuctionRequest(AuctionFormInput formInput, List<ProductImageDTO> uploadedImages) {
@@ -364,6 +389,9 @@ public class CreateAuctionController {
             return null;
         }
         BigDecimal money = parseMoney(value, fieldName);
+        if (money.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(fieldName + " must be greater than 0.");
+        }
         textField.setText(money.toPlainString());
         return money;
     }
@@ -399,27 +427,27 @@ public class CreateAuctionController {
     private LocalTime parseTime(TextField timeField, String fieldName) {
         String timeText = timeField.getText();
         if (timeText == null || timeText.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " time is required in HH:mm format.");
+            throw new IllegalArgumentException(fieldName + " time is required in HH:mm:ss format.");
         }
 
         try {
             return LocalTime.parse(timeText.trim(), TIME_FORMATTER);
         } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(fieldName + " time must use HH:mm format.");
+            throw new IllegalArgumentException(fieldName + " time must use HH:mm:ss format.");
         }
     }
 
     private long resolveCategoryId(String categoryName) {
-        if ("Precision Optics".equals(categoryName)) {
-            return 2L;
+        if (categoryName == null || categoryName.isBlank()) {
+            throw new IllegalArgumentException("Category is required.");
         }
-        if ("Aerospace Components".equals(categoryName)) {
-            return 3L;
-        }
-        if ("Collector Technology".equals(categoryName)) {
-            return 4L;
-        }
-        return 1L;
+        return switch (categoryName) {
+            case "Electronics" -> 1L;
+            case "Collectibles" -> 2L;
+            case "Arts" -> 3L;
+            case "Jewelry & Watches" -> 4L;
+            default -> throw new IllegalArgumentException("Unsupported product category: " + categoryName);
+        };
     }
 
     private void configureDatePicker(DatePicker datePicker) {
