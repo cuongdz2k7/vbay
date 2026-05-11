@@ -36,6 +36,7 @@ public enum RequestType {
     RETURN_DEPOSIT,
 
     // Seller
+    UPLOAD_IMAGE,
     CREATE_AUCTION,
     CANCEL_AUCTION
 }

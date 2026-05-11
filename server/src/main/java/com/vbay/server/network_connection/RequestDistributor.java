@@ -1,5 +1,6 @@
 package com.vbay.server.network_connection;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 import com.google.gson.JsonElement;
@@ -10,12 +11,14 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
+import com.vbay.shared.dto.productDTO.UploadImageRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
@@ -47,16 +50,19 @@ public class RequestDistributor {
     private final AuctionService auctionService;
     private final BidService bidService;
     private final SubscriptionService subscriptionService;
+    private final ImageStorageService imageStorageService;
     
 
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
                                 BidService bidService, 
-                                SubscriptionService subscriptionService) {
+                                SubscriptionService subscriptionService,
+                                ImageStorageService imageStorageService) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
         this.subscriptionService = subscriptionService;
+        this.imageStorageService = imageStorageService;
     }
     /*
     switch-case theo type để gọi handler tương ứng
@@ -79,7 +85,10 @@ public class RequestDistributor {
         }
         
         JsonElement requestIdElement = root.get("requestId");
-        JsonElement typeElement = root.get("type");
+        JsonElement typeElement = root.get("requestType");
+        if (typeElement == null || typeElement.isJsonNull()) {
+            typeElement = root.get("type");
+        }
 
         String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
                             ? requestIdElement.getAsString() : null;
@@ -104,6 +113,7 @@ public class RequestDistributor {
                 case LOGIN -> handleLogin(requestId, payload, session);
                 case LOGOUT -> handleLogout(requestId, session);
                 case REGISTER -> handleRegister(requestId, payload);
+                case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
@@ -156,6 +166,19 @@ public class RequestDistributor {
         authService.register(registerRequest);
         return new Respond<>(requestId, true, "Register successful", null);
     }
+
+    private Respond<String> handleUploadImage(String requestId, JsonElement payload, ClientSession session) throws IOException {
+        if (session == null || !session.isAuthenticated()) {
+            throw new AuthenticationException("User must be logged in to upload images");
+        }
+        UploadImageRequest uploadRequest = JsonUtils.fromJson(payload, UploadImageRequest.class);
+        if (uploadRequest == null) {
+            return new Respond<>(requestId, false, "Invalid upload image request", null);
+        }
+        String imageUrl = imageStorageService.saveBase64Image(uploadRequest);
+        return new Respond<>(requestId, true, "Image uploaded successfully", imageUrl);
+    }
+
     private Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
         if (createAuctionRequest == null) {

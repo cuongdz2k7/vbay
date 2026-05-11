@@ -11,13 +11,16 @@ import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.stage.Stage;
 public class MainApp extends Application {
+    private static final String DEFAULT_SERVER_HOST = "localhost";
+    private static final int SOCKET_PORT = 3618;
 
     public static void initSocketClient() {
         SocketClient client = SocketClient.getClient();
 
         try {
+            String serverHost = System.getProperty("vbay.server.host", DEFAULT_SERVER_HOST);
             System.out.println("Connecting to VBay server...");
-            client.connect("localhost", 3618);
+            client.connect(serverHost, SOCKET_PORT);
 
             Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
             Respond<?> response = client.sendMessage(request);

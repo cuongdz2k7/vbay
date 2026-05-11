@@ -5,6 +5,13 @@ import java.util.List;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.handler.AuctionCreatedRealtimeHandler;
+import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
+import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
+import com.vbay.server.realtime.handler.DomainEventHandler;
+import com.vbay.server.realtime.mapper.RealtimeEventMapper;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
+import com.vbay.server.realtime.publisher.InMemoryDomainEventPublisher;
 import com.vbay.server.realtime.subscription.InMemorySubscriptionRegistry;
 import com.vbay.server.realtime.subscription.SubscriptionRegistry;
 import com.vbay.server.realtime.subscription.SubscriptionService;
@@ -20,6 +27,8 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.realtime.handler.AuctionCreatedRealtimeHandler;
+import com.vbay.server.upload.ImageStorageService;
 
 
 /*
@@ -38,14 +47,16 @@ public class AppConfig {
     private final AuctionService auctionService;
     private final BidService bidService;
     private final RequestDistributor requestDistributor;
+    private final ImageStorageService imageStorageService;
     private final SubscriptionRegistry subscriptionRegistry;
     private final RealtimeBroadcaster realtimeBroadcaster;
     private final SubscriptionService subscriptionService;
     private final RoomSubscriptionValidator subscriptionValidator;
+    private final DomainEventPublisher domainEventPublisher;
+    private final List<DomainEventHandler> domainEventHandlers;
+    private final RealtimeEventMapper realtimeEventMapper;
 
-
-
-
+    
 /*
 Trong Java, this(...) trong constructor nghĩa là gọi constructor khác cùng class. 
 Nó phải nằm ở dòng đầu tiên.
@@ -68,21 +79,32 @@ new AppConfig()
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
-        ///business service
-        this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
-        this.auctionService = new AuctionService(connectionProvider, repositoryFactory);
-        this.bidService = new BidService(connectionProvider, repositoryFactory);
-
         ///realtime
         this.subscriptionRegistry = new InMemorySubscriptionRegistry();
         this.realtimeBroadcaster = new RealtimeBroadcaster(subscriptionRegistry);
+        this.realtimeEventMapper = new RealtimeEventMapper();
+
+        this.domainEventHandlers = List.of(
+            new AuctionCreatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
+        );
+
+        this.domainEventPublisher = new InMemoryDomainEventPublisher(domainEventHandlers);
+
         this.subscriptionValidator = new RoomSubscriptionValidator(List.of(
             new AuctionRoomSubscriptionRule(),
             new UserRoomSubscriptionRule(),
             new AuctionListRoomSubscriptionRule()
         ));
         this.subscriptionService = new SubscriptionService(subscriptionValidator, subscriptionRegistry);
-        this.requestDistributor = new RequestDistributor(authService, auctionService, bidService, subscriptionService);
+        ///business service
+        this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
+        this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.imageStorageService = new ImageStorageService();
+        
+        this.requestDistributor = new RequestDistributor(authService, auctionService, bidService, subscriptionService, imageStorageService);
     }
 
     public RealtimeBroadcaster getRealtimeBroadcaster() {

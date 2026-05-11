@@ -12,6 +12,7 @@ import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.model.MockProductCatalog;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneManager;
+import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
 import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
 import com.vbay.ui.scene_ui.controller.home.classes.ModuleSection;
 import com.vbay.ui.scene_ui.controller.home.classes.SectionGroup;
@@ -24,13 +25,17 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class HomeController {
-    private static final String MODULE_CATEGORIES = "Collections";
-    private static final String MODULE_DASHBOARD = "Dashboard";
+    private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
+    private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
+
+    private static final String MODULE_CATEGORIES = "Category";
+    private static final String MODULE_DASHBOARD = "Live Lots";
     private static final String MODULE_MY_BID = "My Bids";
     private static final String MODULE_UPCOMING = "Coming Soon";
     private static final String MODULE_LIVE_AUCTIONS = "Live Auctions";
@@ -67,6 +72,14 @@ public class HomeController {
     private static final String LIVE_HIGH_STAKES = "live.highStakes";
     private static final String LIVE_COMPETITIVE_ROOM = "live.competitiveRoom";
 
+    @FXML
+    private BorderPane homeRoot;
+    @FXML
+    private Node sidebarScroll;
+    @FXML
+    private Node mainScroll;
+    @FXML
+    private Node portfolioDrawer;
     @FXML
     private Button categoriesModuleButton;
     @FXML
@@ -224,9 +237,18 @@ public class HomeController {
     private String activeSectionKey;
     private String activeViewKey;
     private String emptyStateMessage = "Select a subcategory to display auctions.";
+    private Node homeCenter;
+    private Node homeLeft;
+    private Node homeRight;
+    private Node homeBottom;
 
     @FXML
     private void initialize() {
+        homeCenter = homeRoot.getCenter();
+        homeLeft = homeRoot.getLeft();
+        homeRight = homeRoot.getRight();
+        homeBottom = homeRoot.getBottom();
+
         categoryData = MockProductCatalog.categoryData();
         viewData = initializeViewData();
 
@@ -268,7 +290,7 @@ public class HomeController {
         paginationBar.setVisible(false);
         paginationBar.setManaged(false);
 
-        openModule(findModuleSection(MODULE_DASHBOARD));
+        openInitialLiveLotsView();
     }
 
     @FXML
@@ -359,16 +381,27 @@ public class HomeController {
     @FXML
     private void handleCreateAuctions(ActionEvent event) {
         try {
-            showMessage(
-                Alert.AlertType.INFORMATION,
-                "Create auction",
-                "Create auction flow is not connected yet."
-            );
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(CREATE_AUCTION_VIEW));
+            BorderPane createAuctionRoot = loader.load();
+            CreateAuctionController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            attachCreateAuctionStylesheet();
+
+            Node createAuctionCenter = createAuctionRoot.getCenter();
+            Node createAuctionBottom = createAuctionRoot.getBottom();
+            createAuctionRoot.setCenter(null);
+            createAuctionRoot.setBottom(null);
+
+            homeRoot.setLeft(null);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(createAuctionCenter);
+            homeRoot.setBottom(createAuctionBottom);
         } catch (Exception exception) {
+            exception.printStackTrace();
             showMessage(
                 Alert.AlertType.ERROR,
-                "Fail Creation",
-                "Could not create Auction"
+                "Navigation failed",
+                "Could not open the create auction scene."
             );
         }
     }
@@ -840,7 +873,7 @@ public class HomeController {
 
         resetSectionState();
         clearSubcategorySelection();
-        sidebarSubtitle.setText("Open a module to browse auctions.");
+        sidebarSubtitle.setText("curated selection");
         catalogTitle.setText("Auction Explorer");
         catalogSubtitle.setText("Choose a module on the left, then drill into a subcategory to load products.");
         renderCurrentPage();
@@ -886,6 +919,28 @@ public class HomeController {
         sidebarSubtitle.setText(module.key);
         catalogTitle.setText(module.key);
         catalogSubtitle.setText("Open one of the groups below and choose a subcategory to display auctions.");
+        renderCurrentPage();
+    }
+
+    private void openInitialLiveLotsView() {
+        ModuleSection categoryModule = findModuleSection(MODULE_CATEGORIES);
+        SectionGroup electronicsSection = sectionGroups.get(electronicsButton);
+        ViewDefinition macbooksView = viewDefinitions.get(macbooksButton);
+
+        if (categoryModule == null || electronicsSection == null || macbooksView == null) {
+            openModule(findModuleSection(MODULE_DASHBOARD));
+            return;
+        }
+
+        openModule(categoryModule);
+        openSection(electronicsSection);
+        activeViewKey = macbooksView.key;
+        activeProducts = viewData.getOrDefault(macbooksView.key, List.of());
+        emptyStateMessage = "No products available for " + macbooksView.displayName + " yet.";
+        setActiveSubSelection(macbooksView.button);
+        sidebarSubtitle.setText("filter: " + macbooksView.sectionName + " / " + macbooksView.displayName);
+        catalogTitle.setText("Live Auctions");
+        catalogSubtitle.setText("Filter: " + macbooksView.displayName);
         renderCurrentPage();
     }
 
@@ -935,6 +990,20 @@ public class HomeController {
 
     private void renderCurrentPage() {
         renderProducts(activeProducts);
+    }
+
+    private void restoreHomeLayout() {
+        homeRoot.setLeft(homeLeft);
+        homeRoot.setRight(homeRight);
+        homeRoot.setCenter(homeCenter);
+        homeRoot.setBottom(homeBottom);
+    }
+
+    private void attachCreateAuctionStylesheet() {
+        String stylesheet = getClass().getResource(CREATE_AUCTION_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
     }
 
     private Node createProductCard(Product product) {

@@ -1,9 +1,5 @@
 package com.vbay.server.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,20 +12,25 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.vbay.server.exception.AuthenticationException;
+import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.Product;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
-import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
-import com.vbay.shared.enums.auction.*;
+import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
@@ -37,8 +38,6 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
-import com.vbay.server.exception.AuthenticationException;
-import com.vbay.server.exception.ValidationException;
 
 class AuctionServiceIntegrationTest {
     private static final long SELLER_ID = 1L;
@@ -81,7 +80,7 @@ class AuctionServiceIntegrationTest {
             JdbcProductRepository productRepository = new JdbcProductRepository(connection);
             JdbcProductImageRepository imageRepository = new JdbcProductImageRepository(connection);
 
-            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
+            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository).getId();
 
             Product savedProduct = productRepository.findById(productId).orElseThrow();
             assertEquals(SELLER_ID, savedProduct.getSellerId());

@@ -14,6 +14,9 @@ import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.User;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.BuyNowDomainEvent;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
@@ -102,10 +105,13 @@ public class BidService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
+    private final DomainEventPublisher domainEventPublisher;
 
-    public BidService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
+
+    public BidService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, DomainEventPublisher domainEventPublisher) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
+        this.domainEventPublisher = domainEventPublisher;
     }
 
     private void checkSession(ClientSession session) {
@@ -291,6 +297,7 @@ public class BidService {
                 PlaceBidResult result = placeBid(auction, session.getUserId(), request.getBidAmount(), dbNow, connection);
                 
                 connection.commit();
+                domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
                 return result;
             } catch (Exception e) {
                 connection.rollback();
@@ -328,6 +335,7 @@ public class BidService {
 
                 BuyNowResult result = buyNow(auction, session.getUserId(), auction.getBuyNowPrice(), dbNow, connection);
                 connection.commit();
+                domainEventPublisher.publish(new BuyNowDomainEvent(result));
                 return result;
             } catch (Exception e) {
                 connection.rollback();

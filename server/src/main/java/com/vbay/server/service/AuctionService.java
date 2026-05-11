@@ -15,11 +15,13 @@ import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
+import com.vbay.server.realtime.domain.AuctionCreatedDomainEvent;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 
 
  /*
@@ -54,10 +56,12 @@ public class AuctionService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
+    private final DomainEventPublisher domainEventPublisher;
 
-    public AuctionService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
+    public AuctionService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, DomainEventPublisher domainEventPublisher) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
+        this.domainEventPublisher = domainEventPublisher;
     }
 
     private void checkSession(ClientSession session) {
@@ -110,7 +114,9 @@ public class AuctionService {
                 );
                 auctionRepository.save(auction);
                 connection.commit();
-                return ResultMapper.toCreateAuctionResult(auction, product);
+                CreateAuctionResult result = ResultMapper.toCreateAuctionResult(auction, product);
+                domainEventPublisher.publish(new AuctionCreatedDomainEvent(result, java.time.LocalDateTime.now()));
+                return result;
             } catch (SQLException | RuntimeException e) {
                 connection.rollback();
                 throw e;
