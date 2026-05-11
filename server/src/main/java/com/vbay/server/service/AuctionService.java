@@ -27,7 +27,6 @@ import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
-
  /*
 * Business rules:
 * 1. Giá tiền phải là số dương
@@ -173,5 +172,6 @@ public class AuctionService {
     private String normalizeBlank(String value) {
         return value == null || value.isBlank() ? null : value;
     }
+
 
 }

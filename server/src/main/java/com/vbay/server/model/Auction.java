@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.vbay.shared.enums.auction.AuctionStatus;
+
 public class Auction {
     // Base
     private long id;

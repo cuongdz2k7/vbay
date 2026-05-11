@@ -2,7 +2,6 @@ package com.vbay.server.network_connection;
 
 import com.vbay.shared.enums.auth.Position;
 
-
 public class ClientSession {
     private Long userId;
     private String username;

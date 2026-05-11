@@ -7,7 +7,6 @@ import com.vbay.server.model.User;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
 
-
 public class UserRowMapper {
     private UserRowMapper() {}
     public static User mapUser(ResultSet rs) throws SQLException {

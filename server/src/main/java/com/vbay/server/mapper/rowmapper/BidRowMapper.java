@@ -7,6 +7,7 @@ import com.vbay.server.model.Bid;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
 
+
 public class BidRowMapper {
     public static Bid mapBid(ResultSet rs) throws SQLException {
         Bid bid = new Bid(

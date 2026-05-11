@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
 
+
 public class Bid {
     // Base
     private long id;

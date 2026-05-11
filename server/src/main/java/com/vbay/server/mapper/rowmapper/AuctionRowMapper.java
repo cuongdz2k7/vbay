@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import com.vbay.server.model.Auction;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
+
 public class AuctionRowMapper {
     private AuctionRowMapper() {}
 
