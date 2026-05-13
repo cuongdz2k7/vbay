@@ -4,9 +4,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.vbay.server.model.User;
-import com.vbay.shared.enums.Position;
-import com.vbay.shared.enums.shared_status.UserStatus;
-
+import com.vbay.shared.enums.auth.Position;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class UserRowMapper {
     private UserRowMapper() {}
@@ -21,6 +20,7 @@ public class UserRowMapper {
                         rs.getBigDecimal("hold_balance"),
                         rs.getString("time_init"));
         user.setId(rs.getLong("id"));
+        user.setVersion(rs.getLong("version"));
         return user;
     }
 }

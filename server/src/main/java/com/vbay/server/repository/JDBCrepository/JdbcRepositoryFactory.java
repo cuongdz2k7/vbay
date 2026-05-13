@@ -9,13 +9,23 @@ import com.vbay.server.repository.UserRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
+import com.vbay.server.upload.ImageStorageService;
 
 
 public class JdbcRepositoryFactory implements RepositoryFactory {
+    private final ImageStorageService imageStorageService;
+
+    public JdbcRepositoryFactory() {
+        this(new ImageStorageService());
+    }
+
+    public JdbcRepositoryFactory(ImageStorageService imageStorageService) {
+        this.imageStorageService = imageStorageService;
+    }
     
     @Override
     public AuctionRepository createAuctionRepository(Connection connection) {
-        return new JdbcAuctionRepository(connection);
+        return new JdbcAuctionRepository(connection, imageStorageService);
     }
 
     @Override
@@ -38,6 +48,6 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
 
     @Override
     public PaymentRepository createPaymentRepository(Connection connection) {
-        return new JDBCPaymentRepository(connection);
+        return new JdbcPaymentRepository(connection);
     }
 }

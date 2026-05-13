@@ -14,7 +14,8 @@ public interface UserRepository {
     boolean existsByEmail(String email) throws SQLException;
     User save(User user) throws SQLException;
     Optional<User> lockUserForUpdate(long userId) throws SQLException;
-    void releaseHoldBalance(long userId, BigDecimal amount) throws SQLException;
-    void holdBalance(long userId, BigDecimal amount) throws SQLException;
-    void decreaseAvailableBalance(long userId, BigDecimal amount) throws SQLException;
+    long releaseHoldBalance(long userId, BigDecimal amount) throws SQLException;
+    long holdBalance(long userId, BigDecimal amount) throws SQLException;
+    long decreaseAvailableBalance(long userId, BigDecimal amount) throws SQLException;
+    long depositAvailableBalance(long userId, BigDecimal amount) throws SQLException;
 }

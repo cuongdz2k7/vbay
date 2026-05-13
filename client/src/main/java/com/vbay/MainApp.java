@@ -16,13 +16,16 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 public class MainApp extends Application {
     private static final Logger LOGGER = LoggingUtils.getLogger(MainApp.class);
+    private static final String DEFAULT_SERVER_HOST = "localhost";
+    private static final int SOCKET_PORT = 3618;
 
     public static void initSocketClient() {
         SocketClient client = SocketClient.getClient();
 
         try {
-            LOGGER.info("Connecting to VBay server...");
-            client.connect("localhost", 3618);
+            String serverHost = System.getProperty("vbay.server.host", DEFAULT_SERVER_HOST);
+            LOGGER.info("Connecting to VBay server at " + serverHost + ":" + SOCKET_PORT);
+            client.connect(serverHost, SOCKET_PORT);
 
             Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
             Respond<?> response = client.sendMessage(request);
@@ -84,5 +87,3 @@ public class MainApp extends Application {
         
     }
 }
-
-

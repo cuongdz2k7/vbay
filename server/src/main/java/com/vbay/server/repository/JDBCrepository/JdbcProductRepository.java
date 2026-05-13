@@ -13,7 +13,7 @@ import com.vbay.server.mapper.rowmapper.ProductRowMapper;
 import com.vbay.server.model.Product;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
-import com.vbay.shared.enums.shared_status.ProductStatus;
+import com.vbay.shared.enums.product.ProductStatus;
 
 
 public class JdbcProductRepository implements ProductRepository {
@@ -46,7 +46,7 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     private void loadTimestamps(Product product) throws SQLException {
-        String sql = "SELECT created_at, updated_at FROM products WHERE id = ?";
+        String sql = "SELECT created_at, updated_at, version FROM products WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, product.getId());
             try (ResultSet rs = statement.executeQuery()) {
@@ -55,6 +55,7 @@ public class JdbcProductRepository implements ProductRepository {
                     LocalDateTime updatedAt = rs.getTimestamp("updated_at").toLocalDateTime();
                     product.setCreatedAt(createdAt);
                     product.setUpdatedAt(updatedAt);
+                    product.setVersion(rs.getLong("version"));
                 }
             }
         }
@@ -63,7 +64,7 @@ public class JdbcProductRepository implements ProductRepository {
     @Override
     public Optional<Product> findById(long productId) throws SQLException {
         String sql = """
-            SELECT id, seller_id, name, description, category_id, product_condition AS `condition`, status, created_at, updated_at
+            SELECT id, seller_id, name, description, category_id, product_condition AS `condition`, status, created_at, updated_at, version
             FROM products
             WHERE id = ?
             """;
@@ -90,7 +91,7 @@ public class JdbcProductRepository implements ProductRepository {
     @Override
     public List<Product> findBySellerId(long sellerId) throws SQLException {
         String sql = """
-            SELECT id, seller_id, name, description, category_id, product_condition AS `condition`, status, created_at, updated_at
+            SELECT id, seller_id, name, description, category_id, product_condition AS `condition`, status, created_at, updated_at, version
             FROM products
             WHERE seller_id = ?
             """;
@@ -114,13 +115,19 @@ public class JdbcProductRepository implements ProductRepository {
     }
 
     @Override
-    public void updateStatus(long productId, ProductStatus status) throws SQLException {
-        String sql = "UPDATE products SET status = ? WHERE id = ?";
+    public long updateStatus(long productId, ProductStatus status) throws SQLException {
+        String sql = """
+            UPDATE products
+            SET status = ?,
+                version = version + 1
+            WHERE id = ?
+            """;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, status.name());
             statement.setLong(2, productId);
             statement.executeUpdate();
         }
+        return findVersionById(productId);
     }
 
     @Override
@@ -130,6 +137,19 @@ public class JdbcProductRepository implements ProductRepository {
             statement.setLong(1, productId);
             try (ResultSet rs = statement.executeQuery()) {
                 return rs.next();
+            }
+        }
+    }
+
+    private long findVersionById(long productId) throws SQLException {
+        String sql = "SELECT version FROM products WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, productId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("Product not found while reading version");
+                }
+                return rs.getLong("version");
             }
         }
     }

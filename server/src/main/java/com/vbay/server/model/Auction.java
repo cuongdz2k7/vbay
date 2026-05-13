@@ -3,7 +3,8 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.enums.shared_status.AuctionStatus;
+import com.vbay.shared.enums.auction.AuctionStatus;
+
 public class Auction {
     // Base
     private long id;
@@ -20,6 +21,8 @@ public class Auction {
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private AuctionStatus status;
+    private Long winnerUserId;
+    private long version;
 
     //Constructor (Create new auction) để lưu vào database
     public Auction(long productId, long sellerId, BigDecimal startingPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
@@ -52,6 +55,10 @@ public class Auction {
     }
     ///Constructor đầy đủ để tạo auction từ database, sẽ có tất cả các trường
     public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state) {
+        this(id, productId, sellerId, title, description, startingPrice, currentPrice, reservePrice, buyNowPrice, minimumBidStep, startingTime, endingTime, state, null);
+    }
+
+    public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state, Long winnerUserId) {
         this.id = id;
         this.productId = productId;
         this.sellerId = sellerId;
@@ -65,6 +72,7 @@ public class Auction {
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.status = state;
+        this.winnerUserId = winnerUserId;
     }
 
     //Getter
@@ -109,6 +117,12 @@ public class Auction {
     }
     public AuctionStatus getStatus(){
         return this.status;
+    }
+    public Long getWinnerUserId() {
+        return winnerUserId;
+    }
+    public long getVersion() {
+        return version;
     }
     public boolean isActive(){
         return this.status.equals(AuctionStatus.ACTIVE);
@@ -158,6 +172,12 @@ public class Auction {
     }
     public void setStatus(AuctionStatus new_status){
         this.status = new_status;
+    }
+    public void setWinnerUserId(Long winnerUserId) {
+        this.winnerUserId = winnerUserId;
+    }
+    public void setVersion(long version) {
+        this.version = version;
     }
 
 }

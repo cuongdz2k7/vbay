@@ -1,5 +1,5 @@
 package com.vbay.server.network_connection;
-//Import
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -8,24 +8,22 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.protocol.Respond;
 
-// Listening
 public class ClientHandler implements Runnable {
     private static final Logger LOGGER = LoggingUtils.getLogger(ClientHandler.class);
     private final Socket socket; 
-    private final RequestDistributor Distributor;
+    private final RequestDistributor distributor;
+    private final SubscriptionService subscriptionService;
 
     private final ClientSession session = new ClientSession();
     
-    ///ClientSession
-    
-    //Constructor
-    public ClientHandler(Socket socket, RequestDistributor Distributor) {
+    public ClientHandler(Socket socket, RequestDistributor distributor, SubscriptionService subscriptionService) {
         this.socket = socket;
-        this.Distributor = Distributor;
+        this.distributor = distributor;
+        this.subscriptionService = subscriptionService;
     }
 
     @Override
@@ -34,29 +32,30 @@ public class ClientHandler implements Runnable {
         LOGGER.info(() -> "Client connected: " + clientAddress);
         try (
             Socket clientsocket = socket;
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream())); // client gui request
-            PrintWriter out = new PrintWriter(clientsocket.getOutputStream(), true) // client nhan response
+            BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream()));
+            PrintWriter out = new PrintWriter(clientsocket.getOutputStream(), true)
         ) {
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.trim().isEmpty()){
-                    LOGGER.warning(() -> "Empty request from " + clientAddress);
-                    continue;
+            ClientConnection connection = new ClientConnection(session, out);
+            try {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    if (line.isBlank()) {
+                        LOGGER.warning(() -> "Empty request from " + clientAddress);
+                        continue;
+                    }
+
+                    Respond<?> response = distributor.dispatch(line, session, connection);
+                    connection.send(response);
                 }
-                if ("exit".equalsIgnoreCase(line)){
-                    out.println("Exit current socket");
-                    session.clearSession();
-                    break;
-                }
-                Respond<?> response = Distributor.dispatch(line, session);
-                String jsonResponse = JsonUtils.toJson(response);
-                out.println(jsonResponse);
+            } finally {
+                subscriptionService.disconnect(connection);
             }
         } catch (IOException exception) {
             LOGGER.log(Level.WARNING, "Client connection error for " + clientAddress, exception);
         }
-        finally{
+        finally {
             LOGGER.info(() -> "Client disconnected: " + clientAddress);
+            session.clearSession();
         }
     }
 }

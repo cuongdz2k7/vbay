@@ -23,7 +23,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findById(long id) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
             FROM users
             WHERE id = ?
             """;
@@ -42,7 +42,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByUsername(String username) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
             FROM users
             WHERE username = ?
             """;
@@ -61,7 +61,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
             FROM users
             WHERE email = ?
             LIMIT 1
@@ -142,7 +142,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> lockUserForUpdate (long id) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
             FROM users
             WHERE id = ?
             FOR UPDATE
@@ -160,11 +160,12 @@ public class JdbcUserRepository implements UserRepository {
     }
 
     @Override
-    public void releaseHoldBalance(long userId, BigDecimal amount) throws SQLException {
+    public long releaseHoldBalance(long userId, BigDecimal amount) throws SQLException {
         String sql = """
             UPDATE users
             SET hold_balance = hold_balance - ?,
-                available_balance = available_balance + ?
+                available_balance = available_balance + ?,
+                version = version + 1
             WHERE id = ?
             AND hold_balance >= ?
             """;
@@ -178,14 +179,16 @@ public class JdbcUserRepository implements UserRepository {
                 throw new ValidationException("Insufficient hold balance");
             }
         }
+        return findVersionById(userId);
     }
 
     @Override
-    public void holdBalance(long userId, BigDecimal amount) throws SQLException {
+    public long holdBalance(long userId, BigDecimal amount) throws SQLException {
         String sql = """
             UPDATE users
             SET available_balance = available_balance - ?,
-                hold_balance = hold_balance + ?
+                hold_balance = hold_balance + ?,
+                version = version + 1
             WHERE id = ?
             AND status = 'ACTIVE'
             AND available_balance >= ?
@@ -200,13 +203,15 @@ public class JdbcUserRepository implements UserRepository {
                 throw new ValidationException("Insufficient available balance");
             }
         }
+        return findVersionById(userId);
     }
 
     @Override
-    public void decreaseAvailableBalance(long userId, BigDecimal amount) throws SQLException {
+    public long decreaseAvailableBalance(long userId, BigDecimal amount) throws SQLException {
         String sql = """
             UPDATE users
-            SET available_balance = available_balance - ?
+            SET available_balance = available_balance - ?,
+                version = version + 1
             WHERE id = ?
             AND status = 'ACTIVE'
             AND available_balance >= ?
@@ -218,6 +223,40 @@ public class JdbcUserRepository implements UserRepository {
             statement.setBigDecimal(3, amount);
             if (statement.executeUpdate() == 0) {
                 throw new ValidationException("Insufficient available balance");
+            }
+        }
+        return findVersionById(userId);
+    }
+
+    @Override
+    public long depositAvailableBalance(long userId, BigDecimal amount) throws SQLException {
+        String sql = """
+            UPDATE users
+            SET available_balance = available_balance + ?,
+                version = version + 1
+            WHERE id = ?
+            AND status = 'ACTIVE'
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setBigDecimal(1, amount);
+            statement.setLong(2, userId);
+            if (statement.executeUpdate() == 0) {
+                throw new ValidationException("Active user not found");
+            }
+        }
+        return findVersionById(userId);
+    }
+
+    private long findVersionById(long userId) throws SQLException {
+        String sql = "SELECT version FROM users WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    throw new SQLException("User not found while reading version");
+                }
+                return rs.getLong("version");
             }
         }
     }

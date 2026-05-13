@@ -1,6 +1,8 @@
 package com.vbay.ui.scene_ui.controller.home;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -8,209 +10,100 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.network.dispatcher.RealtimeEventDispatcher;
+import com.vbay.network.dispatcher.RealtimeEventListener;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
+import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
+import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.shared.enums.realtime.RoomType;
+import com.vbay.shared.protocol.RealtimeEvent;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
-import com.vbay.ui.model.MockProductCatalog;
+import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneManager;
+import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
+import com.vbay.ui.scene_ui.controller.bid.BidController;
 import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
-import com.vbay.ui.scene_ui.controller.home.classes.ModuleSection;
-import com.vbay.ui.scene_ui.controller.home.classes.SectionGroup;
-import com.vbay.ui.scene_ui.controller.home.classes.ViewDefinition;
+import com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import com.vbay.ui.scene_ui.NotificationManager;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class HomeController {
-    private static final String MODULE_CATEGORIES = "Collections";
-    private static final String MODULE_DASHBOARD = "Dashboard";
-    private static final String MODULE_MY_BID = "My Bids";
-    private static final String MODULE_UPCOMING = "Coming Soon";
-    private static final String MODULE_LIVE_AUCTIONS = "Live Auctions";
-
-    private static final String SECTION_ELECTRONICS = "Electronics";
-    private static final String SECTION_COLLECTIBLES = "Collectibles";
-    private static final String SECTION_ART = "Art";
-    private static final String SECTION_JEWELRY_WATCHES = "Jewelry & Watches";
-    private static final String SECTION_SPORTING_GOODS = "Sporting Goods";
-
-    private static final String DASHBOARD_HIGHLIGHTS = "Highlights";
-    private static final String DASHBOARD_SELLER_DESK = "Seller Desk";
-    private static final String MY_BID_ACTIVE = "Active Rooms";
-    private static final String MY_BID_RESULTS = "Results";
-    private static final String UPCOMING_SCHEDULE = "Schedule";
-    private static final String UPCOMING_CURATED = "Curated Drops";
-    private static final String LIVE_NOW = "Now Live";
-    private static final String LIVE_PULSE = "Room Pulse";
-
-    private static final String DASHBOARD_FEATURED_TECH = "dashboard.featuredTech";
-    private static final String DASHBOARD_COLLECTOR_DESK = "dashboard.collectorDesk";
-    private static final String DASHBOARD_DRAFT_WATCH = "dashboard.draftWatch";
-    private static final String DASHBOARD_PERFORMANCE_BOARD = "dashboard.performanceBoard";
-    private static final String MY_BID_OPEN_LOTS = "myBid.openLots";
-    private static final String MY_BID_OUTBID_WATCH = "myBid.outbidWatch";
-    private static final String MY_BID_WINNING_LOTS = "myBid.winningLots";
-    private static final String MY_BID_WATCHLIST = "myBid.watchlist";
-    private static final String UPCOMING_TONIGHT = "upcoming.tonight";
-    private static final String UPCOMING_TOMORROW = "upcoming.tomorrow";
-    private static final String UPCOMING_PREMIUM_DROPS = "upcoming.premiumDrops";
-    private static final String UPCOMING_FRESH_LISTINGS = "upcoming.freshListings";
-    private static final String LIVE_CLOSING_FAST = "live.closingFast";
-    private static final String LIVE_TRENDING_LOTS = "live.trendingLots";
-    private static final String LIVE_HIGH_STAKES = "live.highStakes";
-    private static final String LIVE_COMPETITIVE_ROOM = "live.competitiveRoom";
-    //Logger 
     private static final Logger LOGGER = LoggingUtils.getLogger(HomeController.class);
-    @FXML
-    private Button categoriesModuleButton;
-    @FXML
-    private Button dashboardModuleButton;
-    @FXML
-    private Button myBidModuleButton;
-    @FXML
-    private Button upcomingModuleButton;
-    @FXML
-    private Button liveAuctionsModuleButton;
+    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
+    private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
+    private static final String BID_VIEW = "/jfx/scene/bid/Bid.fxml";
+    private static final String BID_CSS = "/jfx/css/Bid.css";
+    private static final String DEPOSIT_BALANCE_VIEW = "/jfx/scene/DepositBalance.fxml";
+
+    private static final String VIEW_HOME = "Home";
+    private static final String VIEW_COMING_SOON = "Coming Soon";
+    private static final String VIEW_LIVE_AUCTION = "Live Auction";
+    private static final String VIEW_BID_HISTORY = "Bid History";
+    private static final String VIEW_MY_AUCTION = "My Auction";
+
+    private static final String CATEGORY_ALL = "All";
+    private static final String CATEGORY_ALL_LABEL = "All Categories";
+    private static final String CATEGORY_ELECTRONICS = "Electronics";
+    private static final String CATEGORY_COLLECTIBLES = "Collectibles";
+    private static final String CATEGORY_ARTS = "Arts";
+    private static final String CATEGORY_JEWELRY_WATCHES = "Jewelry & Watches";
 
     @FXML
-    private VBox categoriesModulePanel;
+    private Label balanceLabel;
     @FXML
-    private VBox dashboardModulePanel;
+    private BorderPane homeRoot;
     @FXML
-    private VBox myBidModulePanel;
+    private Button homeModuleButton;
     @FXML
-    private VBox upcomingModulePanel;
+    private Button comingSoonModuleButton;
     @FXML
-    private VBox liveAuctionsModulePanel;
-
+    private Button liveAuctionModuleButton;
     @FXML
-    private Button electronicsButton;
+    private Button bidHistoryModuleButton;
     @FXML
-    private Button collectiblesButton;
-    @FXML
-    private Button artButton;
-    @FXML
-    private Button jewelryWatchesButton;
-    @FXML
-    private Button sportingGoodsButton;
-    @FXML
-    private Button dashboardHighlightsButton;
-    @FXML
-    private Button dashboardSellerDeskButton;
-    @FXML
-    private Button myBidActiveButton;
-    @FXML
-    private Button myBidResultsButton;
-    @FXML
-    private Button upcomingScheduleButton;
-    @FXML
-    private Button upcomingCuratedButton;
-    @FXML
-    private Button liveNowButton;
-    @FXML
-    private Button livePulseButton;
-
-    @FXML
-    private VBox electronicsSubmenu;
-    @FXML
-    private VBox collectiblesSubmenu;
-    @FXML
-    private VBox artSubmenu;
-    @FXML
-    private VBox jewelryWatchesSubmenu;
-    @FXML
-    private VBox sportingGoodsSubmenu;
-    @FXML
-    private VBox dashboardHighlightsSubmenu;
-    @FXML
-    private VBox dashboardSellerDeskSubmenu;
-    @FXML
-    private VBox myBidActiveSubmenu;
-    @FXML
-    private VBox myBidResultsSubmenu;
-    @FXML
-    private VBox upcomingScheduleSubmenu;
-    @FXML
-    private VBox upcomingCuratedSubmenu;
-    @FXML
-    private VBox liveNowSubmenu;
-    @FXML
-    private VBox livePulseSubmenu;
-
-    @FXML
-    private Button macbooksButton;
-    @FXML
-    private Button phonesButton;
-    @FXML
-    private Button gamingButton;
-    @FXML
-    private Button audioButton;
-    @FXML
-    private Button cardsButton;
-    @FXML
-    private Button figuresButton;
-    @FXML
-    private Button stampsButton;
-    @FXML
-    private Button paintbrushesButton;
-    @FXML
-    private Button clocksButton;
-    @FXML
-    private Button earingsButton;
-    @FXML
-    private Button racketsButton;
-    @FXML
-    private Button pickleballRacketsButton;
-    @FXML
-    private Button dashboardFeaturedTechButton;
-    @FXML
-    private Button dashboardCollectorDeskButton;
-    @FXML
-    private Button dashboardDraftWatchButton;
-    @FXML
-    private Button dashboardPerformanceBoardButton;
-    @FXML
-    private Button myBidOpenLotsButton;
-    @FXML
-    private Button myBidOutbidWatchButton;
-    @FXML
-    private Button myBidWinningLotsButton;
-    @FXML
-    private Button myBidWatchlistButton;
-    @FXML
-    private Button upcomingTonightButton;
-    @FXML
-    private Button upcomingTomorrowButton;
-    @FXML
-    private Button upcomingPremiumDropsButton;
-    @FXML
-    private Button upcomingFreshListingsButton;
-    @FXML
-    private Button liveClosingFastButton;
-    @FXML
-    private Button liveTrendingLotsButton;
-    @FXML
-    private Button liveHighStakesButton;
-    @FXML
-    private Button liveCompetitiveRoomButton;
-
+    private Button myAuctionModuleButton;
     @FXML
     private Label sidebarSubtitle;
+    @FXML
+    private Label accountNameLabel;
     @FXML
     private Label catalogTitle;
     @FXML
     private Label catalogSubtitle;
+    @FXML
+    private ComboBox<String> categoryFilterComboBox;
+    @FXML
+    private VBox homeDashboard;
+    @FXML
+    private VBox catalogContent;
+    @FXML
+    private FlowPane comingSoonPreviewFlow;
+    @FXML
+    private FlowPane liveAuctionPreviewFlow;
     @FXML
     private FlowPane productFlow;
     @FXML
@@ -218,111 +111,272 @@ public class HomeController {
     @FXML
     private HBox paginationBar;
 
-    private Map<String, List<Product>> categoryData;
-    private Map<String, List<Product>> viewData;
-    private Map<Button, ModuleSection> moduleSections;
-    private Map<Button, SectionGroup> sectionGroups;
-    private Map<Button, ViewDefinition> viewDefinitions;
-    private List<Button> subcategoryButtons;
-    private List<Product> activeProducts = List.of();
-    private String activeModuleKey;
-    private String activeSectionKey;
-    private String activeViewKey;
-    private String emptyStateMessage = "Select a subcategory to display auctions.";
+    private final Map<Button, String> moduleButtons = new LinkedHashMap<>();
+
+    private String activeView = VIEW_HOME;
+    private String activeCategory = CATEGORY_ALL;
+    private Node homeCenter;
+    private Node homeLeft;
+    private Node homeRight;
+    private Node homeBottom;
+
+    //realtime
+    private final Map<Long, AuctionListItemPayload> livePreviewAuctions = new LinkedHashMap<>();
+    private final Map<Long, AuctionListItemPayload> comingSoonPreviewAuctions = new LinkedHashMap<>();
+    private final Map<Long, AuctionListItemPayload> activeViewAuctions = new LinkedHashMap<>();
+    private RealtimeEventListener<AuctionListItemPayload> auctionListItemListener;
+    private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
+    private DepositBalanceController activeDepositController;
+    private BidController activeBidController;
+    private Long currentUserId;
+
 
     @FXML
     private void initialize() {
-        categoryData = MockProductCatalog.categoryData();
-        viewData = initializeViewData();
+        homeCenter = homeRoot.getCenter();
+        homeLeft = homeRoot.getLeft();
+        homeRight = homeRoot.getRight();
+        homeBottom = homeRoot.getBottom();
+        currentUserId = ClientAuthSession.getUserId();
 
-        subcategoryButtons = List.of(
-            macbooksButton,
-            phonesButton,
-            gamingButton,
-            audioButton,
-            cardsButton,
-            figuresButton,
-            stampsButton,
-            paintbrushesButton,
-            clocksButton,
-            earingsButton,
-            racketsButton,
-            pickleballRacketsButton,
-            dashboardFeaturedTechButton,
-            dashboardCollectorDeskButton,
-            dashboardDraftWatchButton,
-            dashboardPerformanceBoardButton,
-            myBidOpenLotsButton,
-            myBidOutbidWatchButton,
-            myBidWinningLotsButton,
-            myBidWatchlistButton,
-            upcomingTonightButton,
-            upcomingTomorrowButton,
-            upcomingPremiumDropsButton,
-            upcomingFreshListingsButton,
-            liveClosingFastButton,
-            liveTrendingLotsButton,
-            liveHighStakesButton,
-            liveCompetitiveRoomButton
-        );
-
-        initializeModuleSections();
-        initializeSectionGroups();
-        initializeViewDefinitions();
+        initializeNavigationMaps();
+        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateAccountDisplay();
+        subscribeRealtimeListener();
+        subscribeServerRooms();
 
         paginationBar.setVisible(false);
         paginationBar.setManaged(false);
+        selectView(VIEW_HOME);
+    }
 
-        openModule(findModuleSection(MODULE_DASHBOARD));
+    private void loadHomePreviewAuctions() {
+        livePreviewAuctions.clear();
+        comingSoonPreviewAuctions.clear();
+
+        fetchAuctionList("ACTIVE", null, null, 3)
+            .forEach(item -> livePreviewAuctions.put(item.getAuctionId(), item));
+
+        fetchAuctionList("SCHEDULED", null, null, 3)
+            .forEach(item -> comingSoonPreviewAuctions.put(item.getAuctionId(), item));
+    }
+
+    private List<AuctionListItemPayload> auctionsForActiveView() {
+        return activeViewAuctions.values().stream()
+            .sorted(this::compareAuction)
+            .toList();
+    }
+
+
+    private void loadActiveViewAuctions() {
+        activeViewAuctions.clear();
+
+        if (VIEW_MY_AUCTION.equals(activeView) && currentUserId == null) {
+            return;
+        }
+
+        String status = switch (activeView) {
+            case VIEW_LIVE_AUCTION -> "ACTIVE";
+            case VIEW_COMING_SOON -> "SCHEDULED";
+            default -> null;
+        };
+
+        Long categoryId = categoryIdForActiveFilter();
+        Long sellerId = VIEW_MY_AUCTION.equals(activeView) ? currentUserId : null;
+
+        fetchAuctionList(status, categoryId, sellerId, null)
+            .forEach(item -> activeViewAuctions.put(item.getAuctionId(), item));
+    }
+
+    private List<AuctionListItemPayload> fetchAuctionList(
+        String status, 
+        Long categoryId, 
+        Long sellerId, 
+        Integer limit) {
+        try {
+            AuctionListRequest request = new AuctionListRequest(status, categoryId, sellerId, limit);
+            Respond<?> response = SocketClient.getClient().sendMessage(
+                new Request<>(RequestType.GET_AUCTION_LIST, request)
+            );
+            if (response == null || !response.isStatus()) {
+                throw new IOException(response != null ? response.getMessage() : "No response");
+            }
+            AuctionListResponse listResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()),AuctionListResponse.class);
+
+            return listResponse.getItems() != null ? listResponse.getItems() : List.of();            
+        } catch (IOException exception) {
+            LOGGER.log(Level.SEVERE, "Load auctions failed", exception);
+            showMessage(NotificationManager.NotificationType.ERROR, "Load auctions failed", exception.getMessage());
+            return List.of();
+        }
+    }
+
+    private void subscribeServerRooms() {
+        try {
+            Room room = new Room();
+            room.setType(RoomType.AUCTION_LIST);
+
+            SocketClient.getClient().sendMessage(
+                new Request<>(RequestType.SUBSCRIBE_ROOM, room)
+            );
+            if (currentUserId != null) {
+                Room userRoom = new Room();
+                userRoom.setType(RoomType.USER);
+                userRoom.setTargetId(currentUserId);
+                SocketClient.getClient().sendMessage(
+                    new Request<>(RequestType.SUBSCRIBE_ROOM, userRoom)
+                );
+            }
+        } catch (IOException exception) {
+            LOGGER.log(Level.WARNING, "Subscribe server rooms failed", exception);
+        }
+    }
+
+
+    private void subscribeRealtimeListener() {
+        auctionListItemListener = event -> handleAuctionListItemUpdated(event);
+        RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
+        dispatcher.subscribe(
+                RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
+                auctionListItemListener
+            );
+        userBalanceListener = event -> handleUserBalanceUpdated(event);
+        dispatcher.subscribe(
+            RealtimeEventType.USER_BALANCE_UPDATED,
+            userBalanceListener
+        );
+    }
+
+    private void unsubscribeRealtimeListener() {
+        if (auctionListItemListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
+                auctionListItemListener
+            );
+            auctionListItemListener = null;
+        }
+        if (userBalanceListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.USER_BALANCE_UPDATED,
+                userBalanceListener
+            );
+            userBalanceListener = null;
+        }
+    }
+
+    private void handleAuctionListItemUpdated(RealtimeEvent<AuctionListItemPayload> event) {
+        AuctionListItemPayload item = event.getPayload();
+
+        Platform.runLater(() -> {
+            if (VIEW_HOME.equals(activeView)) {
+                updateHomePreviewCaches(item);
+            } else {
+                updateActiveViewCache(item);
+            }
+
+            renderActiveView();
+        });
+    }
+    
+    private boolean matchesActiveViewQuery(AuctionListItemPayload item) {
+        if (!matchesCategoryFilter(item)) {
+            return false;
+        }
+
+        return switch (activeView) {
+            case VIEW_LIVE_AUCTION -> "ACTIVE".equals(item.getStatus());
+            case VIEW_COMING_SOON -> "SCHEDULED".equals(item.getStatus());
+            case VIEW_MY_AUCTION -> currentUserId != null && item.getSellerId() == currentUserId;
+            default -> true;
+        };
+    }
+
+    private boolean matchesCategoryFilter(AuctionListItemPayload item) {
+        Long categoryId = categoryIdForActiveFilter();
+        return categoryId == null || item.getCategoryId() == categoryId;
+    }
+
+    private void updateActiveViewCache(AuctionListItemPayload item) {
+        if (matchesActiveViewQuery(item)) {
+            activeViewAuctions.put(item.getAuctionId(), item);
+        } else {
+            activeViewAuctions.remove(item.getAuctionId());
+        }
+    }
+
+    private boolean matchesPreviewQuery(AuctionListItemPayload item, String status) {
+        return status.equals(item.getStatus());
+    }
+
+    private void updateHomePreviewCaches(AuctionListItemPayload item) {
+        if (matchesPreviewQuery(item, "ACTIVE")) {
+            livePreviewAuctions.put(item.getAuctionId(), item);
+            trimCache(livePreviewAuctions, 3);
+        } else {
+            livePreviewAuctions.remove(item.getAuctionId());
+        }
+
+        if (matchesPreviewQuery(item, "SCHEDULED")) {
+            comingSoonPreviewAuctions.put(item.getAuctionId(), item);
+            trimCache(comingSoonPreviewAuctions, 3);
+        } else {
+            comingSoonPreviewAuctions.remove(item.getAuctionId());
+        }
+    }
+
+    private void trimCache(Map<Long, AuctionListItemPayload> cache, int limit) {
+        List<AuctionListItemPayload> sorted = cache.values().stream()
+            .sorted(this::compareAuction)
+            .limit(limit)
+            .toList();
+
+        cache.clear();
+        for (AuctionListItemPayload item : sorted) {
+            cache.put(item.getAuctionId(), item);
+        }
     }
 
     @FXML
-    private void handleModuleToggle(ActionEvent event) {
-        ModuleSection section = moduleSections.get(event.getSource());
-        if (section == null) {
-            return;
+    private void handleModuleSelection(ActionEvent event) {
+        String selectedView = moduleButtons.get(event.getSource());
+        if (selectedView != null) {
+            restoreShellIfInSubView();
+            selectView(selectedView);
         }
-
-        if (section.key.equals(activeModuleKey)) {
-            collapseAllModules();
-            return;
-        }
-
-        openModule(section);
     }
 
     @FXML
-    private void handleSectionToggle(ActionEvent event) {
-        SectionGroup section = sectionGroups.get(event.getSource());
-        if (section == null || !section.moduleKey.equals(activeModuleKey)) {
-            return;
-        }
+    private void handleCategoryFilterChange(ActionEvent event) {
+        activeCategory = normalizeCategoryFilter(categoryFilterComboBox.getValue());
 
-        if (section.key.equals(activeSectionKey)) {
-            collapseSection(section);
-            return;
+        if (!VIEW_HOME.equals(activeView)) {
+            loadActiveViewAuctions();
+            renderActiveView();
         }
-
-        openSection(section);
     }
 
     @FXML
-    private void handleSubcategorySelection(ActionEvent event) {
-        ViewDefinition definition = viewDefinitions.get(event.getSource());
-        if (definition == null || !definition.moduleKey.equals(activeModuleKey)) {
-            return;
-        }
+    private void handleViewAllBidHistory(ActionEvent event) {
+        restoreShellIfInSubView();
+        selectView(VIEW_BID_HISTORY);
+    }
 
-        activeViewKey = definition.key;
-        activeProducts = viewData.getOrDefault(definition.key, List.of());
-        emptyStateMessage = "No products available for " + definition.displayName + " yet.";
+    @FXML
+    private void handleViewAllMyAuction(ActionEvent event) {
+        restoreShellIfInSubView();
+        selectView(VIEW_MY_AUCTION);
+    }
 
-        setActiveSubSelection(definition.button);
-        sidebarSubtitle.setText(definition.moduleKey + " / " + definition.sectionName + " / " + definition.displayName);
-        catalogTitle.setText(definition.displayName);
-        catalogSubtitle.setText(definition.subtitle);
+    @FXML
+    private void handleViewAllComingSoon(ActionEvent event) {
+        restoreShellIfInSubView();
+        selectView(VIEW_COMING_SOON);
+    }
 
-        renderCurrentPage();
+    @FXML
+    private void handleViewAllLiveAuction(ActionEvent event) {
+        restoreShellIfInSubView();
+        selectView(VIEW_LIVE_AUCTION);
     }
 
     @FXML
@@ -330,22 +384,132 @@ public class HomeController {
         try {
             logoutUser();
         } catch (IOException exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Logout failed", exception);
             showMessage(
                 NotificationManager.NotificationType.ERROR,
-                "Logout failed(Server Side)",
+                "Logout failed",
                 exception.getMessage() != null ? exception.getMessage() : "Could not log out from the current session."
             );
             return;
         }
         try {
+            unsubscribeRealtimeListener();
             SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Navigation to login failed", exception);
             showMessage(
                 NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 exception.getMessage() != null ? exception.getMessage() : "Could not return to the login screen."
+            );
+        }
+    }
+
+    @FXML
+    private void handleYourInventory(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(CREATE_AUCTION_VIEW));
+            BorderPane createAuctionRoot = loader.load();
+            CreateAuctionController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            controller.setOnAuctionCreated(this::openMyAuctionAfterCreate);
+            attachCreateAuctionStylesheet();
+
+            Node createAuctionCenter = createAuctionRoot.getCenter();
+            Node createAuctionBottom = createAuctionRoot.getBottom();
+            createAuctionRoot.setCenter(null);
+            createAuctionRoot.setBottom(null);
+
+            homeRoot.setLeft(null);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(createAuctionCenter);
+            homeRoot.setBottom(createAuctionBottom);
+        } catch (Exception exception) {
+            LOGGER.log(Level.SEVERE, "Navigation to create auction failed", exception);
+            showMessage(
+                NotificationManager.NotificationType.ERROR,
+                "Navigation failed",
+                "Could not open the create auction scene."
+            );
+        }
+    }
+
+    private void handleUserBalanceUpdated(RealtimeEvent<UserBalanceUpdatedPayload> event) {
+        UserBalanceUpdatedPayload payload = event.getPayload();
+        if (payload == null || currentUserId == null || payload.getUserId() != currentUserId) {
+            return;
+        }
+        Platform.runLater(() -> {
+            ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+            updateBalanceDisplay(payload.getAvailableBalance());
+        });
+    }
+
+    private void updateBalanceDisplay(BigDecimal availableBalance) {
+        BigDecimal balance = availableBalance == null ? BigDecimal.ZERO : availableBalance;
+        balanceLabel.setText("BALANCE: " + CURRENCY_FORMAT.format(balance));
+    }
+
+    private void updateAccountDisplay() {
+        String username = ClientAuthSession.getUsername();
+        accountNameLabel.setText(username == null || username.isBlank() ? "Account" : username);
+    }
+
+    @FXML
+    private void handleDepositBalance(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(DEPOSIT_BALANCE_VIEW));
+            Node depositCenter = loader.load();
+            if (activeDepositController != null) {
+                activeDepositController.dispose();
+            }
+            DepositBalanceController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            activeDepositController = controller;
+
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(depositCenter);
+            homeRoot.setBottom(null);
+        } catch (Exception exception) {
+            LOGGER.log(Level.SEVERE, "Navigation to deposit balance failed", exception);
+            showMessage(
+                NotificationManager.NotificationType.ERROR,
+                "Navigation failed",
+                "Could not open the deposit balance screen."
+            );
+        }
+    }
+
+    public void handleCardClick(Auction auction) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(BID_VIEW));
+            BorderPane bidRoot = loader.load();
+            if (activeBidController != null) {
+                activeBidController.dispose();
+            }
+            BidController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            controller.setSceneData(auction);
+            activeBidController = controller;
+            attachBidStylesheet();
+
+            Node bidCenter = bidRoot.getCenter();
+            Node bidBottom = bidRoot.getBottom();
+            ///gỡ node ra khỏi parent cũ
+            bidRoot.setCenter(null);
+            bidRoot.setBottom(null);
+
+            homeRoot.setLeft(null);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(bidCenter);
+            homeRoot.setBottom(bidBottom);
+        } catch (Exception exception) {
+            LOGGER.log(Level.SEVERE, "Navigation to bid detail failed", exception);
+            showMessage(
+                NotificationManager.NotificationType.ERROR,
+                "Navigation failed",
+                "Could not open the placebid detail scene for the selected product."
             );
         }
     }
@@ -359,605 +523,254 @@ public class HomeController {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response.getMessage() : "Logout failed.");
         }
+        LOGGER.info("Logout successfully.");
+        ClientAuthSession.clear();
     }
 
-    @FXML
-    private void handleCreateAuctions(ActionEvent event) {
-        try {
-            NotificationManager.show(
-                NotificationManager.NotificationType.SUCCESS,
-                "Auction Created",
-                "Your auction has been created successfully. Redirecting..."
-            );
-            // Slightly delay redirection to let notification show properly
-            javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1));
-            delay.setOnFinished(e -> {
-                try {
-                    SceneManager.switchScene("/jfx/scene/Home.fxml");
-                } catch (Exception ex) {
-                    LOGGER.log(java.util.logging.Level.SEVERE, "Fail to refresh home", ex);
-                }
-            });
-            delay.play();
-        } catch (Exception exception) {
-            NotificationManager.show(
-                NotificationManager.NotificationType.ERROR,
-                "Fail Creation",
-                "Could not create Auction"
-            );
+    private void initializeNavigationMaps() {
+        moduleButtons.put(homeModuleButton, VIEW_HOME);
+        moduleButtons.put(comingSoonModuleButton, VIEW_COMING_SOON);
+        moduleButtons.put(liveAuctionModuleButton, VIEW_LIVE_AUCTION);
+        moduleButtons.put(bidHistoryModuleButton, VIEW_BID_HISTORY);
+        moduleButtons.put(myAuctionModuleButton, VIEW_MY_AUCTION);
+    }
+
+    private void selectView(String view) {
+        activeView = view;
+        if (VIEW_HOME.equals(view)) {
+            loadHomePreviewAuctions();
+        } else {
+            loadActiveViewAuctions();
+        }
+
+        renderActiveView();
+    }
+
+    private void renderActiveView() {
+        List<AuctionListItemPayload> auctions = auctionsForActiveView();
+        sidebarSubtitle.setText(subtitleForSidebar());
+        homeRoot.setRight(VIEW_HOME.equals(activeView) ? homeRight : null);
+        setActiveNavigationState();
+        if (VIEW_HOME.equals(activeView)) {
+            renderHomeDashboard();
+        } else {
+            catalogTitle.setText(activeView);
+            catalogSubtitle.setText(subtitleForCatalog(auctions.size()));
+            setNodeVisibility(homeDashboard, false);
+            setNodeVisibility(catalogContent, true);
+            renderAuctionItems(auctions);
         }
     }
 
-    public void renderProducts(List<Product> products) {
+    private String subtitleForSidebar() {
+        if (!VIEW_HOME.equals(activeView) && !CATEGORY_ALL.equals(activeCategory)) {
+            return activeView.toLowerCase() + " / " + activeCategory;
+        }
+        return activeView.toLowerCase();
+    }
+
+    private String subtitleForCatalog(int auctionCount) {
+        String categoryLabel = CATEGORY_ALL.equals(activeCategory) ? "all categories" : activeCategory;
+        return switch (activeView) {
+            case VIEW_COMING_SOON -> auctionCount + " upcoming auctions in " + categoryLabel + ".";
+            case VIEW_LIVE_AUCTION -> auctionCount + " active auctions in " + categoryLabel + ".";
+            case VIEW_BID_HISTORY -> "Your bid records filtered by " + categoryLabel + ".";
+            case VIEW_MY_AUCTION -> "Auctions you created, filtered by " + categoryLabel + ".";
+            default -> "Auction list in " + categoryLabel + ".";
+        };
+    }
+
+    private void setActiveNavigationState() {
+        for (Map.Entry<Button, String> entry : moduleButtons.entrySet()) {
+            setStyleClassActive(entry.getKey(), "active-module", entry.getValue().equals(activeView));
+        }
+    }
+
+    private void renderAuctionItems(List<AuctionListItemPayload> auctions) {
         productFlow.getChildren().clear();
 
-        boolean isEmpty = products.isEmpty();
-        emptyStateLabel.setText(emptyStateMessage);
+        boolean isEmpty = auctions.isEmpty();
+        emptyStateLabel.setText(emptyMessage());
         emptyStateLabel.setVisible(isEmpty);
         emptyStateLabel.setManaged(isEmpty);
 
-        for (Product product : products) {
-            Node card = createProductCard(product);
-            productFlow.getChildren().add(card);
+        for (AuctionListItemPayload auction : auctions) {
+            productFlow.getChildren().add(createAuctionCard(toAuction(auction)));
         }
     }
 
-    public void handleCardClick(Product product) {
-        try {
-            SceneManager.switchScene("/jfx/scene/bid/Bid.fxml", product);
-        } catch (Exception exception) {
-            showMessage(
-                NotificationManager.NotificationType.ERROR,
-                "Navigation failed",
-                "Could not open the placebid detail scene for the selected product."
-            );
+    private void renderHomeDashboard() {
+        setNodeVisibility(homeDashboard, true);
+        setNodeVisibility(catalogContent, false);
+        renderPreviewFlow(
+            comingSoonPreviewFlow,
+            comingSoonPreviewAuctions.values().stream()
+                .sorted(this::compareAuction)
+                .map(this::toAuction)
+                .toList()
+        );
+
+        renderPreviewFlow(
+            liveAuctionPreviewFlow,
+            livePreviewAuctions.values().stream()
+                .sorted(this::compareAuction)
+                .map(this::toAuction)
+                .toList()
+        );
+    }
+
+    private void renderPreviewFlow(FlowPane flowPane, List<Auction> auctions) {
+        flowPane.getChildren().clear();
+        for (Auction auction : auctions) {
+            flowPane.getChildren().add(createAuctionCard(auction));
         }
     }
 
-    private Map<String, List<Product>> initializeViewData() {
-        Map<String, List<Product>> data = new LinkedHashMap<>(categoryData);
+    private Auction toAuction(AuctionListItemPayload payload) {
+        String imagePath = payload.getThumbnailUrl() == null || payload.getThumbnailUrl().isBlank()
+            ? "/jfx/image/products/collectibles.png"
+            : payload.getThumbnailUrl();
+        List<String> imageUrls = payload.getImageUrls() == null || payload.getImageUrls().isEmpty()
+            ? List.of(imagePath)
+            : payload.getImageUrls();
+        String description = payload.getDescription() == null || payload.getDescription().isBlank()
+            ? "Auction #" + payload.getAuctionId()
+            : payload.getDescription();
 
-        data.put(DASHBOARD_FEATURED_TECH, categoryData.getOrDefault(MockProductCatalog.ELECTRONICS_MACBOOKS, List.of()));
-        data.put(DASHBOARD_COLLECTOR_DESK, categoryData.getOrDefault(MockProductCatalog.COLLECTIBLES_CARDS, List.of()));
-        data.put(DASHBOARD_DRAFT_WATCH, categoryData.getOrDefault(MockProductCatalog.ART_PAINTBRUSHES, List.of()));
-        data.put(DASHBOARD_PERFORMANCE_BOARD, categoryData.getOrDefault(MockProductCatalog.SPORTING_RACKETS, List.of()));
+        Product product = new Product(
+            payload.getProductId(),
+            payload.getProductName() == null || payload.getProductName().isBlank() ? payload.getTitle() : payload.getProductName(),
+            description,
+            payload.getCategoryId(),
+            imagePath,
+            imageUrls
+        );
 
-        data.put(MY_BID_OPEN_LOTS, categoryData.getOrDefault(MockProductCatalog.ELECTRONICS_PHONES, List.of()));
-        data.put(MY_BID_OUTBID_WATCH, categoryData.getOrDefault(MockProductCatalog.COLLECTIBLES_FIGURES, List.of()));
-        data.put(MY_BID_WINNING_LOTS, categoryData.getOrDefault(MockProductCatalog.JEWELRY_CLOCKS, List.of()));
-        data.put(MY_BID_WATCHLIST, categoryData.getOrDefault(MockProductCatalog.ELECTRONICS_AUDIO, List.of()));
-
-        data.put(UPCOMING_TONIGHT, categoryData.getOrDefault(MockProductCatalog.SPORTING_PICKLEBALL, List.of()));
-        data.put(UPCOMING_TOMORROW, categoryData.getOrDefault(MockProductCatalog.ART_STAMPS, List.of()));
-        data.put(UPCOMING_PREMIUM_DROPS, categoryData.getOrDefault(MockProductCatalog.JEWELRY_EARRINGS, List.of()));
-        data.put(UPCOMING_FRESH_LISTINGS, categoryData.getOrDefault(MockProductCatalog.COLLECTIBLES_CARDS, List.of()));
-
-        data.put(LIVE_CLOSING_FAST, categoryData.getOrDefault(MockProductCatalog.ELECTRONICS_GAMING, List.of()));
-        data.put(LIVE_TRENDING_LOTS, categoryData.getOrDefault(MockProductCatalog.ELECTRONICS_MACBOOKS, List.of()));
-        data.put(LIVE_HIGH_STAKES, categoryData.getOrDefault(MockProductCatalog.JEWELRY_CLOCKS, List.of()));
-        data.put(LIVE_COMPETITIVE_ROOM, categoryData.getOrDefault(MockProductCatalog.SPORTING_PICKLEBALL, List.of()));
-
-        return Map.copyOf(data);
+        return new Auction(
+            payload.getAuctionId(),
+            payload.getAuctionVersion(),
+            payload.getSellerId(),
+            payload.getTitle(),
+            description,
+            payload.getStatus(),
+            payload.getStartingPrice(),
+            payload.getCurrentPrice(),
+            payload.getMinimumBidStep(),
+            payload.getBuyNowPrice(),
+            payload.getWinnerUserId(),
+            payload.getReserveMet(),
+            payload.getStartingTime(),
+            payload.getEndingTime(),
+            product
+        );
     }
 
-    private void initializeModuleSections() {
-        Map<Button, ModuleSection> sections = new LinkedHashMap<>();
-        sections.put(categoriesModuleButton, new ModuleSection(MODULE_CATEGORIES, categoriesModuleButton, categoriesModulePanel));
-        sections.put(dashboardModuleButton, new ModuleSection(MODULE_DASHBOARD, dashboardModuleButton, dashboardModulePanel));
-        sections.put(myBidModuleButton, new ModuleSection(MODULE_MY_BID, myBidModuleButton, myBidModulePanel));
-        sections.put(upcomingModuleButton, new ModuleSection(MODULE_UPCOMING, upcomingModuleButton, upcomingModulePanel));
-        sections.put(
-            liveAuctionsModuleButton,
-            new ModuleSection(MODULE_LIVE_AUCTIONS, liveAuctionsModuleButton, liveAuctionsModulePanel)
-        );
-        moduleSections = Map.copyOf(sections);
-    }
-
-    private void initializeSectionGroups() {
-        Map<Button, SectionGroup> sections = new LinkedHashMap<>();
-
-        sections.put(
-            electronicsButton,
-            new SectionGroup(MODULE_CATEGORIES, SECTION_ELECTRONICS, electronicsButton, electronicsSubmenu)
-        );
-        sections.put(
-            collectiblesButton,
-            new SectionGroup(MODULE_CATEGORIES, SECTION_COLLECTIBLES, collectiblesButton, collectiblesSubmenu)
-        );
-        sections.put(
-            artButton,
-            new SectionGroup(MODULE_CATEGORIES, SECTION_ART, artButton, artSubmenu)
-        );
-        sections.put(
-            jewelryWatchesButton,
-            new SectionGroup(MODULE_CATEGORIES, SECTION_JEWELRY_WATCHES, jewelryWatchesButton, jewelryWatchesSubmenu)
-        );
-        sections.put(
-            sportingGoodsButton,
-            new SectionGroup(MODULE_CATEGORIES, SECTION_SPORTING_GOODS, sportingGoodsButton, sportingGoodsSubmenu)
-        );
-        sections.put(
-            dashboardHighlightsButton,
-            new SectionGroup(MODULE_DASHBOARD, DASHBOARD_HIGHLIGHTS, dashboardHighlightsButton, dashboardHighlightsSubmenu)
-        );
-        sections.put(
-            dashboardSellerDeskButton,
-            new SectionGroup(MODULE_DASHBOARD, DASHBOARD_SELLER_DESK, dashboardSellerDeskButton, dashboardSellerDeskSubmenu)
-        );
-        sections.put(
-            myBidActiveButton,
-            new SectionGroup(MODULE_MY_BID, MY_BID_ACTIVE, myBidActiveButton, myBidActiveSubmenu)
-        );
-        sections.put(
-            myBidResultsButton,
-            new SectionGroup(MODULE_MY_BID, MY_BID_RESULTS, myBidResultsButton, myBidResultsSubmenu)
-        );
-        sections.put(
-            upcomingScheduleButton,
-            new SectionGroup(MODULE_UPCOMING, UPCOMING_SCHEDULE, upcomingScheduleButton, upcomingScheduleSubmenu)
-        );
-        sections.put(
-            upcomingCuratedButton,
-            new SectionGroup(MODULE_UPCOMING, UPCOMING_CURATED, upcomingCuratedButton, upcomingCuratedSubmenu)
-        );
-        sections.put(
-            liveNowButton,
-            new SectionGroup(MODULE_LIVE_AUCTIONS, LIVE_NOW, liveNowButton, liveNowSubmenu)
-        );
-        sections.put(
-            livePulseButton,
-            new SectionGroup(MODULE_LIVE_AUCTIONS, LIVE_PULSE, livePulseButton, livePulseSubmenu)
-        );
-
-        sectionGroups = Map.copyOf(sections);
-    }
-
-    private void initializeViewDefinitions() {
-        Map<Button, ViewDefinition> definitions = new LinkedHashMap<>();
-
-        definitions.put(
-            macbooksButton,
-            new ViewDefinition(
-                MockProductCatalog.ELECTRONICS_MACBOOKS,
-                MODULE_CATEGORIES,
-                SECTION_ELECTRONICS,
-                macbooksButton,
-                "MacBooks",
-                "High-end Apple laptops and premium creator machines."
-            )
-        );
-        definitions.put(
-            phonesButton,
-            new ViewDefinition(
-                MockProductCatalog.ELECTRONICS_PHONES,
-                MODULE_CATEGORIES,
-                SECTION_ELECTRONICS,
-                phonesButton,
-                "Phones",
-                "Flagship smartphones, foldables, and sealed collector devices."
-            )
-        );
-        definitions.put(
-            gamingButton,
-            new ViewDefinition(
-                MockProductCatalog.ELECTRONICS_GAMING,
-                MODULE_CATEGORIES,
-                SECTION_ELECTRONICS,
-                gamingButton,
-                "Gaming",
-                "Tournament-ready rigs, GPUs, and enthusiast desktop bundles."
-            )
-        );
-        definitions.put(
-            audioButton,
-            new ViewDefinition(
-                MockProductCatalog.ELECTRONICS_AUDIO,
-                MODULE_CATEGORIES,
-                SECTION_ELECTRONICS,
-                audioButton,
-                "Audio",
-                "Studio-grade headphones, DACs, and audiophile desk setups."
-            )
-        );
-        definitions.put(
-            cardsButton,
-            new ViewDefinition(
-                MockProductCatalog.COLLECTIBLES_CARDS,
-                MODULE_CATEGORIES,
-                SECTION_COLLECTIBLES,
-                cardsButton,
-                "Cards",
-                "Graded hits, sealed hobby boxes, and investment-grade sports cards."
-            )
-        );
-        definitions.put(
-            figuresButton,
-            new ViewDefinition(
-                MockProductCatalog.COLLECTIBLES_FIGURES,
-                MODULE_CATEGORIES,
-                SECTION_COLLECTIBLES,
-                figuresButton,
-                "Figures",
-                "Display statues, die-cast heroes, and limited collector runs."
-            )
-        );
-        definitions.put(
-            stampsButton,
-            new ViewDefinition(
-                MockProductCatalog.ART_STAMPS,
-                MODULE_CATEGORIES,
-                SECTION_ART,
-                stampsButton,
-                "Stamps",
-                "Historic postal rarities and archive-worthy philatelic sets."
-            )
-        );
-        definitions.put(
-            paintbrushesButton,
-            new ViewDefinition(
-                MockProductCatalog.ART_PAINTBRUSHES,
-                MODULE_CATEGORIES,
-                SECTION_ART,
-                paintbrushesButton,
-                "Paintbrushes",
-                "Studio brush kits and handcrafted tools for atelier work."
-            )
-        );
-        definitions.put(
-            clocksButton,
-            new ViewDefinition(
-                MockProductCatalog.JEWELRY_CLOCKS,
-                MODULE_CATEGORIES,
-                SECTION_JEWELRY_WATCHES,
-                clocksButton,
-                "Clocks",
-                "Mechanical desk clocks and statement collector timepieces."
-            )
-        );
-        definitions.put(
-            earingsButton,
-            new ViewDefinition(
-                MockProductCatalog.JEWELRY_EARRINGS,
-                MODULE_CATEGORIES,
-                SECTION_JEWELRY_WATCHES,
-                earingsButton,
-                "Earrings",
-                "Diamond drops, halo sets, and event-ready fine jewelry."
-            )
-        );
-        definitions.put(
-            racketsButton,
-            new ViewDefinition(
-                MockProductCatalog.SPORTING_RACKETS,
-                MODULE_CATEGORIES,
-                SECTION_SPORTING_GOODS,
-                racketsButton,
-                "Rackets",
-                "Tour-level badminton frames and pro-stock match gear."
-            )
-        );
-        definitions.put(
-            pickleballRacketsButton,
-            new ViewDefinition(
-                MockProductCatalog.SPORTING_PICKLEBALL,
-                MODULE_CATEGORIES,
-                SECTION_SPORTING_GOODS,
-                pickleballRacketsButton,
-                "Pickleball Rackets",
-                "Competition paddles, carbon faces, and starter bundles."
-            )
-        );
-        definitions.put(
-            dashboardFeaturedTechButton,
-            new ViewDefinition(
-                DASHBOARD_FEATURED_TECH,
-                MODULE_DASHBOARD,
-                DASHBOARD_HIGHLIGHTS,
-                dashboardFeaturedTechButton,
-                "Featured Tech",
-                "A quick dashboard cut of premium devices drawing the most attention."
-            )
-        );
-        definitions.put(
-            dashboardCollectorDeskButton,
-            new ViewDefinition(
-                DASHBOARD_COLLECTOR_DESK,
-                MODULE_DASHBOARD,
-                DASHBOARD_HIGHLIGHTS,
-                dashboardCollectorDeskButton,
-                "Collector Desk",
-                "High-conviction collector pieces surfaced for quick review."
-            )
-        );
-        definitions.put(
-            dashboardDraftWatchButton,
-            new ViewDefinition(
-                DASHBOARD_DRAFT_WATCH,
-                MODULE_DASHBOARD,
-                DASHBOARD_SELLER_DESK,
-                dashboardDraftWatchButton,
-                "Draft Watch",
-                "A seller-focused view for listings that still need final attention."
-            )
-        );
-        definitions.put(
-            dashboardPerformanceBoardButton,
-            new ViewDefinition(
-                DASHBOARD_PERFORMANCE_BOARD,
-                MODULE_DASHBOARD,
-                DASHBOARD_SELLER_DESK,
-                dashboardPerformanceBoardButton,
-                "Performance Board",
-                "Items with clean bidding momentum and strong marketplace pacing."
-            )
-        );
-        definitions.put(
-            myBidOpenLotsButton,
-            new ViewDefinition(
-                MY_BID_OPEN_LOTS,
-                MODULE_MY_BID,
-                MY_BID_ACTIVE,
-                myBidOpenLotsButton,
-                "Open Lots",
-                "Your currently active bidding rooms and live tracked lots."
-            )
-        );
-        definitions.put(
-            myBidOutbidWatchButton,
-            new ViewDefinition(
-                MY_BID_OUTBID_WATCH,
-                MODULE_MY_BID,
-                MY_BID_ACTIVE,
-                myBidOutbidWatchButton,
-                "Outbid Watch",
-                "Rooms where the pace changed and your position may need attention."
-            )
-        );
-        definitions.put(
-            myBidWinningLotsButton,
-            new ViewDefinition(
-                MY_BID_WINNING_LOTS,
-                MODULE_MY_BID,
-                MY_BID_RESULTS,
-                myBidWinningLotsButton,
-                "Winning Lots",
-                "Auction rooms where you are currently leading or near the top."
-            )
-        );
-        definitions.put(
-            myBidWatchlistButton,
-            new ViewDefinition(
-                MY_BID_WATCHLIST,
-                MODULE_MY_BID,
-                MY_BID_RESULTS,
-                myBidWatchlistButton,
-                "Watchlist",
-                "Saved lots worth revisiting before the next decision point."
-            )
-        );
-        definitions.put(
-            upcomingTonightButton,
-            new ViewDefinition(
-                UPCOMING_TONIGHT,
-                MODULE_UPCOMING,
-                UPCOMING_SCHEDULE,
-                upcomingTonightButton,
-                "Tonight",
-                "Auctions lining up for the next session window."
-            )
-        );
-        definitions.put(
-            upcomingTomorrowButton,
-            new ViewDefinition(
-                UPCOMING_TOMORROW,
-                MODULE_UPCOMING,
-                UPCOMING_SCHEDULE,
-                upcomingTomorrowButton,
-                "Tomorrow",
-                "A forward look at the next batch of scheduled lots."
-            )
-        );
-        definitions.put(
-            upcomingPremiumDropsButton,
-            new ViewDefinition(
-                UPCOMING_PREMIUM_DROPS,
-                MODULE_UPCOMING,
-                UPCOMING_CURATED,
-                upcomingPremiumDropsButton,
-                "Premium Drops",
-                "High-value releases expected to pull stronger bidding activity."
-            )
-        );
-        definitions.put(
-            upcomingFreshListingsButton,
-            new ViewDefinition(
-                UPCOMING_FRESH_LISTINGS,
-                MODULE_UPCOMING,
-                UPCOMING_CURATED,
-                upcomingFreshListingsButton,
-                "Fresh Listings",
-                "Newly surfaced inventory worth scanning before rooms get crowded."
-            )
-        );
-        definitions.put(
-            liveClosingFastButton,
-            new ViewDefinition(
-                LIVE_CLOSING_FAST,
-                MODULE_LIVE_AUCTIONS,
-                LIVE_NOW,
-                liveClosingFastButton,
-                "Closing Fast",
-                "Live rooms pressing into their last bidding windows."
-            )
-        );
-        definitions.put(
-            liveTrendingLotsButton,
-            new ViewDefinition(
-                LIVE_TRENDING_LOTS,
-                MODULE_LIVE_AUCTIONS,
-                LIVE_NOW,
-                liveTrendingLotsButton,
-                "Trending Lots",
-                "The most watched live inventory across the current floor."
-            )
-        );
-        definitions.put(
-            liveHighStakesButton,
-            new ViewDefinition(
-                LIVE_HIGH_STAKES,
-                MODULE_LIVE_AUCTIONS,
-                LIVE_PULSE,
-                liveHighStakesButton,
-                "High Stakes",
-                "Premium rooms where pricing is moving aggressively."
-            )
-        );
-        definitions.put(
-            liveCompetitiveRoomButton,
-            new ViewDefinition(
-                LIVE_COMPETITIVE_ROOM,
-                MODULE_LIVE_AUCTIONS,
-                LIVE_PULSE,
-                liveCompetitiveRoomButton,
-                "Competitive Room",
-                "Fast-response bidding rooms where timing matters most."
-            )
-        );
-
-        viewDefinitions = Map.copyOf(definitions);
-    }
-
-    private void openModule(ModuleSection selectedModule) {
-        activeModuleKey = selectedModule.key;
-        activeSectionKey = null;
-        activeViewKey = null;
-        activeProducts = List.of();
-        emptyStateMessage = "Select a subcategory to display auctions.";
-
-        setModuleVisibility(selectedModule);
-        resetSectionState();
-        clearSubcategorySelection();
-        renderModulePrompt(selectedModule);
-    }
-
-    private void collapseAllModules() {
-        activeModuleKey = null;
-        activeSectionKey = null;
-        activeViewKey = null;
-        activeProducts = List.of();
-        emptyStateMessage = "Open a module, then choose a subcategory to display auctions.";
-
-        for (ModuleSection module : moduleSections.values()) {
-            setNodeVisibility(module.button, true);
-            setNodeVisibility(module.panel, false);
-            setModuleButtonState(module, false);
+    private int compareAuction(AuctionListItemPayload left, AuctionListItemPayload right) {
+        int byStartingTime = right.getStartingTime().compareTo(left.getStartingTime());
+        if (byStartingTime != 0) {
+            return byStartingTime;
         }
-
-        resetSectionState();
-        clearSubcategorySelection();
-        sidebarSubtitle.setText("Open a module to browse auctions.");
-        catalogTitle.setText("Auction Explorer");
-        catalogSubtitle.setText("Choose a module on the left, then drill into a subcategory to load products.");
-        renderCurrentPage();
+        return Long.compare(right.getAuctionId(), left.getAuctionId());
     }
 
-    private void openSection(SectionGroup selectedSection) {
-        activeSectionKey = selectedSection.key;
-        activeViewKey = null;
-        activeProducts = List.of();
-        emptyStateMessage = "Select a subcategory to display auctions.";
+    private Long categoryIdForActiveFilter() {
+        return switch (activeCategory) {
+            case CATEGORY_ELECTRONICS -> 1L;
+            case CATEGORY_COLLECTIBLES -> 2L;
+            case CATEGORY_ARTS -> 3L;
+            case CATEGORY_JEWELRY_WATCHES -> 4L;
+            default -> null;
+        };
+    }
 
-        for (SectionGroup section : sectionGroups.values()) {
-            boolean sameModule = section.moduleKey.equals(activeModuleKey);
-            boolean expanded = sameModule && section == selectedSection;
-            setNodeVisibility(section.submenu, expanded);
-            setSectionButtonState(section, expanded);
+    private String emptyMessage() {
+        if (VIEW_LIVE_AUCTION.equals(activeView)) {
+            return "No active auctions found for this category.";
         }
-
-        clearSubcategorySelection();
-        sidebarSubtitle.setText(selectedSection.moduleKey + " / " + selectedSection.key);
-        catalogTitle.setText(selectedSection.key);
-        catalogSubtitle.setText("Choose a subcategory to show the auction list for this section.");
-        renderCurrentPage();
-    }
-
-    private void collapseSection(SectionGroup section) {
-        activeSectionKey = null;
-        activeViewKey = null;
-        activeProducts = List.of();
-        emptyStateMessage = "Select a subcategory to display auctions.";
-
-        setNodeVisibility(section.submenu, false);
-        setSectionButtonState(section, false);
-        clearSubcategorySelection();
-        renderModulePrompt(findModuleSection(section.moduleKey));
-    }
-
-    private void renderModulePrompt(ModuleSection module) {
-        if (module == null) {
-            return;
+        if (VIEW_COMING_SOON.equals(activeView)) {
+            return "No upcoming auctions found for this category.";
         }
-
-        sidebarSubtitle.setText(module.key);
-        catalogTitle.setText(module.key);
-        catalogSubtitle.setText("Open one of the groups below and choose a subcategory to display auctions.");
-        renderCurrentPage();
+        if (VIEW_BID_HISTORY.equals(activeView)) {
+            return "No bid history found for this category.";
+        }
+        if (VIEW_MY_AUCTION.equals(activeView)) {
+            return "No created auctions found for this category.";
+        }
+        return "No auctions available for this category.";
     }
 
-    private void setModuleVisibility(ModuleSection selectedModule) {
-        for (ModuleSection module : moduleSections.values()) {
-            boolean isActive = module == selectedModule;
-            setNodeVisibility(module.button, true);
-            setNodeVisibility(module.panel, isActive);
-            setModuleButtonState(module, isActive);
+    private void openMyAuctionAfterCreate() {
+        restoreHomeLayout();
+        selectView(VIEW_MY_AUCTION);
+    }
+
+    private String normalizeCategoryFilter(String selectedFilter) {
+        if (selectedFilter == null ||
+            selectedFilter.isBlank() ||
+            CATEGORY_ALL_LABEL.equals(selectedFilter)) {
+            return CATEGORY_ALL;
+        }
+        return selectedFilter;
+    }
+
+    private void restoreHomeLayout() {
+        if (activeDepositController != null) {
+            activeDepositController.dispose();
+            activeDepositController = null;
+        }
+        if (activeBidController != null) {
+            activeBidController.dispose();
+            activeBidController = null;
+        }
+        homeRoot.setLeft(homeLeft);
+        homeRoot.setRight(homeRight);
+        homeRoot.setCenter(homeCenter);
+        homeRoot.setBottom(homeBottom);
+        if (VIEW_HOME.equals(activeView)) {
+            loadHomePreviewAuctions();
+        } else {
+            loadActiveViewAuctions();
+        }
+        renderActiveView();
+    }
+
+    private void restoreShellIfInSubView() {
+        if (activeDepositController != null) {
+            activeDepositController.dispose();
+            activeDepositController = null;
+        }
+        if (activeBidController != null) {
+            activeBidController.dispose();
+            activeBidController = null;
+        }
+        if (homeRoot.getCenter() != homeCenter) {
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(homeRight);
+            homeRoot.setCenter(homeCenter);
+            homeRoot.setBottom(homeBottom);
         }
     }
 
-    private void resetSectionState() {
-        for (SectionGroup section : sectionGroups.values()) {
-            setNodeVisibility(section.submenu, false);
-            setSectionButtonState(section, false);
+    private void attachCreateAuctionStylesheet() {
+        String stylesheet = getClass().getResource(CREATE_AUCTION_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
         }
     }
 
-    private void setModuleButtonState(ModuleSection module, boolean active) {
-        module.button.getStyleClass().remove("active-module");
-        if (active && !module.button.getStyleClass().contains("active-module")) {
-            module.button.getStyleClass().add("active-module");
+    private void attachBidStylesheet() {
+        String stylesheet = getClass().getResource(BID_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
         }
     }
 
-    private void setSectionButtonState(SectionGroup section, boolean active) {
-        section.button.setText(section.key + (active ? " -" : " +"));
-        section.button.getStyleClass().remove("active-section");
-        if (active && !section.button.getStyleClass().contains("active-section")) {
-            section.button.getStyleClass().add("active-section");
-        }
-    }
-
-    private void clearSubcategorySelection() {
-        for (Button button : subcategoryButtons) {
-            button.getStyleClass().remove("active-sub");
-        }
-    }
-
-    private void setActiveSubSelection(Button selectedSubButton) {
-        clearSubcategorySelection();
-        if (!selectedSubButton.getStyleClass().contains("active-sub")) {
-            selectedSubButton.getStyleClass().add("active-sub");
-        }
-    }
-
-    private void renderCurrentPage() {
-        renderProducts(activeProducts);
-    }
-
-    private Node createProductCard(Product product) {
+    private Node createAuctionCard(Auction auction) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/jfx/scene/AuctionCard.fxml"));
             Node card = loader.load();
             AuctionCardController controller = loader.getController();
-            controller.setProduct(product);
+            controller.setAuction(auction);
             controller.setOnSelected(this::handleCardClick);
             return card;
         } catch (IOException exception) {
@@ -965,22 +778,19 @@ public class HomeController {
         }
     }
 
-    private ModuleSection findModuleSection(String key) {
-        for (ModuleSection section : moduleSections.values()) {
-            if (section.key.equals(key)) {
-                return section;
-            }
-        }
-        return null;
-    }
-
     private void setNodeVisibility(Node node, boolean visible) {
         node.setVisible(visible);
         node.setManaged(visible);
     }
 
+    private void setStyleClassActive(Node node, String styleClass, boolean active) {
+        node.getStyleClass().remove(styleClass);
+        if (active && !node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
+        }
+    }
+
     private void showMessage(NotificationManager.NotificationType type, String title, String content) {
         NotificationManager.show(type, title, content);
     }
-
 }
