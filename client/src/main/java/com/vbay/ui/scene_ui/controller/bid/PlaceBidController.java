@@ -11,7 +11,7 @@ import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
+import com.vbay.ui.scene_ui.NotificationManager;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -95,20 +95,20 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         try {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
         } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Navigation failed", "Could not return to the home scene.");
+            showMessage(NotificationManager.NotificationType.ERROR, "Navigation failed", "Could not return to the home scene.");
         }
     }
 
     @FXML
     private void handlePlaceBid(ActionEvent event) {
         if (currentProduct == null) {
-            showMessage(Alert.AlertType.WARNING, "Missing product", "No asset is loaded for bidding.");
+            showMessage(NotificationManager.NotificationType.WARNING, "Missing product", "No asset is loaded for bidding.");
             return;
         }
 
         String rawBid = bidAmountField.getText().trim();
         if (rawBid.isBlank()) {
-            showMessage(Alert.AlertType.WARNING, "Missing amount", "Enter a bid amount before placing a bid.");
+            showMessage(NotificationManager.NotificationType.WARNING, "Missing amount", "Enter a bid amount before placing a bid.");
             bidAmountField.requestFocus();
             return;
         }
@@ -117,14 +117,14 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         try {
             enteredBid = parseCurrency(rawBid);
         } catch (NumberFormatException exception) {
-            showMessage(Alert.AlertType.WARNING, "Invalid amount", "Bid amount must be a valid currency value.");
+            showMessage(NotificationManager.NotificationType.WARNING, "Invalid amount", "Bid amount must be a valid currency value.");
             bidAmountField.requestFocus();
             return;
         }
 
         if (enteredBid.compareTo(nextMinimumBid) < 0) {
             showMessage(
-                Alert.AlertType.WARNING,
+                NotificationManager.NotificationType.WARNING,
                 "Bid too low",
                 "Minimum valid bid for this asset is " + formatCurrency(nextMinimumBid) + "."
             );
@@ -133,20 +133,20 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         }
 
         showMessage(
-            Alert.AlertType.INFORMATION,
-            "Bid staged",
-            "Bid " + formatCurrency(enteredBid) + " queued for " + currentProduct.getTitle() + "."
+            NotificationManager.NotificationType.SUCCESS,
+            "Bid placed",
+            "Your bid of " + formatCurrency(enteredBid) + " has been placed for " + currentProduct.getTitle() + "."
         );
     }
 
     @FXML
     private void handleProxyBid(ActionEvent event) {
-        showMessage(Alert.AlertType.INFORMATION, "Proxy bid", "Proxy bidding flow is not connected yet.");
+        showMessage(NotificationManager.NotificationType.INFO, "Proxy bid", "Proxy bidding flow is not connected yet.");
     }
 
     @FXML
     private void handleWatchAsset(ActionEvent event) {
-        showMessage(Alert.AlertType.INFORMATION, "Watch asset", "Watchlist flow is not connected yet.");
+        showMessage(NotificationManager.NotificationType.INFO, "Watch asset", "Watchlist flow is not connected yet.");
     }
 
     //Creating Code of Product ~ MASANPHAM
@@ -204,11 +204,7 @@ public class PlaceBidController implements SceneDataReceiver<Product> {
         amountLabel.setText(formatCurrency(amount));
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void showMessage(NotificationManager.NotificationType type, String title, String content) {
+        NotificationManager.show(type, title, content);
     }
 }

@@ -3,9 +3,13 @@ package com.vbay.ui.scene_ui.controller.home;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.network.SocketClient;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -21,7 +25,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
+import com.vbay.ui.scene_ui.NotificationManager;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.FlowPane;
@@ -66,7 +70,8 @@ public class HomeController {
     private static final String LIVE_TRENDING_LOTS = "live.trendingLots";
     private static final String LIVE_HIGH_STAKES = "live.highStakes";
     private static final String LIVE_COMPETITIVE_ROOM = "live.competitiveRoom";
-
+    //Logger 
+    private static final Logger LOGGER = LoggingUtils.getLogger(HomeController.class);
     @FXML
     private Button categoriesModuleButton;
     @FXML
@@ -327,7 +332,7 @@ public class HomeController {
         } catch (IOException exception) {
             exception.printStackTrace();
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Logout failed(Server Side)",
                 exception.getMessage() != null ? exception.getMessage() : "Could not log out from the current session."
             );
@@ -338,7 +343,7 @@ public class HomeController {
         } catch (Exception exception) {
             exception.printStackTrace();
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 exception.getMessage() != null ? exception.getMessage() : "Could not return to the login screen."
             );
@@ -359,14 +364,22 @@ public class HomeController {
     @FXML
     private void handleCreateAuctions(ActionEvent event) {
         try {
-            showMessage(
-                Alert.AlertType.INFORMATION,
-                "Create auction",
-                "Create auction flow is not connected yet."
+            NotificationManager.show(
+                NotificationManager.NotificationType.SUCCESS,
+                "Auction Created",
+                "Your auction has been created successfully. Redirecting..."
             );
+            // Simulate redirection for now as requested
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    SceneManager.switchScene("/jfx/scene/Home.fxml");
+                } catch (Exception e) {
+                    LOGGER.log(java.util.logging.Level.SEVERE, "Fail to refresh home", e);
+                }
+            });
         } catch (Exception exception) {
-            showMessage(
-                Alert.AlertType.ERROR,
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
                 "Fail Creation",
                 "Could not create Auction"
             );
@@ -392,7 +405,7 @@ public class HomeController {
             SceneManager.switchScene("/jfx/scene/bid/Bid.fxml", product);
         } catch (Exception exception) {
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the placebid detail scene for the selected product."
             );
@@ -964,12 +977,8 @@ public class HomeController {
         node.setManaged(visible);
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void showMessage(NotificationManager.NotificationType type, String title, String content) {
+        NotificationManager.show(type, title, content);
     }
 
 }

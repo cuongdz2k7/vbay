@@ -7,6 +7,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class SceneManager {
@@ -63,12 +64,20 @@ public class SceneManager {
 
         Scene scene = currentStage.getScene();
         if (scene == null) {
-            scene = new Scene(view.root);
+            StackPane root = new StackPane(view.root);
+            scene = new Scene(root);
             scene.getStylesheets().add(view.stylesheetPath);
             installGlobalShortcuts(scene);
             currentStage.setScene(scene);
         } else {
-            scene.setRoot(view.root);
+            if (scene.getRoot() instanceof StackPane root) {
+                // The first child is the scene content
+                root.getChildren().set(0, view.root);
+                // Keep other children (like notifications)
+            } else {
+                StackPane root = new StackPane(view.root);
+                scene.setRoot(root);
+            }
             scene.getStylesheets().setAll(view.stylesheetPath);
         }
 

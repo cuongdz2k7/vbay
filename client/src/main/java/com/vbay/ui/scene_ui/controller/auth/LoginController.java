@@ -12,14 +12,13 @@ import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.SVGPath;
 import java.awt.Desktop;
 
@@ -61,28 +60,29 @@ public class LoginController {
         String password = passwordField.getText();
 
         if (email.isBlank()) {
-            showMessage(Alert.AlertType.WARNING, "Missing email", "Please enter your email address.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing email", "Please enter your email address.");
             emailField.requestFocus();
             return;
         }
 
         if (!EMAIL_PATTERN.matcher(email).matches()) {
-            showMessage(Alert.AlertType.WARNING, "Invalid email", "Please enter a valid email address.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid email", "Please enter a valid email address.");
             emailField.requestFocus();
             return;
         }
 
         if (password.isBlank()) {
-            showMessage(Alert.AlertType.WARNING, "Missing password", "Please enter your password.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing password", "Please enter your password.");
             passwordField.requestFocus();
             return;
         }
         //Sever Side
         try {
             loginUser(email, password);
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
         } catch (Exception exception) {
-            showMessage(
-                Alert.AlertType.ERROR,
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
                 "Login failed",
                 exception.getMessage()
             );
@@ -93,7 +93,7 @@ public class LoginController {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
             SceneManager.enterImmersiveMode();
         }catch ( Exception exception){
-                showMessage(Alert.AlertType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
         }
     }
     //Method Login
@@ -139,8 +139,8 @@ public class LoginController {
         try {
             SceneManager.switchScene("/jfx/scene/auth/Register.fxml");
         } catch (Exception exception) {
-            showMessage(
-                Alert.AlertType.ERROR,
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the register screen."
             );
@@ -164,13 +164,5 @@ public class LoginController {
             passwordField.requestFocus();
             passwordField.positionCaret(passwordField.getText().length());
         }
-    }
-
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }
