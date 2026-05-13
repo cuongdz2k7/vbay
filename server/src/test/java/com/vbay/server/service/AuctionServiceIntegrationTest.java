@@ -59,7 +59,8 @@ class AuctionServiceIntegrationTest {
         createSchema(keepAliveConnection);
         auctionService = new AuctionService(
             () -> DriverManager.getConnection(jdbcUrl),
-            new JdbcRepositoryFactory()
+            new JdbcRepositoryFactory(),
+            NO_OP_PUBLISHER
         );
         bidService = new BidService(
             () -> DriverManager.getConnection(jdbcUrl),
@@ -85,20 +86,20 @@ class AuctionServiceIntegrationTest {
             JdbcProductRepository productRepository = new JdbcProductRepository(connection);
             JdbcProductImageRepository imageRepository = new JdbcProductImageRepository(connection);
 
-            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
+            Product savedProduct = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
 
-            Product savedProduct = productRepository.findById(productId).orElseThrow();
-            assertEquals(SELLER_ID, savedProduct.getSellerId());
-            assertEquals("iPhone 15", savedProduct.getName());
-            assertEquals("Good condition", savedProduct.getDescription());
-            assertEquals(1L, savedProduct.getCategoryId());
-            assertEquals("USED", savedProduct.getCondition());
-            assertEquals(ProductStatus.AVAILABLE, savedProduct.getStatus());
-            assertNotNull(savedProduct.getCreatedAt());
-            assertNotNull(savedProduct.getUpdatedAt());
-            assertEquals(2, savedProduct.getImages().size());
-            assertEquals("https://example.com/iphone-front.jpg", savedProduct.getImages().get(0).getImageUrl());
-            assertEquals(true, savedProduct.getImages().get(0).isThumbnail());
+            Product foundProduct = productRepository.findById(savedProduct.getId()).orElseThrow();
+            assertEquals(SELLER_ID, foundProduct.getSellerId());
+            assertEquals("iPhone 15", foundProduct.getName());
+            assertEquals("Good condition", foundProduct.getDescription());
+            assertEquals(1L, foundProduct.getCategoryId());
+            assertEquals("USED", foundProduct.getCondition());
+            assertEquals(ProductStatus.AVAILABLE, foundProduct.getStatus());
+            assertNotNull(foundProduct.getCreatedAt());
+            assertNotNull(foundProduct.getUpdatedAt());
+            assertEquals(2, foundProduct.getImages().size());
+            assertEquals("https://example.com/iphone-front.jpg", foundProduct.getImages().get(0).getImageUrl());
+            assertEquals(true, foundProduct.getImages().get(0).isThumbnail());
         }
     }
 
