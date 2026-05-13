@@ -40,7 +40,8 @@ public class SceneManager {
     public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
         LoadedView view = loadView(fxmlPath, sceneData);
         Scene scene = new Scene(view.root);
-        scene.getStylesheets().add(view.stylesheetPath);
+        String notificationCss = SceneManager.class.getResource("/jfx/css/Notification.css").toExternalForm();
+        scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
         installGlobalShortcuts(scene);
         return scene;
     }
@@ -63,10 +64,12 @@ public class SceneManager {
         }
 
         Scene scene = currentStage.getScene();
+        String notificationCss = SceneManager.class.getResource("/jfx/css/Notification.css").toExternalForm();
+        
         if (scene == null) {
             StackPane root = new StackPane(view.root);
             scene = new Scene(root);
-            scene.getStylesheets().add(view.stylesheetPath);
+            scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
             installGlobalShortcuts(scene);
             currentStage.setScene(scene);
         } else {
@@ -78,7 +81,9 @@ public class SceneManager {
                 StackPane root = new StackPane(view.root);
                 scene.setRoot(root);
             }
-            scene.getStylesheets().setAll(view.stylesheetPath);
+            
+            // Atomically set exactly the two required stylesheets
+            scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
         }
 
         if (!currentStage.isShowing()) {
