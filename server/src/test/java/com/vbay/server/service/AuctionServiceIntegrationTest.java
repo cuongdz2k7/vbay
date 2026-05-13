@@ -88,7 +88,7 @@ class AuctionServiceIntegrationTest {
 
             long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository).getId();
 
-            Product savedProduct = productRepository.findById(productId).orElseThrow();
+            Product savedProduct = productRepository.findById(product.getId()).orElseThrow();
             assertEquals(SELLER_ID, savedProduct.getSellerId());
             assertEquals("iPhone 15", savedProduct.getName());
             assertEquals("Good condition", savedProduct.getDescription());
