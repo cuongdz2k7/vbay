@@ -6,7 +6,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.Desktop;
 
-import com.vbay.network.ClientAuthSession;
+import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
@@ -106,7 +106,7 @@ public class LoginController {
         }
         LoginResponse loginResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), LoginResponse.class);
         if (loginResponse != null) {
-            ClientAuthSession.setLoginResponse(loginResponse);
+            UserData.setLoginResponse(loginResponse);
         }
         LOGGER.info(() -> "Client login successful: " + username);
     }

@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.vbay.network.ClientAuthSession;
+import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
@@ -137,10 +137,10 @@ public class HomeController {
         homeLeft = homeRoot.getLeft();
         homeRight = homeRoot.getRight();
         homeBottom = homeRoot.getBottom();
-        currentUserId = ClientAuthSession.getUserId();
+        currentUserId = UserData.getUserId();
 
         initializeNavigationMaps();
-        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateBalanceDisplay(UserData.getAvailableBalance());
         updateAccountDisplay();
         subscribeRealtimeListener();
         subscribeServerRooms();
@@ -440,7 +440,7 @@ public class HomeController {
             return;
         }
         Platform.runLater(() -> {
-            ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+            UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
         });
     }
@@ -451,7 +451,7 @@ public class HomeController {
     }
 
     private void updateAccountDisplay() {
-        String username = ClientAuthSession.getUsername();
+        String username = UserData.getUsername();
         accountNameLabel.setText(username == null || username.isBlank() ? "Account" : username);
     }
 
@@ -524,7 +524,7 @@ public class HomeController {
             throw new IOException(response.getMessage() != null ? response.getMessage() : "Logout failed.");
         }
         LOGGER.info("Logout successfully.");
-        ClientAuthSession.clear();
+        UserData.clear();
     }
 
     private void initializeNavigationMaps() {

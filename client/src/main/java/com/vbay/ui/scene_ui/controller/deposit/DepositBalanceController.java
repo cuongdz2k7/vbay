@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import com.vbay.network.ClientAuthSession;
+import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
@@ -38,7 +38,7 @@ public class DepositBalanceController {
     @FXML
     private void initialize() {
         MoneyInput.install(amountField);
-        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateBalanceDisplay(UserData.getAvailableBalance());
         subscribeBalanceUpdates();
     }
 
@@ -82,7 +82,7 @@ public class DepositBalanceController {
 
             UserBalanceResponse balanceResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), UserBalanceResponse.class);
             if (balanceResponse != null) {
-                ClientAuthSession.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
+                UserData.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
                 updateBalanceDisplay(balanceResponse.getAvailableBalance());
             }
             showMessage(Alert.AlertType.INFORMATION, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
@@ -106,12 +106,12 @@ public class DepositBalanceController {
     private void subscribeBalanceUpdates() {
         balanceListener = event -> {
             UserBalanceUpdatedPayload payload = event.getPayload();
-            Long userId = ClientAuthSession.getUserId();
+            Long userId = UserData.getUserId();
             if (payload == null || userId == null || payload.getUserId() != userId) {
                 return;
             }
             Platform.runLater(() -> {
-                ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+                UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
                 updateBalanceDisplay(payload.getAvailableBalance());
             });
         };

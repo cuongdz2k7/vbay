@@ -40,7 +40,7 @@ public class AuthService {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
         ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
 
