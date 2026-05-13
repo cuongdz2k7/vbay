@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.image.ImageView?>
@@ -27,6 +28,10 @@
             </children>
         </HBox>
         <Label fx:id="timeLabel" styleClass="time"/>
-        <ProgressBar fx:id="progressBar" prefWidth="240" progress="0.0"/>
+        <ProgressBar fx:id="progressBar" prefWidth="204" maxWidth="204" prefHeight="8" progress="0.0" styleClass="card-progress">
+            <VBox.margin>
+                <Insets left="18" right="18"/>
+            </VBox.margin>
+        </ProgressBar>
     </children>
 </VBox>

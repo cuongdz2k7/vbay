@@ -116,7 +116,7 @@ public class AuctionCardController {
             return;
         }
         timeLabel.setText(formatAuctionTime(auction));
-        progressBar.setProgress(calculateProgress(auction.getStartingTime(), auction.getEndingTime()));
+        progressBar.setProgress(calculateProgress(auction));
     }
 
     private static String formatCurrency(BigDecimal value) {
@@ -177,19 +177,33 @@ public class AuctionCardController {
             .format(DISPLAY_TIME_FORMATTER);
     }
 
-    private static double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {
-        if (startingTime == null || endingTime == null) {
+    private static double calculateProgress(Auction auction) {
+        if (isClosedStatus(auction.getStatus())) {
             return 0.0;
         }
 
+        LocalDateTime now = utcNow();
+        LocalDateTime startingTime = auction.getStartingTime();
+        if ("SCHEDULED".equals(auction.getStatus())) {
+            return startingTime != null && now.isBefore(startingTime) ? 1.0 : 0.0;
+        }
+
+        LocalDateTime endingTime = auction.getEndingTime();
+        if (startingTime == null || endingTime == null) {
+            return 0.0;
+        }
         long totalMillis = Duration.between(startingTime, endingTime).toMillis();
         if (totalMillis <= 0) {
             return 1.0;
         }
 
-        long remainingMillis = Duration.between(utcNow(), endingTime).toMillis();
+        long remainingMillis = Duration.between(now, endingTime).toMillis();
         double progress = (double) remainingMillis / totalMillis;
         return Math.max(0.0, Math.min(1.0, progress));
+    }
+
+    private static boolean isClosedStatus(String status) {
+        return "ENDED".equals(status) || "FAILED".equals(status) || "SOLD".equals(status) || "CANCELLED".equals(status);
     }
 
     private static LocalDateTime utcNow() {

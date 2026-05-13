@@ -48,7 +48,6 @@ public class UserAccountService {
                 );
                 UserBalanceResult result = ResultMapper.toUserBalanceResult(
                     user,
-                    request.getAmount(),
                     "DEPOSIT",
                     LocalDateTime.now()
                 );

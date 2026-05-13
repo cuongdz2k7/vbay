@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
@@ -194,7 +195,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         productNameLabel.setText(product.getTitle());
         auctionIdLabel.setText("#" + data.getId());
         statusLabel.setText(data.getStatus() == null || data.getStatus().isBlank() ? "-" : data.getStatus());
-        setBidControlsEnabled(isActiveStatus(data.getStatus()));
+        setBidControlsEnabled(canCurrentUserBid(data));
 
         loadGalleryImages(product);
         populateBidHistory(data);
@@ -442,7 +443,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         updateBidPrompt();
         updateReserveStatus(currentAuction);
         statusLabel.setText(currentAuction.getStatus());
-        setBidControlsEnabled(isActiveStatus(currentAuction.getStatus()));
+        setBidControlsEnabled(canCurrentUserBid(currentAuction));
         updateTimeState();
     }
 
@@ -544,8 +545,11 @@ public class BidController implements SceneDataReceiver<Auction> {
             && utcNow().isBefore(startingTime);
     }
 
-    private boolean isActiveStatus(String status) {
-        return "ACTIVE".equals(status);
+    private boolean canCurrentUserBid(Auction auction) {
+        Long currentUserId = ClientAuthSession.getUserId();
+        return auction != null
+            && "ACTIVE".equals(auction.getStatus())
+            && (currentUserId == null || currentUserId.longValue() != auction.getSellerId());
     }
 
     private void startTimeUpdater() {
@@ -568,7 +572,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
         updateAuctionTimeLabels(currentAuction);
-        progressBar.setProgress(calculateProgress(currentAuction.getStartingTime(), currentAuction.getEndingTime()));
+        progressBar.setProgress(calculateProgress(currentAuction));
     }
 
     private void updateAuctionTimeLabels(Auction auction) {
@@ -634,7 +638,18 @@ public class BidController implements SceneDataReceiver<Auction> {
             .format(DISPLAY_TIME_FORMATTER);
     }
 
-    private double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {
+    private double calculateProgress(Auction auction) {
+        if (isClosedStatus(auction.getStatus())) {
+            return 0.0;
+        }
+
+        LocalDateTime now = utcNow();
+        LocalDateTime startingTime = auction.getStartingTime();
+        if ("SCHEDULED".equals(auction.getStatus())) {
+            return startingTime != null && now.isBefore(startingTime) ? 1.0 : 0.0;
+        }
+
+        LocalDateTime endingTime = auction.getEndingTime();
         if (startingTime == null || endingTime == null) {
             return 0.0;
         }
@@ -644,9 +659,13 @@ public class BidController implements SceneDataReceiver<Auction> {
             return 1.0;
         }
 
-        long remainingMillis = Duration.between(utcNow(), endingTime).toMillis();
+        long remainingMillis = Duration.between(now, endingTime).toMillis();
         double progress = (double) remainingMillis / totalMillis;
         return Math.max(0.0, Math.min(1.0, progress));
+    }
+
+    private boolean isClosedStatus(String status) {
+        return "ENDED".equals(status) || "FAILED".equals(status) || "SOLD".equals(status) || "CANCELLED".equals(status);
     }
 
     private LocalDateTime utcNow() {

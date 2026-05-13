@@ -545,19 +545,23 @@
     -fx-padding: 0 18 0 18;
 }
 
-.auction-card .progress-bar {
-    -fx-padding: 0 18 0 18;
+.card-progress {
+    -fx-min-height: 8;
+    -fx-pref-height: 8;
+    -fx-max-height: 8;
     -fx-accent: #d95f1a;
 }
 
-.auction-card .track {
+.card-progress .track {
     -fx-background-color: #343535;
     -fx-background-radius: 0;
+    -fx-background-insets: 0;
 }
 
-.auction-card .bar {
+.card-progress .bar {
     -fx-background-color: #d95f1a;
     -fx-background-radius: 0;
+    -fx-background-insets: 0;
 }
 
 .empty-state {

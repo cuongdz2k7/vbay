@@ -95,7 +95,6 @@ public class ResultMapper {
 
     public static UserBalanceResult toUserBalanceResult(
             User user,
-            BigDecimal changedAmount,
             String reason,
             LocalDateTime updatedAt) {
         return new UserBalanceResult(
@@ -103,7 +102,6 @@ public class ResultMapper {
             user.getVersion(),
             user.getAvailableBalance(),
             user.getHoldBalance(),
-            changedAmount,
             reason,
             updatedAt
         );
@@ -124,7 +122,6 @@ public class ResultMapper {
             result.getUserVersion(),
             result.getAvailableBalance(),
             result.getHoldBalance(),
-            result.getChangedAmount(),
             result.getReason(),
             result.getUpdatedAt()
         );

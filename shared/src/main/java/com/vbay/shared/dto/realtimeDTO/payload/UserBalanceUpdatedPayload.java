@@ -8,7 +8,6 @@ public class UserBalanceUpdatedPayload {
     private long userVersion;
     private BigDecimal availableBalance;
     private BigDecimal holdBalance;
-    private BigDecimal changedAmount;
     private String reason;
     private LocalDateTime updatedAt;
 
@@ -20,14 +19,12 @@ public class UserBalanceUpdatedPayload {
             long userVersion,
             BigDecimal availableBalance,
             BigDecimal holdBalance,
-            BigDecimal changedAmount,
             String reason,
             LocalDateTime updatedAt) {
         this.userId = userId;
         this.userVersion = userVersion;
         this.availableBalance = availableBalance;
         this.holdBalance = holdBalance;
-        this.changedAmount = changedAmount;
         this.reason = reason;
         this.updatedAt = updatedAt;
     }
@@ -62,14 +59,6 @@ public class UserBalanceUpdatedPayload {
 
     public void setHoldBalance(BigDecimal holdBalance) {
         this.holdBalance = holdBalance;
-    }
-
-    public BigDecimal getChangedAmount() {
-        return changedAmount;
-    }
-
-    public void setChangedAmount(BigDecimal changedAmount) {
-        this.changedAmount = changedAmount;
     }
 
     public String getReason() {

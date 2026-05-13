@@ -44,6 +44,9 @@ import com.vbay.shared.enums.auction.AuctionStatus;
 * 7. Khi tạo auction, phải có ít nhất 1 ảnh của product, nếu không có ảnh nào là thumbnail thì sẽ tự động đánh dấu ảnh đầu tiên là thumbnail
 * 8. CooldownTime giữa mỗi lần bid là 10s
 * 9. Reserve Price: Thường là Ẩn (Chỉ hiện thông báo "Reserve not met").
+* 10. CHO PHÉP thằng đang thắng được bid thêm
+* 11. KHÔNG CHO PHÉP AutoBid tự động bid thêm (chỉ thêm khi user bị OUTBID)
+
 Rule buy now price + reserve price: (bài tập lớn sẽ không implement)
 Auction status: 
     DRAFT:
