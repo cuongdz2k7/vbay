@@ -59,8 +59,7 @@ class AuctionServiceIntegrationTest {
         createSchema(keepAliveConnection);
         auctionService = new AuctionService(
             () -> DriverManager.getConnection(jdbcUrl),
-            new JdbcRepositoryFactory(),
-            NO_OP_PUBLISHER
+            new JdbcRepositoryFactory()
         );
         bidService = new BidService(
             () -> DriverManager.getConnection(jdbcUrl),
@@ -86,7 +85,7 @@ class AuctionServiceIntegrationTest {
             JdbcProductRepository productRepository = new JdbcProductRepository(connection);
             JdbcProductImageRepository imageRepository = new JdbcProductImageRepository(connection);
 
-            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository).getId();
+            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
 
             Product savedProduct = productRepository.findById(productId).orElseThrow();
             assertEquals(SELLER_ID, savedProduct.getSellerId());

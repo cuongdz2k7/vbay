@@ -26,8 +26,7 @@ class AuctionServiceTest {
     static void setUp() {
         auctionService = new AuctionService(
             () -> { throw new SQLException("Connection is not used in validation-only tests"); },
-            new JdbcRepositoryFactory(),
-            NO_OP_PUBLISHER
+            new JdbcRepositoryFactory()
         );
     }
 
