@@ -10,11 +10,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.concurrent.Executors;
+import java.util.logging.Logger;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import com.vbay.shared.Utils.LoggingUtils;
 
 public class ImageHttpServer {
+    private static final Logger LOGGER = LoggingUtils.getLogger(ImageHttpServer.class);
     private static final int DEFAULT_PORT = 8080;
     private static final String URL_PREFIX = "/uploads/products/";
 
@@ -41,7 +44,7 @@ public class ImageHttpServer {
         server.createContext(URL_PREFIX, this::handleImageRequest);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
-        System.out.println("Image HTTP server started at http://localhost:" + port + URL_PREFIX);
+        LOGGER.info(() -> "Image HTTP server started at http://localhost:" + port + URL_PREFIX);
     }
 
     public void stop() {
