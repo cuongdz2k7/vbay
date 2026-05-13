@@ -39,6 +39,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -59,6 +60,13 @@ public class HomeController {
     private static final String VIEW_BID_HISTORY = "Bid History";
     private static final String VIEW_MY_AUCTION = "My Auction";
 
+    private static final String CATEGORY_ALL = "All";
+    private static final String CATEGORY_ALL_LABEL = "All Categories";
+    private static final String CATEGORY_ELECTRONICS = "Electronics";
+    private static final String CATEGORY_COLLECTIBLES = "Collectibles";
+    private static final String CATEGORY_ARTS = "Arts";
+    private static final String CATEGORY_JEWELRY_WATCHES = "Jewelry & Watches";
+
     @FXML
     private Label balanceLabel;
     @FXML
@@ -78,6 +86,12 @@ public class HomeController {
     @FXML
     private Label accountNameLabel;
     @FXML
+    private Label catalogTitle;
+    @FXML
+    private Label catalogSubtitle;
+    @FXML
+    private ComboBox<String> categoryFilterComboBox;
+    @FXML
     private VBox homeDashboard;
     @FXML
     private VBox catalogContent;
@@ -95,6 +109,7 @@ public class HomeController {
     private final Map<Button, String> moduleButtons = new LinkedHashMap<>();
 
     private String activeView = VIEW_HOME;
+    private String activeCategory = CATEGORY_ALL;
     private Node homeCenter;
     private Node homeLeft;
     private Node homeRight;
@@ -161,9 +176,10 @@ public class HomeController {
             default -> null;
         };
 
+        Long categoryId = categoryIdForActiveFilter();
         Long sellerId = VIEW_MY_AUCTION.equals(activeView) ? currentUserId : null;
 
-        fetchAuctionList(status, null, sellerId, null)
+        fetchAuctionList(status, categoryId, sellerId, null)
             .forEach(item -> activeViewAuctions.put(item.getAuctionId(), item));
     }
 
@@ -258,12 +274,21 @@ public class HomeController {
     }
     
     private boolean matchesActiveViewQuery(AuctionListItemPayload item) {
+        if (!matchesCategoryFilter(item)) {
+            return false;
+        }
+
         return switch (activeView) {
             case VIEW_LIVE_AUCTION -> "ACTIVE".equals(item.getStatus());
             case VIEW_COMING_SOON -> "SCHEDULED".equals(item.getStatus());
             case VIEW_MY_AUCTION -> currentUserId != null && item.getSellerId() == currentUserId;
             default -> true;
         };
+    }
+
+    private boolean matchesCategoryFilter(AuctionListItemPayload item) {
+        Long categoryId = categoryIdForActiveFilter();
+        return categoryId == null || item.getCategoryId() == categoryId;
     }
 
     private void updateActiveViewCache(AuctionListItemPayload item) {
@@ -312,6 +337,16 @@ public class HomeController {
         if (selectedView != null) {
             restoreShellIfInSubView();
             selectView(selectedView);
+        }
+    }
+
+    @FXML
+    private void handleCategoryFilterChange(ActionEvent event) {
+        activeCategory = normalizeCategoryFilter(categoryFilterComboBox.getValue());
+
+        if (!VIEW_HOME.equals(activeView)) {
+            loadActiveViewAuctions();
+            renderActiveView();
         }
     }
 
@@ -509,10 +544,13 @@ public class HomeController {
     private void renderActiveView() {
         List<AuctionListItemPayload> auctions = auctionsForActiveView();
         sidebarSubtitle.setText(subtitleForSidebar());
+        homeRoot.setRight(VIEW_HOME.equals(activeView) ? homeRight : null);
         setActiveNavigationState();
         if (VIEW_HOME.equals(activeView)) {
             renderHomeDashboard();
         } else {
+            catalogTitle.setText(activeView);
+            catalogSubtitle.setText(subtitleForCatalog(auctions.size()));
             setNodeVisibility(homeDashboard, false);
             setNodeVisibility(catalogContent, true);
             renderAuctionItems(auctions);
@@ -520,7 +558,21 @@ public class HomeController {
     }
 
     private String subtitleForSidebar() {
+        if (!VIEW_HOME.equals(activeView) && !CATEGORY_ALL.equals(activeCategory)) {
+            return activeView.toLowerCase() + " / " + activeCategory;
+        }
         return activeView.toLowerCase();
+    }
+
+    private String subtitleForCatalog(int auctionCount) {
+        String categoryLabel = CATEGORY_ALL.equals(activeCategory) ? "all categories" : activeCategory;
+        return switch (activeView) {
+            case VIEW_COMING_SOON -> auctionCount + " upcoming auctions in " + categoryLabel + ".";
+            case VIEW_LIVE_AUCTION -> auctionCount + " active auctions in " + categoryLabel + ".";
+            case VIEW_BID_HISTORY -> "Your bid records filtered by " + categoryLabel + ".";
+            case VIEW_MY_AUCTION -> "Auctions you created, filtered by " + categoryLabel + ".";
+            default -> "Auction list in " + categoryLabel + ".";
+        };
     }
 
     private void setActiveNavigationState() {
@@ -600,6 +652,8 @@ public class HomeController {
             payload.getCurrentPrice(),
             payload.getMinimumBidStep(),
             payload.getBuyNowPrice(),
+            payload.getWinnerUserId(),
+            payload.getReserveMet(),
             payload.getStartingTime(),
             payload.getEndingTime(),
             product
@@ -612,6 +666,16 @@ public class HomeController {
             return byStartingTime;
         }
         return Long.compare(right.getAuctionId(), left.getAuctionId());
+    }
+
+    private Long categoryIdForActiveFilter() {
+        return switch (activeCategory) {
+            case CATEGORY_ELECTRONICS -> 1L;
+            case CATEGORY_COLLECTIBLES -> 2L;
+            case CATEGORY_ARTS -> 3L;
+            case CATEGORY_JEWELRY_WATCHES -> 4L;
+            default -> null;
+        };
     }
 
     private String emptyMessage() {
@@ -633,6 +697,15 @@ public class HomeController {
     private void openMyAuctionAfterCreate() {
         restoreHomeLayout();
         selectView(VIEW_MY_AUCTION);
+    }
+
+    private String normalizeCategoryFilter(String selectedFilter) {
+        if (selectedFilter == null ||
+            selectedFilter.isBlank() ||
+            CATEGORY_ALL_LABEL.equals(selectedFilter)) {
+            return CATEGORY_ALL;
+        }
+        return selectedFilter;
     }
 
     private void restoreHomeLayout() {

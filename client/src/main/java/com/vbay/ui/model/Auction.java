@@ -14,6 +14,8 @@ public class Auction {
     private final BigDecimal currentPrice;
     private final BigDecimal minimumBidStep;
     private final BigDecimal buyNowPrice;
+    private final Long winnerUserId;
+    private final Boolean reserveMet;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
     private final Product product;
@@ -29,6 +31,8 @@ public class Auction {
         BigDecimal currentPrice,
         BigDecimal minimumBidStep,
         BigDecimal buyNowPrice,
+        Long winnerUserId,
+        Boolean reserveMet,
         LocalDateTime startingTime,
         LocalDateTime endingTime,
         Product product
@@ -43,6 +47,8 @@ public class Auction {
         this.currentPrice = currentPrice;
         this.minimumBidStep = minimumBidStep;
         this.buyNowPrice = buyNowPrice;
+        this.winnerUserId = winnerUserId;
+        this.reserveMet = reserveMet;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.product = product;
@@ -86,6 +92,14 @@ public class Auction {
 
     public BigDecimal getBuyNowPrice() {
         return buyNowPrice;
+    }
+
+    public Long getWinnerUserId() {
+        return winnerUserId;
+    }
+
+    public Boolean getReserveMet() {
+        return reserveMet;
     }
 
     public LocalDateTime getStartingTime() {

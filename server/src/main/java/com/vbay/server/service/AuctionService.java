@@ -35,6 +35,7 @@ import com.vbay.shared.enums.auction.AuctionStatus;
  /*
 * Business rules:
 * 1. Giá tiền phải là số dương
+* 1.5. Nếu chưa có bid nào thì người dùng có thể bid bằng với starting price
 * 2. Nếu có reserve price thì reserve price phải lớn hơn starting price
 * 3. Nếu có buy now price thì buy now price phải lớn hơn reserve price (nếu không thì đặt reserve price làm gì ?)
 * 4. Thời gian bắt đầu phải trước thời gian kết thúc
@@ -42,7 +43,7 @@ import com.vbay.shared.enums.auction.AuctionStatus;
 * 6. Mỗi ảnh chỉ có 1 thumbnail, nếu có nhiều hơn 1 ảnh được đánh dấu là thumbnail thì sẽ throw validation exception
 * 7. Khi tạo auction, phải có ít nhất 1 ảnh của product, nếu không có ảnh nào là thumbnail thì sẽ tự động đánh dấu ảnh đầu tiên là thumbnail
 * 8. CooldownTime giữa mỗi lần bid là 10s
-* 9. thời điểm createAuction phải
+* 9. Reserve Price: Thường là Ẩn (Chỉ hiện thông báo "Reserve not met").
 Rule buy now price + reserve price: (bài tập lớn sẽ không implement)
 Auction status: 
     DRAFT:
@@ -162,6 +163,14 @@ public class AuctionService {
         }
     }
 
+    boolean checkIfAuctionFailed(Auction auction) {
+        if (auction.getWinnerUserId() == null) {
+            return true;
+        }
+        return auction.getReservePrice() != null
+            && auction.getCurrentPrice().compareTo(auction.getReservePrice()) < 0;
+    }
+
     ///method này cực kì cẩn thận là phải implement sao cho nó IDEMPOTENT
     public void syncAuctionStatus(long auctionId) throws SQLException {
         try (Connection connection = connectionProvider.getConnection()) {
@@ -177,8 +186,7 @@ public class AuctionService {
                     case NO_CHANGE, STARTED -> {}
                     case ENDED -> { ///ended chỉ check xem auction có transition không, còn cập nhật trạng thái auction thì làm ở đây
                         ///không thỏa mãn reserve price
-                        if (auction.getReservePrice() != null &&
-                            auction.getCurrentPrice().compareTo(auction.getReservePrice()) < 0) {
+                        if (checkIfAuctionFailed(auction)) {
                             auctionRepository.terminateAuction(auctionId); ///failed
                         } else if (auctionRepository.finalizeAuction(auctionId) == 0L) {
                             auctionRepository.terminateAuction(auctionId);

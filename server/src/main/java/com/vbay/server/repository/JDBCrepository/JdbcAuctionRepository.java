@@ -77,7 +77,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, version
+                   starting_time, ending_time, status, winner_user_id, version
             FROM auctions
             WHERE id = ?
             """;
@@ -100,7 +100,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, version
+                   starting_time, ending_time, status, winner_user_id, version
             FROM auctions
             WHERE seller_id = ?
             ORDER BY id DESC
@@ -125,7 +125,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, version
+                   starting_time, ending_time, status, winner_user_id, version
             FROM auctions
             WHERE product_id = ?
             ORDER BY id DESC
@@ -169,7 +169,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
         SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                 starting_price, current_price, reserve_price, buy_now_price,
-                starting_time, ending_time, status, version
+                starting_time, ending_time, status, winner_user_id, version
         FROM auctions
         WHERE id = ?
         FOR UPDATE
@@ -350,7 +350,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, version
+                   starting_time, ending_time, status, winner_user_id, version
             FROM auctions
             WHERE status IN ('SCHEDULED', 'ACTIVE')
             ORDER BY starting_time ASC, ending_time ASC, id ASC
@@ -367,7 +367,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, version
+                   starting_time, ending_time, status, winner_user_id, version
             FROM auctions
             WHERE (status = 'SCHEDULED' AND starting_time <= ?)
                OR (status IN ('SCHEDULED', 'ACTIVE') AND ending_time <= ?)
@@ -401,6 +401,12 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 a.current_price,
                 a.minimum_bid_step,
                 a.buy_now_price,
+                a.winner_user_id,
+                CASE
+                    WHEN a.reserve_price IS NULL THEN NULL
+                    WHEN a.current_price >= a.reserve_price THEN TRUE
+                    ELSE FALSE
+                END AS reserve_met,
                 (
                     SELECT image_url
                     FROM product_images
@@ -469,6 +475,12 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 a.current_price,
                 a.minimum_bid_step,
                 a.buy_now_price,
+                a.winner_user_id,
+                CASE
+                    WHEN a.reserve_price IS NULL THEN NULL
+                    WHEN a.current_price >= a.reserve_price THEN TRUE
+                    ELSE FALSE
+                END AS reserve_met,
                 (
                     SELECT image_url
                     FROM product_images
@@ -518,6 +530,8 @@ public class JdbcAuctionRepository implements AuctionRepository {
             rs.getBigDecimal("current_price"),
             rs.getBigDecimal("minimum_bid_step"),
             rs.getBigDecimal("buy_now_price"),
+            (Long) rs.getObject("winner_user_id"),
+            nullableBoolean(rs, "reserve_met"),
             imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url")),
             findProductImageUrls(rs.getLong("product_id")),
             rs.getTimestamp("starting_time").toLocalDateTime(),
@@ -547,6 +561,11 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 return imageUrls;
             }
         }
+    }
+
+    private Boolean nullableBoolean(ResultSet rs, String columnName) throws SQLException {
+        boolean value = rs.getBoolean(columnName);
+        return rs.wasNull() ? null : value;
     }
 
     private long findVersionById(long auctionId) throws SQLException {

@@ -269,7 +269,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("109.99")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("99.99")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
         assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));

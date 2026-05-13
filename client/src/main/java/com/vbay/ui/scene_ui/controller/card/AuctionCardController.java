@@ -67,7 +67,7 @@ public class AuctionCardController {
         this.auction = auction;
         Product product = auction.getProduct();
         titleLabel.setText(auction.getTitle());
-        priceLabel.setText("Current Bid  " + formatCurrency(auction.getCurrentPrice()));
+        priceLabel.setText("Current Bid  " + (auction.getWinnerUserId() == null ? "-" : formatCurrency(auction.getCurrentPrice())));
         startingPriceLabel.setText("Starting Price  " + formatCurrency(auction.getStartingPrice()));
         bidStepLabel.setText("Step  " + formatCurrency(auction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
@@ -142,7 +142,14 @@ public class AuctionCardController {
             return "Ended";
         }
         if ("SCHEDULED".equals(status)) {
-            return startingTime == null ? "Starts: -" : "Starts: " + formatVietnamTime(startingTime);
+            if (startingTime == null) {
+                return "Starts: -";
+            }
+            Duration remainingUntilStart = Duration.between(now, startingTime);
+            if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {
+                return "Starts: " + formatVietnamTime(startingTime);
+            }
+            return "Starts in " + formatRemainingDuration(remainingUntilStart);
         }
         if (!"ACTIVE".equals(status)) {
             return "-";

@@ -18,6 +18,8 @@ public class AuctionListItemResult {
     private final BigDecimal currentPrice;
     private final BigDecimal minimumBidStep;
     private final BigDecimal buyNowPrice;
+    private final Long winnerUserId;
+    private final Boolean reserveMet;
     private final String thumbnailUrl;
     private final List<String> imageUrls;
     private final LocalDateTime startingTime;
@@ -38,6 +40,8 @@ public class AuctionListItemResult {
             BigDecimal currentPrice,
             BigDecimal minimumBidStep,
             BigDecimal buyNowPrice,
+            Long winnerUserId,
+            Boolean reserveMet,
             String thumbnailUrl,
             List<String> imageUrls,
             LocalDateTime startingTime,
@@ -56,6 +60,8 @@ public class AuctionListItemResult {
         this.currentPrice = currentPrice;
         this.minimumBidStep = minimumBidStep;
         this.buyNowPrice = buyNowPrice;
+        this.winnerUserId = winnerUserId;
+        this.reserveMet = reserveMet;
         this.thumbnailUrl = thumbnailUrl;
         this.imageUrls = imageUrls;
         this.startingTime = startingTime;
@@ -76,6 +82,8 @@ public class AuctionListItemResult {
     public BigDecimal getCurrentPrice() { return currentPrice; }
     public BigDecimal getMinimumBidStep() { return minimumBidStep; }
     public BigDecimal getBuyNowPrice() { return buyNowPrice; }
+    public Long getWinnerUserId() { return winnerUserId; }
+    public Boolean getReserveMet() { return reserveMet; }
     public String getThumbnailUrl() { return thumbnailUrl; }
     public List<String> getImageUrls() { return imageUrls; }
     public LocalDateTime getStartingTime() { return startingTime; }

@@ -24,7 +24,8 @@ public class AuctionRowMapper {
             rs.getBigDecimal("minimum_bid_step"),
             rs.getTimestamp("starting_time").toLocalDateTime(),
             rs.getTimestamp("ending_time").toLocalDateTime(),
-            AuctionStatus.valueOf(rs.getString("status"))
+            AuctionStatus.valueOf(rs.getString("status")),
+            (Long) rs.getObject("winner_user_id")
         );
         auction.setVersion(rs.getLong("version"));
         return auction;

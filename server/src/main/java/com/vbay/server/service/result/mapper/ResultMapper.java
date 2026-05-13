@@ -55,12 +55,20 @@ public class ResultMapper {
             currentBid.getBidAmount(),
             currentBid.getBidAmount(),
             nextMinimumBid,
+            reserveMet(auction, currentBid.getBidAmount()),
             previousWinningUserId,
             previousWinningBidId,
             currentBid.getStatus(),
             currentBid.getBidSource(),
             currentBid.getBidTime()
         );
+    }
+
+    private static Boolean reserveMet(Auction auction, BigDecimal currentPrice) {
+        if (auction.getReservePrice() == null) {
+            return null;
+        }
+        return currentPrice.compareTo(auction.getReservePrice()) >= 0;
     }
 
     public static BuyNowResult toBuyNowResult(
@@ -137,6 +145,8 @@ public class ResultMapper {
             result.getCurrentPrice(),
             result.getMinimumBidStep(),
             result.getBuyNowPrice(),
+            result.getWinnerUserId(),
+            result.getReserveMet(),
             result.getThumbnailUrl(),
             result.getImageUrls(),
             result.getStartingTime(),

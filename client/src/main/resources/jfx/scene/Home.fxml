@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -121,10 +124,12 @@
                     </padding>
 
                     <VBox spacing="20">
-                        <HBox alignment="CENTER_LEFT" styleClass="live-heading-row">
-                        </HBox>
-
                         <VBox fx:id="homeDashboard" spacing="28">
+                            <VBox spacing="4" styleClass="home-page-heading">
+                                <Label text="Home" styleClass="catalog-title"/>
+                                <Label text="Previewing upcoming and live auctions." styleClass="catalog-subtitle"/>
+                            </VBox>
+
                             <VBox spacing="14" styleClass="home-section">
                                 <HBox alignment="CENTER_LEFT" styleClass="home-section-header">
                                     <VBox spacing="3">
@@ -151,6 +156,24 @@
                         </VBox>
 
                         <VBox fx:id="catalogContent" spacing="16">
+                            <HBox alignment="CENTER_LEFT" styleClass="live-heading-row">
+                                <VBox spacing="4">
+                                    <Label fx:id="catalogTitle" text="Live Auction" styleClass="catalog-title"/>
+                                    <Label fx:id="catalogSubtitle" text="Auction list in all categories." styleClass="catalog-subtitle"/>
+                                </VBox>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <ComboBox fx:id="categoryFilterComboBox" onAction="#handleCategoryFilterChange" prefWidth="190" value="All Categories" styleClass="category-filter-combo">
+                                    <items>
+                                        <FXCollections fx:factory="observableArrayList">
+                                            <String fx:value="All Categories"/>
+                                            <String fx:value="Electronics"/>
+                                            <String fx:value="Collectibles"/>
+                                            <String fx:value="Arts"/>
+                                            <String fx:value="Jewelry &amp; Watches"/>
+                                        </FXCollections>
+                                    </items>
+                                </ComboBox>
+                            </HBox>
                             <Label fx:id="emptyStateLabel" text="No auctions available." styleClass="empty-state"/>
                             <FlowPane fx:id="productFlow" hgap="22" vgap="22" prefWrapLength="760" styleClass="auction-grid"/>
                         </VBox>

@@ -6,6 +6,7 @@ import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -49,6 +50,9 @@ import javafx.scene.layout.VBox;
 public class BidController implements SceneDataReceiver<Auction> {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter DISPLAY_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm", Locale.US);
     private static final String ACTIVE_TAB_STYLE_CLASS = "active-tab";
     private static final String ACTIVE_THUMBNAIL_STYLE_CLASS = "active-thumb";
     private static final BigDecimal AVAILABLE_BALANCE = new BigDecimal("42500.00");
@@ -84,6 +88,8 @@ public class BidController implements SceneDataReceiver<Auction> {
     private Label stepLabel;
     @FXML
     private Label nextBidLabel;
+    @FXML
+    private Label reserveStatusLabel;
     @FXML
     private Label timePrefixLabel;
     @FXML
@@ -171,22 +177,24 @@ public class BidController implements SceneDataReceiver<Auction> {
         BigDecimal startingPrice = valueOrZero(data.getStartingPrice());
         BigDecimal bidStep = valueOrZero(data.getMinimumBidStep());
         BigDecimal buyNowPrice = data.getBuyNowPrice();
-        nextMinimumBid = currentPrice.add(bidStep);
+        nextMinimumBid = data.getWinnerUserId() == null ? currentPrice : currentPrice.add(bidStep);
 
         titleLabel.setText(data.getTitle());
-        descriptionLabel.setText(descriptionFor(data));
+        descriptionLabel.setText(categoryName(product.getCategoryId()));
         longDescriptionLabel.setText(descriptionFor(data));
-        currentBidLabel.setText(formatCurrency(currentPrice));
+        updateCurrentBidLabel(data.getWinnerUserId(), currentPrice);
         buyNowLabel.setText(buyNowPrice == null ? "-" : formatCurrency(buyNowPrice));
         startingPriceLabel.setText(formatCurrency(startingPrice));
         stepLabel.setText(formatCurrency(bidStep));
         nextBidLabel.setText(formatCurrency(nextMinimumBid));
+        updateBidPrompt();
+        updateReserveStatus(data);
         startTimeUpdater();
-        bidAmountField.setText(MoneyInput.toInputText(nextMinimumBid));
+        bidAmountField.clear();
         productNameLabel.setText(product.getTitle());
         auctionIdLabel.setText("#" + data.getId());
         statusLabel.setText(data.getStatus() == null || data.getStatus().isBlank() ? "-" : data.getStatus());
-        setBidControlsEnabled(!isClosedStatus(data.getStatus()));
+        setBidControlsEnabled(isActiveStatus(data.getStatus()));
 
         loadGalleryImages(product);
         populateBidHistory(data);
@@ -321,6 +329,16 @@ public class BidController implements SceneDataReceiver<Auction> {
             : product.getDescription();
     }
 
+    private String categoryName(long categoryId) {
+        return switch ((int) categoryId) {
+            case 1 -> "Electronics";
+            case 2 -> "Collectibles";
+            case 3 -> "Arts";
+            case 4 -> "Jewelry & Watches";
+            default -> "Category #" + categoryId;
+        };
+    }
+
     private static String formatCurrency(BigDecimal value) {
         return CURRENCY_FORMAT.format(value);
     }
@@ -413,14 +431,18 @@ public class BidController implements SceneDataReceiver<Auction> {
             payload.getAuctionVersion(),
             payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
             currentPrice,
+            payload.getWinningUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinningUserId(),
+            payload.getReserveMet(),
             payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
             payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
         );
 
-        currentBidLabel.setText(formatCurrency(currentPrice));
+        updateCurrentBidLabel(currentAuction.getWinnerUserId(), currentPrice);
         nextBidLabel.setText(formatCurrency(nextMinimumBid));
-        bidAmountField.setText(MoneyInput.toInputText(nextMinimumBid));
+        updateBidPrompt();
+        updateReserveStatus(currentAuction);
         statusLabel.setText(currentAuction.getStatus());
+        setBidControlsEnabled(isActiveStatus(currentAuction.getStatus()));
         updateTimeState();
     }
 
@@ -438,10 +460,12 @@ public class BidController implements SceneDataReceiver<Auction> {
             payload.getAuctionVersion(),
             payload.getStatus() == null ? "ENDED" : payload.getStatus(),
             finalPrice,
+            payload.getWinnerUserId(),
+            currentAuction.getReserveMet(),
             currentAuction.getStartingTime(),
             currentAuction.getEndingTime()
         );
-        currentBidLabel.setText(formatCurrency(finalPrice));
+        updateCurrentBidLabel(currentAuction.getWinnerUserId(), finalPrice);
         statusLabel.setText(currentAuction.getStatus());
         nextBidLabel.setText("-");
         setBidControlsEnabled(false);
@@ -452,6 +476,8 @@ public class BidController implements SceneDataReceiver<Auction> {
             long version,
             String status,
             BigDecimal currentPrice,
+            Long winnerUserId,
+            Boolean reserveMet,
             LocalDateTime startingTime,
             LocalDateTime endingTime) {
         return new Auction(
@@ -465,6 +491,8 @@ public class BidController implements SceneDataReceiver<Auction> {
             currentPrice,
             currentAuction.getMinimumBidStep(),
             currentAuction.getBuyNowPrice(),
+            winnerUserId,
+            reserveMet,
             startingTime,
             endingTime,
             currentAuction.getProduct()
@@ -477,8 +505,47 @@ public class BidController implements SceneDataReceiver<Auction> {
         buyNowButton.setDisable(!enabled || currentAuction == null || currentAuction.getBuyNowPrice() == null);
     }
 
-    private boolean isClosedStatus(String status) {
-        return "ENDED".equals(status) || "FAILED".equals(status) || "SOLD".equals(status) || "CANCELLED".equals(status);
+    private void updateBidPrompt() {
+        bidAmountField.setPromptText("Bid " + formatCurrency(nextMinimumBid) + " or more");
+    }
+
+    private void updateCurrentBidLabel(Long winnerUserId, BigDecimal currentPrice) {
+        currentBidLabel.setText(winnerUserId == null ? "-" : formatCurrency(currentPrice));
+    }
+
+    private void updateReserveStatus(Auction auction) {
+        reserveStatusLabel.getStyleClass().removeAll(
+            "reserve-status-met",
+            "reserve-status-not-met",
+            "reserve-status-neutral"
+        );
+        if (auction == null || isNotStarted(auction)) {
+            reserveStatusLabel.setText("-");
+            reserveStatusLabel.getStyleClass().add("reserve-status-neutral");
+            return;
+        }
+        Boolean reserveMet = auction.getReserveMet();
+        if (reserveMet == null) {
+            reserveStatusLabel.setText("-");
+            reserveStatusLabel.getStyleClass().add("reserve-status-neutral");
+        } else if (reserveMet) {
+            reserveStatusLabel.setText("Reserve met");
+            reserveStatusLabel.getStyleClass().add("reserve-status-met");
+        } else {
+            reserveStatusLabel.setText("Reserve not met");
+            reserveStatusLabel.getStyleClass().add("reserve-status-not-met");
+        }
+    }
+
+    private boolean isNotStarted(Auction auction) {
+        LocalDateTime startingTime = auction.getStartingTime();
+        return "SCHEDULED".equals(auction.getStatus())
+            && startingTime != null
+            && utcNow().isBefore(startingTime);
+    }
+
+    private boolean isActiveStatus(String status) {
+        return "ACTIVE".equals(status);
     }
 
     private void startTimeUpdater() {
@@ -527,10 +594,21 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
         if ("SCHEDULED".equals(status) && startingTime != null && now.isBefore(startingTime)) {
-            setTimeLabels("Starts in", formatDuration(Duration.between(now, startingTime)));
+            Duration remainingUntilStart = Duration.between(now, startingTime);
+            if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {
+                setTimeLabels("Starts:", formatVietnamTime(startingTime));
+            } else {
+                setTimeLabels("Starts in", formatRemainingDuration(remainingUntilStart));
+            }
             return;
         }
-        setTimeLabels("Ends in", formatDuration(Duration.between(now, endingTime)));
+
+        Duration remainingUntilEnd = Duration.between(now, endingTime);
+        if (remainingUntilEnd.compareTo(Duration.ofHours(24)) >= 0) {
+            setTimeLabels("Ends:", formatVietnamTime(endingTime));
+        } else {
+            setTimeLabels("Ends in", formatRemainingDuration(remainingUntilEnd));
+        }
     }
 
     private void setTimeLabels(String prefix, String value) {
@@ -541,15 +619,19 @@ public class BidController implements SceneDataReceiver<Auction> {
         timeLabel.setText(value);
     }
 
-    private String formatDuration(Duration remaining) {
-        long totalMinutes = remaining.toMinutes();
-        long days = totalMinutes / (24 * 60);
-        long hours = (totalMinutes % (24 * 60)) / 60;
-        long minutes = totalMinutes % 60;
-        if (days > 0) {
-            return days + "d " + hours + "h " + minutes + "m";
-        }
-        return hours + "h " + minutes + "m";
+    private String formatRemainingDuration(Duration remaining) {
+        long seconds = Math.max(0, remaining.getSeconds());
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long remainingSeconds = seconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds);
+    }
+
+    private String formatVietnamTime(LocalDateTime utcTime) {
+        return utcTime
+            .atZone(UTC_ZONE)
+            .withZoneSameInstant(VIETNAM_ZONE)
+            .format(DISPLAY_TIME_FORMATTER);
     }
 
     private double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {

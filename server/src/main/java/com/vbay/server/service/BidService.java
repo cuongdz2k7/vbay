@@ -262,10 +262,12 @@ public class BidService {
         }
     }
 
-    private void validateMinimumBid(Auction auction, BigDecimal bidAmount) {
-        BigDecimal minimumBid = auction.getCurrentPrice().add(auction.getMinimumBidStep());
+    private void validateMinimumBid(Auction auction, BigDecimal bidAmount, Optional<Bid> currentWinningBid) {
+        BigDecimal minimumBid = currentWinningBid.isEmpty()
+            ? auction.getCurrentPrice()
+            : auction.getCurrentPrice().add(auction.getMinimumBidStep());
         if (bidAmount.compareTo(minimumBid) < 0) {
-            throw new ValidationException("Bid amount is not sufficient");
+            throw new ValidationException("Bid amount must be at least " + minimumBid);
         }
     }
      /*
@@ -284,6 +286,7 @@ public class BidService {
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
 
                 //1. lock auction 
                 Auction auction = auctionRepository.lockAuctionForUpdate(request.getAuctionId())
@@ -297,6 +300,7 @@ public class BidService {
                 validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
                 
                 checkBuyNow(auction, request.getBidAmount());
+                Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
                 /* 
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
                 ///vì buynow có thể ít hơn current price + bước nhảy
@@ -304,7 +308,7 @@ public class BidService {
                     validateMinimumBid(auction, request.getBidAmount());
                 }
                     */
-                validateMinimumBid(auction, request.getBidAmount());
+                validateMinimumBid(auction, request.getBidAmount(), currentWinningBid);
                 //3. Lock Auction validate xong xuôi rồi mới lock user
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));

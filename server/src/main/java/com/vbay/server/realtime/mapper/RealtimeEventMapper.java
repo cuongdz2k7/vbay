@@ -28,6 +28,7 @@ public class RealtimeEventMapper {
         payload.setAuctionVersion(result.getAuctionVersion());
         payload.setCurrentPrice(result.getCurrentPrice());
         payload.setNextMinimumBid(result.getNextMinimumBid());
+        payload.setReserveMet(result.getReserveMet());
         payload.setWinnerUserId(result.getBidderId());
         payload.setUpdatedAt(result.getBidTime());
 

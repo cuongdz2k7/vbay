@@ -98,6 +98,11 @@
                                 </VBox>
                             </GridPane>
 
+                            <HBox spacing="8" alignment="CENTER_LEFT" styleClass="reserve-row">
+                                <Label text="RESERVE" styleClass="metric-label"/>
+                                <Label fx:id="reserveStatusLabel" text="-" styleClass="reserve-status-neutral"/>
+                            </HBox>
+
                             <VBox spacing="8">
                                 <Label text="YOUR BID (USD)" styleClass="input-label"/>
                                 <TextField fx:id="bidAmountField" onAction="#handlePlaceBid" promptText="4300" styleClass="bid-input"/>

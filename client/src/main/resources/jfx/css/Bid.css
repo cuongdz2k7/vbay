@@ -218,6 +218,29 @@
     -fx-padding: 12 0 12 0;
 }
 
+.reserve-row {
+    -fx-padding: 0 0 4 0;
+}
+
+.reserve-status-met,
+.reserve-status-not-met,
+.reserve-status-neutral {
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+}
+
+.reserve-status-met {
+    -fx-text-fill: #2fd47c;
+}
+
+.reserve-status-not-met {
+    -fx-text-fill: #ff8a3d;
+}
+
+.reserve-status-neutral {
+    -fx-text-fill: #d7c2bd;
+}
+
 .metric-value,
 .meta-value,
 .time-value {
