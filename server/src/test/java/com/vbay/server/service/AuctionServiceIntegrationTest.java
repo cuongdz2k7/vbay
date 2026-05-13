@@ -1,9 +1,5 @@
 package com.vbay.server.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -16,20 +12,27 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.vbay.server.exception.AuthenticationException;
+import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.Product;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.repository.JDBCrepository.JdbcAuctionRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductImageRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcProductRepository;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
-import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
+import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
-import com.vbay.shared.enums.auction.*;
+import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
@@ -37,11 +40,11 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
-import com.vbay.server.exception.AuthenticationException;
-import com.vbay.server.exception.ValidationException;
+import com.vbay.server.model.Auction;
 
 class AuctionServiceIntegrationTest {
     private static final long SELLER_ID = 1L;
+    private static final DomainEventPublisher NO_OP_PUBLISHER = event -> { };
 
     private String jdbcUrl;
     private Connection keepAliveConnection;
@@ -56,11 +59,13 @@ class AuctionServiceIntegrationTest {
         createSchema(keepAliveConnection);
         auctionService = new AuctionService(
             () -> DriverManager.getConnection(jdbcUrl),
-            new JdbcRepositoryFactory()
+            new JdbcRepositoryFactory(),
+            NO_OP_PUBLISHER
         );
         bidService = new BidService(
             () -> DriverManager.getConnection(jdbcUrl),
-            new JdbcRepositoryFactory()
+            new JdbcRepositoryFactory(),
+            NO_OP_PUBLISHER
         );
         session = new ClientSession();
         session.setSession(SELLER_ID, "seller", Position.USER);
@@ -81,7 +86,7 @@ class AuctionServiceIntegrationTest {
             JdbcProductRepository productRepository = new JdbcProductRepository(connection);
             JdbcProductImageRepository imageRepository = new JdbcProductImageRepository(connection);
 
-            Product product = auctionService.createProduct(validProduct(), session, productRepository, imageRepository);
+            long productId = auctionService.createProduct(validProduct(), session, productRepository, imageRepository).getId();
 
             Product savedProduct = productRepository.findById(product.getId()).orElseThrow();
             assertEquals(SELLER_ID, savedProduct.getSellerId());
@@ -229,7 +234,7 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
-    void placeBid_whenActiveAuctionExpired_syncsEndedAndRejects() throws SQLException {
+    void placeBid_whenActiveAuctionExpired_rejectsWithoutCreatingBid() throws SQLException {
         seedUser(SELLER_ID);
         seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(
@@ -244,7 +249,7 @@ class AuctionServiceIntegrationTest {
         assertThrows(ValidationException.class,
             () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
 
-        assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
+        assertEquals(AuctionStatus.ACTIVE.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
         assertEquals(0, countRows(keepAliveConnection, "bids"));
     }
 
@@ -264,7 +269,7 @@ class AuctionServiceIntegrationTest {
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
         assertThrows(ValidationException.class,
-            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("109.99")), sessionFor(2L, "bidder")));
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("99.99")), sessionFor(2L, "bidder")));
 
         assertEquals(0, countRows(keepAliveConnection, "bids"));
         assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
@@ -311,12 +316,12 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
-    void placeBid_whenBidEqualsBuyNow_completesAuctionAndCreatesHeldPayment() throws SQLException {
+    void buyNow_completesAuctionAndCreatesHeldPayment() throws SQLException {
         seedUser(SELLER_ID);
         seedUser(2L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
-        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(2L, "buyer"));
+        bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(2L, "buyer"));
 
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE auction_id = " + auctionId));
         assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
@@ -331,7 +336,7 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
-    void placeBid_whenBuyNowWithExistingWinner_releasesOldHoldAndCreatesWonBid() throws SQLException {
+    void buyNow_withExistingWinner_releasesOldHoldAndCreatesWonBid() throws SQLException {
         seedUser(SELLER_ID);
         seedUser(2L, "oldwinner", UserStatus.ACTIVE, new BigDecimal("500.00"), new BigDecimal("120.00"));
         seedUser(3L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
@@ -339,7 +344,7 @@ class AuctionServiceIntegrationTest {
         updateAuctionWinner(auctionId, 2L);
         long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
 
-        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("200.00")), sessionFor(3L, "buyer"));
+        bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
 
         assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
@@ -378,7 +383,7 @@ class AuctionServiceIntegrationTest {
             "iPhone 15 auction",
             "Auction description",
             new BigDecimal("100.00"),
-            new BigDecimal("220.00"),
+            new BigDecimal("150.00"),
             new BigDecimal("200.00"),
             new BigDecimal("10.00"),
             LocalDateTime.now().plusHours(1),

@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
@@ -14,6 +16,10 @@ import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.User;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.BuyNowDomainEvent;
+import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
@@ -21,6 +27,7 @@ import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
+import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
@@ -102,16 +109,31 @@ public class BidService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
+    private final DomainEventPublisher domainEventPublisher;
 
-    public BidService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
+
+    public BidService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, DomainEventPublisher domainEventPublisher) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
+        this.domainEventPublisher = domainEventPublisher;
     }
 
     private void checkSession(ClientSession session) {
         if (session == null || !session.isAuthenticated()) {
             throw new AuthenticationException("User must be logged in to perform this action");
         }
+    }
+
+    private UserBalanceResult readUserBalanceResult(
+            UserRepository userRepository,
+            long userId,
+            BigDecimal changedAmount,
+            String reason,
+            LocalDateTime updatedAt) throws SQLException {
+        User user = userRepository.findById(userId).orElseThrow(
+            () -> new ValidationException("User not found")
+        );
+        return ResultMapper.toUserBalanceResult(user, changedAmount, reason, updatedAt);
     }
 
     private BuyNowResult buyNow (Auction auction, long buyerId, BigDecimal buyNowPrice, LocalDateTime dbNow, Connection connection) throws SQLException {
@@ -240,10 +262,12 @@ public class BidService {
         }
     }
 
-    private void validateMinimumBid(Auction auction, BigDecimal bidAmount) {
-        BigDecimal minimumBid = auction.getCurrentPrice().add(auction.getMinimumBidStep());
+    private void validateMinimumBid(Auction auction, BigDecimal bidAmount, Optional<Bid> currentWinningBid) {
+        BigDecimal minimumBid = currentWinningBid.isEmpty()
+            ? auction.getCurrentPrice()
+            : auction.getCurrentPrice().add(auction.getMinimumBidStep());
         if (bidAmount.compareTo(minimumBid) < 0) {
-            throw new ValidationException("Bid amount is not sufficient");
+            throw new ValidationException("Bid amount must be at least " + minimumBid);
         }
     }
      /*
@@ -262,6 +286,7 @@ public class BidService {
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
 
                 //1. lock auction 
                 Auction auction = auctionRepository.lockAuctionForUpdate(request.getAuctionId())
@@ -275,6 +300,7 @@ public class BidService {
                 validateAuctionCanReceiveBid(auction, session.getUserId(), dbNow);
                 
                 checkBuyNow(auction, request.getBidAmount());
+                Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
                 /* 
                 boolean buyNow = canBuyNow(auction, request.getBidAmount());
                 ///vì buynow có thể ít hơn current price + bước nhảy
@@ -282,15 +308,40 @@ public class BidService {
                     validateMinimumBid(auction, request.getBidAmount());
                 }
                     */
-                validateMinimumBid(auction, request.getBidAmount());
+                validateMinimumBid(auction, request.getBidAmount(), currentWinningBid);
                 //3. Lock Auction validate xong xuôi rồi mới lock user
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
                 validateUserCanBid(user, request.getBidAmount());
                
                 PlaceBidResult result = placeBid(auction, session.getUserId(), request.getBidAmount(), dbNow, connection);
+                List<UserBalanceResult> balanceResults = new ArrayList<>();
+                LocalDateTime balanceUpdatedAt = LocalDateTime.now();
+
+                ///tạo result
+                balanceResults.add(readUserBalanceResult(
+                    userRepository,
+                    session.getUserId(),
+                    request.getBidAmount().negate(),
+                    "PLACE_BID_HOLD",
+                    balanceUpdatedAt
+                ));
+                Long previousWinningUserId = result.getPreviousWinningUserId();
+                if (previousWinningUserId != null && previousWinningUserId != session.getUserId()) {
+                    balanceResults.add(readUserBalanceResult(
+                        userRepository,
+                        previousWinningUserId,
+                        null,
+                        "OUTBID_RELEASE",
+                        balanceUpdatedAt
+                    ));
+                }
                 
                 connection.commit();
+                domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
+                for (UserBalanceResult balanceResult : balanceResults) {
+                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
+                }
                 return result;
             } catch (Exception e) {
                 connection.rollback();
@@ -326,9 +377,35 @@ public class BidService {
                     .orElseThrow(() -> new ValidationException("User not found"));
                 validateUserCanBid(user, auction.getBuyNowPrice());
 
-                BuyNowResult result = buyNow(auction, session.getUserId(), auction.getBuyNowPrice(), dbNow, connection);
+                BuyNowResult buyNowResult = buyNow(auction, session.getUserId(), auction.getBuyNowPrice(), dbNow, connection);
+                List<UserBalanceResult> balanceResults = new ArrayList<>();
+                LocalDateTime balanceUpdatedAt = LocalDateTime.now();
+
+                ///tạo result
+                balanceResults.add(readUserBalanceResult(
+                    userRepository,
+                    session.getUserId(),
+                    auction.getBuyNowPrice().negate(),
+                    "BUY_NOW_PAYMENT",
+                    balanceUpdatedAt
+                ));
+                Long previousWinningUserId = buyNowResult.getPreviousWinningUserId();
+                if (previousWinningUserId != null && previousWinningUserId != session.getUserId()) {
+                    balanceResults.add(readUserBalanceResult(
+                        userRepository,
+                        previousWinningUserId,
+                        null,
+                        "OUTBID_RELEASE",
+                        balanceUpdatedAt
+                    ));
+                }
+
                 connection.commit();
-                return result;
+                domainEventPublisher.publish(new BuyNowDomainEvent(buyNowResult));
+                for (UserBalanceResult balanceResult : balanceResults) {
+                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
+                }
+                return buyNowResult;
             } catch (Exception e) {
                 connection.rollback();
                 throw e;

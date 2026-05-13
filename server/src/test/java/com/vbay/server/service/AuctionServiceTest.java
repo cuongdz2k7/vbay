@@ -12,19 +12,22 @@ import org.junit.jupiter.api.Test;
 
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
+import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
 
 class AuctionServiceTest {
+    private static final DomainEventPublisher NO_OP_PUBLISHER = event -> { };
     private static AuctionService auctionService;
 
     @BeforeAll
     static void setUp() {
         auctionService = new AuctionService(
             () -> { throw new SQLException("Connection is not used in validation-only tests"); },
-            new JdbcRepositoryFactory()
+            new JdbcRepositoryFactory(),
+            NO_OP_PUBLISHER
         );
     }
 
@@ -44,7 +47,7 @@ class AuctionServiceTest {
             "iPhone 15 auction",
             "Auction description", 
             new BigDecimal("100.00"),
-            new BigDecimal("220.00"),
+            new BigDecimal("150.00"),
             new BigDecimal("200.00"),
             new BigDecimal("10.00"),
             LocalDateTime.now().plusHours(1),
@@ -240,14 +243,14 @@ class AuctionServiceTest {
     }
 
     @Test
-    void validateCreateAuctionRequest_buyNowPriceLessThanStartingPrice_throwsValidationException() {
+    void validateCreateAuctionRequest_buyNowPriceLessThanReservePrice_throwsValidationException() {
         CreateAuctionRequest request = new CreateAuctionRequest(
             validProduct(),
             "Auction",
             "Description",
             new BigDecimal("100.00"),
-            null,
-            new BigDecimal("90.00"),
+            new BigDecimal("120.00"),
+            new BigDecimal("110.00"),
             new BigDecimal("10.00"),
             LocalDateTime.now().plusHours(1),
             LocalDateTime.now().plusHours(2)
@@ -260,7 +263,7 @@ class AuctionServiceTest {
     }
 
     @Test
-    void validateCreateAuctionRequest_reservePriceLessThanBuyNowPrice_throwsValidationException() {
+    void validateCreateAuctionRequest_buyNowPriceGreaterThanReservePrice_doesNotThrow() {
         CreateAuctionRequest request = new CreateAuctionRequest(
             validProduct(),
             "Auction",
@@ -273,9 +276,6 @@ class AuctionServiceTest {
             LocalDateTime.now().plusHours(2)
         );
 
-        assertThrows(
-            ValidationException.class,
-            () -> ValidateAuctionDTO.validateCreateAuctionRequest(request)
-        );
+        assertDoesNotThrow(() -> ValidateAuctionDTO.validateCreateAuctionRequest(request));
     }
 }

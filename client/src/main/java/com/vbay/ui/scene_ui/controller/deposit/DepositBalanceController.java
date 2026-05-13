@@ -1,0 +1,136 @@
+package com.vbay.ui.scene_ui.controller.deposit;
+
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.Locale;
+
+import com.vbay.network.ClientAuthSession;
+import com.vbay.network.SocketClient;
+import com.vbay.network.dispatcher.RealtimeEventListener;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
+import com.vbay.shared.dto.userDTO.UserBalanceResponse;
+import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.shared.protocol.Request;
+import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.util.MoneyInput;
+
+import javafx.application.Platform;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+
+public class DepositBalanceController {
+    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+
+    @FXML
+    private Label balanceLabel;
+    @FXML
+    private TextField amountField;
+
+    private Runnable onBack;
+    private RealtimeEventListener<UserBalanceUpdatedPayload> balanceListener;
+
+    @FXML
+    private void initialize() {
+        MoneyInput.install(amountField);
+        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        subscribeBalanceUpdates();
+    }
+
+    public void setOnBack(Runnable onBack) {
+        this.onBack = onBack;
+    }
+
+    @FXML
+    private void handleBack(ActionEvent event) {
+        dispose();
+        if (onBack != null) {
+            onBack.run();
+        }
+    }
+
+    @FXML
+    private void handleConfirmDeposit(ActionEvent event) {
+        BigDecimal amount;
+        try {
+            amount = MoneyInput.parseRequired(amountField, "Deposit amount");
+        } catch (IllegalArgumentException exception) {
+            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", exception.getMessage());
+            amountField.requestFocus();
+            return;
+        }
+
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
+            amountField.requestFocus();
+            return;
+        }
+
+        try {
+            Respond<?> response = SocketClient.getClient().sendMessage(
+                new Request<>(RequestType.DEPOSIT_BALANCE, new DepositBalanceRequest(amount))
+            );
+            if (response == null || !response.isStatus()) {
+                showMessage(Alert.AlertType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
+                return;
+            }
+
+            UserBalanceResponse balanceResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), UserBalanceResponse.class);
+            if (balanceResponse != null) {
+                ClientAuthSession.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
+                updateBalanceDisplay(balanceResponse.getAvailableBalance());
+            }
+            showMessage(Alert.AlertType.INFORMATION, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
+            amountField.clear();
+        } catch (Exception exception) {
+            showMessage(Alert.AlertType.ERROR, "Deposit failed", exception.getMessage());
+        }
+    }
+
+    public void dispose() {
+        if (balanceListener == null) {
+            return;
+        }
+        SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+            RealtimeEventType.USER_BALANCE_UPDATED,
+            balanceListener
+        );
+        balanceListener = null;
+    }
+
+    private void subscribeBalanceUpdates() {
+        balanceListener = event -> {
+            UserBalanceUpdatedPayload payload = event.getPayload();
+            Long userId = ClientAuthSession.getUserId();
+            if (payload == null || userId == null || payload.getUserId() != userId) {
+                return;
+            }
+            Platform.runLater(() -> {
+                ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+                updateBalanceDisplay(payload.getAvailableBalance());
+            });
+        };
+        SocketClient.getClient().getRealtimeEventDispatcher().subscribe(
+            RealtimeEventType.USER_BALANCE_UPDATED,
+            balanceListener
+        );
+    }
+
+    private void updateBalanceDisplay(BigDecimal availableBalance) {
+        BigDecimal balance = availableBalance == null ? BigDecimal.ZERO : availableBalance;
+        balanceLabel.setText(CURRENCY_FORMAT.format(balance));
+    }
+
+    private void showMessage(Alert.AlertType type, String title, String content) {
+        Alert alert = new Alert(type);
+        alert.setTitle("VBay");
+        alert.setHeaderText(title);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+}

@@ -32,7 +32,7 @@ public class ClientHandler implements Runnable {
             BufferedReader in = new BufferedReader(new InputStreamReader(clientsocket.getInputStream())); // client gui request
             PrintWriter out = new PrintWriter(clientsocket.getOutputStream(), true) // client nhan response
         ) {
-            ClientConnection clientConnection = new ClientConnection(session, out);
+            ClientConnection connection = new ClientConnection(session, out);
             try {
                 String line;
                 while ((line = in.readLine()) != null) { /// = null khi không kết nối đc tới phía client nữa
@@ -40,11 +40,11 @@ public class ClientHandler implements Runnable {
                         continue;
                     }
 
-                    Respond<?> response = distributor.dispatch(line, session);
-                    clientConnection.send(response);
+                    Respond<?> response = distributor.dispatch(line, session, connection);
+                    connection.send(response);
                 }
             } finally {
-                subscriptionService.disconnect(clientConnection);
+                subscriptionService.disconnect(connection);
             }
         } catch (IOException exception) {
             System.err.println("Client connection error: " + exception.getMessage());

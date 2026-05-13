@@ -17,4 +17,5 @@ public interface UserRepository {
     long releaseHoldBalance(long userId, BigDecimal amount) throws SQLException;
     long holdBalance(long userId, BigDecimal amount) throws SQLException;
     long decreaseAvailableBalance(long userId, BigDecimal amount) throws SQLException;
+    long depositAvailableBalance(long userId, BigDecimal amount) throws SQLException;
 }

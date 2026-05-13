@@ -15,6 +15,7 @@ public class PlaceBidResult {
     private final BigDecimal bidAmount;
     private final BigDecimal currentPrice;
     private final BigDecimal nextMinimumBid;
+    private final Boolean reserveMet;
     private final Long previousWinningUserId;
     private final Long previousWinningBidId;
     private final BidStatus bidStatus;
@@ -30,6 +31,7 @@ public class PlaceBidResult {
             BigDecimal bidAmount,
             BigDecimal currentPrice,
             BigDecimal nextMinimumBid,
+            Boolean reserveMet,
             Long previousWinningUserId,
             Long previousWinningBidId,
             BidStatus bidStatus,
@@ -43,6 +45,7 @@ public class PlaceBidResult {
         this.bidAmount = bidAmount;
         this.currentPrice = currentPrice;
         this.nextMinimumBid = nextMinimumBid;
+        this.reserveMet = reserveMet;
         this.previousWinningUserId = previousWinningUserId;
         this.previousWinningBidId = previousWinningBidId;
         this.bidStatus = bidStatus;
@@ -80,6 +83,10 @@ public class PlaceBidResult {
 
     public BigDecimal getNextMinimumBid() {
         return nextMinimumBid;
+    }
+
+    public Boolean getReserveMet() {
+        return reserveMet;
     }
 
     public Long getPreviousWinningUserId() {

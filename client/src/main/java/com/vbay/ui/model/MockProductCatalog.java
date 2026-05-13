@@ -436,11 +436,6 @@ public final class MockProductCatalog {
         return new Product(
             title,
             expandDescription(description),
-            price,
-            startingPrice,
-            bidStep,
-            timeLeft,
-            progress,
             imagePath
         );
     }

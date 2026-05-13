@@ -67,8 +67,8 @@
                                             <children>
                                                 <VBox spacing="8.0">
                                                     <children>
-                                                        <Label styleClass="field-label" text="EMAIL ADDRESS" />
-                                                        <TextField fx:id="emailField" onAction="#handleLogin" promptText="Email" styleClass="auth-input" />
+                                                        <Label styleClass="field-label" text="USERNAME" />
+                                                        <TextField fx:id="usernameField" onAction="#handleLogin" promptText="Username" styleClass="auth-input" />
                                                     </children>
                                                 </VBox>
 

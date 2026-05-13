@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
 
+
 public class User {
     private long id;
     private final String timeinit;

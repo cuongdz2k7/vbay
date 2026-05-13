@@ -19,10 +19,13 @@ public enum RequestType {
     GET_AUCTION_DETAIL,
     SEARCH_AUCTION,
     FILTER_AUCTION,
+    SUBSCRIBE_ROOM,
+    UNSUBSCRIBE_ROOM,
 
     // Bidder
     JOIN_AUCTION,
     PLACE_BID,
+    BUY_NOW,
     AUTO_BID,
     CANCEL_BID,
     WATCH_AUCTION,
@@ -30,12 +33,16 @@ public enum RequestType {
 
     // Payment
     CREATE_PAYMENT,
+    DEPOSIT_BALANCE,
     PAY_DEPOSIT,
     PAY_REST,
     VERIFY_PAYMENT,
     RETURN_DEPOSIT,
 
     // Seller
+    UPLOAD_IMAGE,
     CREATE_AUCTION,
-    CANCEL_AUCTION
+    CANCEL_AUCTION,
+    
+
 }

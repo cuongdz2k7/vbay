@@ -228,6 +228,26 @@ public class JdbcUserRepository implements UserRepository {
         return findVersionById(userId);
     }
 
+    @Override
+    public long depositAvailableBalance(long userId, BigDecimal amount) throws SQLException {
+        String sql = """
+            UPDATE users
+            SET available_balance = available_balance + ?,
+                version = version + 1
+            WHERE id = ?
+            AND status = 'ACTIVE'
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setBigDecimal(1, amount);
+            statement.setLong(2, userId);
+            if (statement.executeUpdate() == 0) {
+                throw new ValidationException("Active user not found");
+            }
+        }
+        return findVersionById(userId);
+    }
+
     private long findVersionById(long userId) throws SQLException {
         String sql = "SELECT version FROM users WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {

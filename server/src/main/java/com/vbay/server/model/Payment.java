@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
+
 public class Payment {
     private long id;
     private long auctionId;

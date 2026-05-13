@@ -5,13 +5,11 @@ import com.vbay.server.realtime.domain.DomainEvent;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
 import com.vbay.server.realtime.transport.RealtimeBroadcaster;
 
-public class BidUpdatedRealtimeHandler implements DomainEventHandler {
-    private final RealtimeBroadcaster broadcaster;
-    private final RealtimeEventMapper mapper;
-
-    public BidUpdatedRealtimeHandler(RealtimeBroadcaster broadcaster, RealtimeEventMapper mapper) {
-        this.broadcaster = broadcaster;
-        this.mapper = mapper;
+public class BidUpdatedRealtimeHandler extends AbstractRealtimeHandler implements DomainEventHandler {
+    public BidUpdatedRealtimeHandler(
+            RealtimeBroadcaster broadcaster,
+            RealtimeEventMapper mapper) {
+        super(broadcaster, mapper);
     }
 
     @Override

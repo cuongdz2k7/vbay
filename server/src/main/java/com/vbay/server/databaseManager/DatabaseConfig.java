@@ -15,12 +15,25 @@ public class DatabaseConfig {
         + "&forceConnectionTimeZoneToSession=true"
         + "&allowPublicKeyRetrieval=true";
 
+    private static final String DB_HOST_URL =
+        "jdbc:mysql://" + HOST + ":" + PORT + "/"
+        + "?useSSL=false"
+        + "&serverTimezone=UTC"
+        + "&connectionTimeZone=UTC"
+        + "&forceConnectionTimeZoneToSession=true"
+        + "&allowPublicKeyRetrieval=true";
 
     private DatabaseConfig() {
     }
 
+    public static String getDatabaseName() {
+        return DATABASE;
+    }
     public static String getJdbcUrl() {
         return JDBC_URL;
+    }
+    public static String getDbHostUrl() {
+        return DB_HOST_URL;
     }
     static String getUsername() {
         return USERNAME;

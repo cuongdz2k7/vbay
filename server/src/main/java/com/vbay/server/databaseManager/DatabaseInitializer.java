@@ -5,6 +5,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DatabaseInitializer {
 
@@ -12,9 +16,24 @@ public class DatabaseInitializer {
     }
 
     public static void init() {
+        createDatabase();
         createTables();
+        createIndexes();
     }
 
+    private static void createDatabase() {
+        // Chú ý: Ở đây chúng ta dùng DriverManager kết nối với DB_HOST_URL (không có tên DB)'
+        System.out.println("Connecting to " + DatabaseConfig.getDbHostUrl());
+        try (Connection connection = DriverManager.getConnection(DatabaseConfig.getDbHostUrl(), DatabaseConfig.getUsername(), DatabaseConfig.getPassword());
+             Statement statement = connection.createStatement()) {
+            
+            // Lệnh tạo DB với Text Format chuẩn để không lỗi tiếng Việt
+            String sql = "CREATE DATABASE IF NOT EXISTS " + DatabaseConfig.getDatabaseName() + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
+            statement.executeUpdate(sql);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create database " + e.getMessage(), e);
+        }
+    }
 
     private static void createTables() {
         try (var connection = DatabaseConnection.getConnection();
@@ -49,6 +68,35 @@ public class DatabaseInitializer {
             throw new IllegalStateException("Failed to read database initialization script", e);
         } catch (Exception e) {
             throw new IllegalStateException("Failed to initialize database tables", e);
+        }
+    }
+
+    private static void createIndexes() {
+        try (var connection = DatabaseConnection.getConnection();
+             var statement = connection.createStatement()) {
+            String[] indexQueries = {
+                "CREATE INDEX idx_auctions_status ON auctions(status)",
+                "CREATE INDEX idx_auctions_seller_id ON auctions(seller_id)",
+                "CREATE INDEX idx_auctions_status_starting_time ON auctions(status, starting_time)",
+                "CREATE INDEX idx_auctions_status_ending_time ON auctions(status, ending_time)"
+            };
+
+            for (String query : indexQueries) {
+                try {
+                    statement.execute(query);
+                    System.out.println("Executed: " + query);
+                } catch (SQLException e) {
+                    // Mã lỗi 1061: Duplicate key name (Index đã tồn tại)
+                    if (e.getErrorCode() == 1061) {
+                        System.out.println("Index already exists, skipping...");
+                    } else {
+                        // Các lỗi khác (sai tên cột, sai bảng...) thì vẫn cần in ra
+                        System.err.println("Failed to create index: " + e.getMessage());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create database " + e.getMessage(), e);
         }
     }
 }
