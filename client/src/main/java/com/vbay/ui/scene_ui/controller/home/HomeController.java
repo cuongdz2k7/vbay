@@ -369,14 +369,16 @@ public class HomeController {
                 "Auction Created",
                 "Your auction has been created successfully. Redirecting..."
             );
-            // Simulate redirection for now as requested
-            javafx.application.Platform.runLater(() -> {
+            // Slightly delay redirection to let notification show properly
+            javafx.animation.PauseTransition delay = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(1));
+            delay.setOnFinished(e -> {
                 try {
                     SceneManager.switchScene("/jfx/scene/Home.fxml");
-                } catch (Exception e) {
-                    LOGGER.log(java.util.logging.Level.SEVERE, "Fail to refresh home", e);
+                } catch (Exception ex) {
+                    LOGGER.log(java.util.logging.Level.SEVERE, "Fail to refresh home", ex);
                 }
             });
+            delay.play();
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,

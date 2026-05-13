@@ -63,13 +63,6 @@ public class NotificationManager {
             VBox notification = new VBox(5);
             notification.getStyleClass().addAll("notification-container", type.getStyleClass());
             
-            // Add stylesheet if not present
-            Scene scene = SceneManager.getStage().getScene();
-            String cssPath = NotificationManager.class.getResource("/jfx/css/Notification.css").toExternalForm();
-            if (!scene.getStylesheets().contains(cssPath)) {
-                scene.getStylesheets().add(cssPath);
-            }
-
             Label titleLabel = new Label(title);
             titleLabel.getStyleClass().add("notification-title");
 
@@ -79,16 +72,25 @@ public class NotificationManager {
 
             Region progress = new Region();
             progress.getStyleClass().add("notification-progress");
-            progress.setPrefWidth(300); // Initial width
+            progress.setMinWidth(0);
+            progress.setPrefWidth(400); // Max width of container
 
             notification.getChildren().addAll(titleLabel, messageLabel, progress);
 
             notificationContainer.getChildren().add(0, notification);
 
+            // Slide-in animation
+            notification.setTranslateX(400);
+            Timeline slideIn = new Timeline(
+                new KeyFrame(Duration.millis(150), new KeyValue(notification.translateXProperty(), 0))
+            );
+            slideIn.play();
+
             // Animation for progress bar
             Timeline timeline = new Timeline();
+            // Start from full width and go to 0
             KeyValue keyValue = new KeyValue(progress.prefWidthProperty(), 0);
-            KeyFrame keyFrame = new KeyFrame(Duration.seconds(5), keyValue);
+            KeyFrame keyFrame = new KeyFrame(Duration.seconds(3), keyValue);
             timeline.getKeyFrames().add(keyFrame);
 
             timeline.setOnFinished(event -> {
