@@ -49,7 +49,9 @@ public class AuctionCardController {
     private ProgressBar progressBar;
 
     private Auction auction;
+    private Product product;
     private Consumer<Auction> onSelected;
+    private Consumer<Product> onSelectedProduct;
     private Timeline timeUpdater;
 
     @FXML
@@ -78,6 +80,23 @@ public class AuctionCardController {
         this.onSelected = onSelected;
     }
 
+    public void setProduct(Product product) {
+        stopTimeUpdater();
+        this.auction = null;
+        this.product = product;
+        titleLabel.setText(product.getTitle());
+        priceLabel.setText("");
+        startingPriceLabel.setText("");
+        bidStepLabel.setText("");
+        timeLabel.setText("");
+        progressBar.setProgress(0.0);
+        ProductImageLoader.loadCover(productImageView, product.getImagePath());
+    }
+
+    public void setOnSelectedProduct(Consumer<Product> onSelectedProduct) {
+        this.onSelectedProduct = onSelectedProduct;
+    }
+
     @FXML
     private void handleCardClicked(MouseEvent event) {
         notifySelection();
@@ -94,6 +113,8 @@ public class AuctionCardController {
     private void notifySelection() {
         if (auction != null && onSelected != null) {
             onSelected.accept(auction);
+        } else if (product != null && onSelectedProduct != null) {
+            onSelectedProduct.accept(product);
         }
     }
 

@@ -15,7 +15,11 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.network_connection.ClientSession;
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.productDTO.UploadImageRequest;
+import com.vbay.shared.protocol.Respond;
 
 /*
 nhận UploadImageRequest
@@ -205,6 +209,15 @@ public class ImageStorageService {
             return fileName;
         }
         return fileName.substring(0, dotIndex);
+    }
+
+    public Respond<String> handleUploadImage(String requestId, JsonElement payload, ClientSession session) throws IOException {
+        UploadImageRequest request = JsonUtils.fromJson(payload, UploadImageRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid upload image request", null);
+        }
+        String imageUrl = storeUploadedImage(request);
+        return new Respond<>(requestId, true, "Image uploaded successfully", imageUrl);
     }
 
     private static String extensionOf(String fileName) {

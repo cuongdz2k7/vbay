@@ -16,7 +16,11 @@ import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
+import com.vbay.shared.dto.userDTO.UserBalanceResponse;
+import com.vbay.shared.protocol.Respond;
 
 public class UserAccountService {
     private final ConnectionProvider connectionProvider;
@@ -61,6 +65,15 @@ public class UserAccountService {
                 throw exception;
             }
         }
+    }
+
+    public Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        DepositBalanceRequest request = JsonUtils.fromJson(payload, DepositBalanceRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid deposit balance request", null);
+        }
+        UserBalanceResult result = depositBalance(request, session);
+        return new Respond<>(requestId, true, "Balance deposited successfully", ResultMapper.toUserBalanceResponse(result));
     }
 
     private void validateDepositRequest(DepositBalanceRequest request) {

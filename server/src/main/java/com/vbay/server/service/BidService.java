@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -350,6 +353,15 @@ public class BidService {
         }
     }
 
+    public Respond<Void> handlePlaceBid(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        PlaceBidRequest request = JsonUtils.fromJson(payload, PlaceBidRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid place bid request", null);
+        }
+        placeBid(request, session);
+        return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
+
     public BuyNowResult buyNow(BuyNowRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
@@ -411,6 +423,15 @@ public class BidService {
                 throw e;
             }
         }
+    }
+
+    public Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        BuyNowRequest request = JsonUtils.fromJson(payload, BuyNowRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid buy now request", null);
+        }
+        buyNow(request, session);
+        return new Respond<>(requestId, true, "Buy now completed successfully", null);
     }
 
 }
