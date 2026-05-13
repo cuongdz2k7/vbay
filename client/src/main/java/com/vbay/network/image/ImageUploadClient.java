@@ -12,16 +12,16 @@ import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 
 /*
-max 2MB/file
+max 10MB/file
 đuôi cho phép: jpg, jpeg, png, gif, webp
 */
 
 public class ImageUploadClient {
-    private static final long MAX_IMAGE_BYTES = 2L * 1024L * 1024L;
+    private static final long MAX_IMAGE_BYTES = 10L * 1024L * 1024L;
 
     public String upload(File file) throws IOException {
         if (file.length() > MAX_IMAGE_BYTES) {
-            throw new IOException("Image file must be 2MB or smaller.");
+            throw new IOException("Image file must be 10MB or smaller.");
         }
 
         byte[] imageBytes = Files.readAllBytes(file.toPath());

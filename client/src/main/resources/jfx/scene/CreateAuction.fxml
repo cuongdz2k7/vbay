@@ -161,8 +161,8 @@
                                     <HBox alignment="CENTER_LEFT">
                                         <Label text="Reserve Price" styleClass="mini-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
-                                        <StackPane styleClass="switch-track">
-                                            <Circle radius="4" translateX="9" styleClass="switch-dot"/>
+                                        <StackPane fx:id="reservePriceToggle" onMouseClicked="#handleReservePriceToggle" styleClass="switch-track">
+                                            <Circle fx:id="reservePriceToggleDot" radius="4" translateX="-9" styleClass="switch-dot"/>
                                         </StackPane>
                                     </HBox>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
@@ -171,10 +171,16 @@
                                     </HBox>
                                 </VBox>
                                 <VBox spacing="8" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
-                                    <Label text="Buy Now Price" styleClass="mini-label"/>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Buy Now Price" styleClass="mini-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <StackPane fx:id="buyNowPriceToggle" onMouseClicked="#handleBuyNowPriceToggle" styleClass="switch-track">
+                                            <Circle fx:id="buyNowPriceToggleDot" radius="4" translateX="-9" styleClass="switch-dot"/>
+                                        </StackPane>
+                                    </HBox>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label text="\$" styleClass="currency-mark"/>
-                                        <TextField fx:id="buyNowPriceField" promptText="0.00" styleClass="money-input"/>
+                                        <TextField fx:id="buyNowPriceField" promptText="Optional" styleClass="money-input"/>
                                     </HBox>
                                 </VBox>
                             </GridPane>

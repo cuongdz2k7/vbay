@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.String?>
-<?import javafx.collections.FXCollections?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -27,13 +24,14 @@
                 <Insets top="0" right="28" bottom="0" left="28"/>
             </padding>
 
-            <Label text="HERITAGE AUCTIONS" styleClass="brand-title"/>
+            <Label text="VBAY" styleClass="brand-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox alignment="CENTER_RIGHT" spacing="20">
-                <Label text="BALANCE: \$42,500" styleClass="balance-chip"/>
+                <Label fx:id="balanceLabel" text="BALANCE: \$0.00" styleClass="balance-chip"/>
+                <Button text="Deposit Balance" onAction="#handleDepositBalance" styleClass="deposit-balance-btn"/>
                 <HBox alignment="CENTER" spacing="10" styleClass="account-chip">
                     <SVGPath content="M3 3H17V17H3ZM7 7A3 3 0 1 0 13 7A3 3 0 0 0 7 7ZM6 15C6.6 12.8 8.1 12 10 12C11.9 12 13.4 12.8 14 15" styleClass="account-icon"/>
-                    <Label text="Account" styleClass="account-label"/>
+                    <Label fx:id="accountNameLabel" text="Account" styleClass="account-label"/>
                 </HBox>
             </HBox>
         </HBox>
@@ -124,22 +122,6 @@
 
                     <VBox spacing="20">
                         <HBox alignment="CENTER_LEFT" styleClass="live-heading-row">
-                            <VBox spacing="4">
-                                <Label fx:id="catalogTitle" text="Home" styleClass="catalog-title"/>
-                                <Label fx:id="catalogSubtitle" text="Featured active auctions across the marketplace." styleClass="catalog-subtitle"/>
-                            </VBox>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <ComboBox fx:id="categoryFilterComboBox" onAction="#handleCategoryFilterChange" prefWidth="190" value="All Categories" styleClass="category-filter-combo">
-                                <items>
-                                    <FXCollections fx:factory="observableArrayList">
-                                        <String fx:value="All Categories"/>
-                                        <String fx:value="Electronics"/>
-                                        <String fx:value="Collectibles"/>
-                                        <String fx:value="Arts"/>
-                                        <String fx:value="Jewelry &amp; Watches"/>
-                                    </FXCollections>
-                                </items>
-                            </ComboBox>
                         </HBox>
 
                         <VBox fx:id="homeDashboard" spacing="28">

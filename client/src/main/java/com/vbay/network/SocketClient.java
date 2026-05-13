@@ -128,6 +128,7 @@ public class SocketClient {
             threadlistener.interrupt();
         }
         pendingResponse.clear();
+        realtimeEventDispatcher.clear();
         in = null;
         out = null;
         socket = null;

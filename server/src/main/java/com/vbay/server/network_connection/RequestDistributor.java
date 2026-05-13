@@ -11,6 +11,9 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.service.UserAccountService;
+import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
@@ -23,6 +26,8 @@ import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.dto.productDTO.UploadImageRequest;
 import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
+import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
@@ -53,6 +58,7 @@ public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final BidService bidService;
+    private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
     
@@ -60,11 +66,13 @@ public class RequestDistributor {
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
                                 BidService bidService, 
+                                UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.userAccountService = userAccountService;
         this.subscriptionService = subscriptionService;
         this.imageStorageService = imageStorageService;
     }
@@ -122,6 +130,7 @@ public class RequestDistributor {
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 case BUY_NOW -> handleBuyNow(requestId, payload, session);
+                case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
                 case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
@@ -240,6 +249,15 @@ public class RequestDistributor {
         }
         auctionService.createAuction(createAuctionRequest, session);
         return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    private Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        DepositBalanceRequest depositRequest = JsonUtils.fromJson(payload, DepositBalanceRequest.class);
+        if (depositRequest == null) {
+            return new Respond<>(requestId, false, "Invalid deposit balance request", null);
+        }
+        UserBalanceResult result = userAccountService.depositBalance(depositRequest, session);
+        return new Respond<>(requestId, true, "Balance deposited successfully", ResultMapper.toUserBalanceResponse(result));
     }
 
     private Respond<Void> handlePlaceBid (String requestId, JsonElement payload, ClientSession session) throws SQLException {

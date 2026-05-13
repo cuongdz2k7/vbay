@@ -104,13 +104,13 @@
                             </VBox>
 
                             <VBox spacing="10">
-                                <Button text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn"/>
-                                <Button text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn"/>
+                                <Button fx:id="placeBidButton" text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn"/>
+                                <Button fx:id="buyNowButton" text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn"/>
                             </VBox>
 
                             <HBox spacing="10" alignment="CENTER_LEFT" styleClass="time-row">
                                 <SVGPath content="M10 2A8 8 0 1 0 10 18A8 8 0 0 0 10 2ZM10 5V10L13 12" styleClass="small-icon"/>
-                                <Label text="Ends in" styleClass="time-copy"/>
+                                <Label fx:id="timePrefixLabel" text="Ends in" styleClass="time-copy"/>
                                 <Label fx:id="timeLabel" text="-" styleClass="time-value"/>
                             </HBox>
 

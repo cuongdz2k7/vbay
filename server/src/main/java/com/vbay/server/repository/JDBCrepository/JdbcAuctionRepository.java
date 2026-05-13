@@ -15,9 +15,11 @@ import java.util.Optional;
 import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+
 
 
 public class JdbcAuctionRepository implements AuctionRepository {
@@ -148,8 +150,8 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT 1
             FROM auctions
-            WHERE product_id = ?
-              AND status IN ('SCHEDULED', 'ACTIVE')
+            WHERE status IN ('SCHEDULED', 'ACTIVE')
+            AND product_id = ?
             LIMIT 1
             """;
 
@@ -195,11 +197,18 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
     @Override
-    public void syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException {
-        activateIfDue(auctionId, dbNow);
-        endIfExpired(auctionId, dbNow);
+    public AuctionTransition syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException {
+        if (endIfExpired(auctionId, dbNow)) {
+            return AuctionTransition.ENDED;
+        }
+        else if(activateIfDue(auctionId, dbNow)) {
+            return AuctionTransition.STARTED;
+        }
+        else {
+            return AuctionTransition.NO_CHANGE;
+        }
     }
-    private void activateIfDue(long auctionId, LocalDateTime dbNow) throws SQLException {
+    private boolean activateIfDue(long auctionId, LocalDateTime dbNow) throws SQLException {
          String sql = """
             UPDATE auctions
             SET status = 'ACTIVE',
@@ -218,24 +227,27 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 statement.setLong(1, auctionId);
                 statement.setTimestamp(2, now);
                 statement.setTimestamp(3, now);
-                statement.executeUpdate(); 
+                int rowsAffected = statement.executeUpdate();
+                return rowsAffected > 0;
         }    
     }
 
-    private void endIfExpired (long auctionId, LocalDateTime dbNow) throws SQLException {
+    private boolean endIfExpired (long auctionId, LocalDateTime dbNow) throws SQLException {
          String sql = """
-            UPDATE auctions
-            SET status = 'ENDED',
-                version = version + 1
+            SELECT 1
+            FROM auctions
             WHERE id = ?
             AND status IN ('SCHEDULED', 'ACTIVE')
             AND ending_time <= ?
+            LIMIT 1
         """;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 Timestamp now = Timestamp.valueOf(dbNow);
                 statement.setLong(1, auctionId);
                 statement.setTimestamp(2, now);
-                statement.executeUpdate(); 
+                try (ResultSet rs = statement.executeQuery()) {
+                    return rs.next();
+                }
         }    
     }
 
@@ -258,7 +270,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         return findVersionById(auctionId);
     }
 
-    @Override
+        @Override
     public long completeByBuyNow(long auctionId, long buyerId) throws SQLException {
         String sql = """
             UPDATE auctions
@@ -279,7 +291,101 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
     @Override
-    public List<AuctionListItemPayload> findAuctionList(AuctionListRequest request) throws SQLException {
+    public long terminateAuction(long auctionId) throws SQLException {
+        String sql = """
+            UPDATE auctions
+            SET status = 'FAILED',
+                winner_user_id = NULL,
+                final_price = NULL,
+                version = version + 1
+            WHERE id = ?
+            AND status IN ('SCHEDULED', 'ACTIVE')
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            statement.executeUpdate();
+        }
+        return findVersionById(auctionId);
+    }
+
+    @Override
+    public long finalizeAuction(long auctionId) throws SQLException {
+        String sql = """
+            UPDATE auctions
+            SET status = 'ENDED',
+                final_price = current_price,
+                winner_user_id = (
+                    SELECT bidder_id
+                    FROM bids
+                    WHERE auction_id = ?
+                    AND status = 'WINNING'
+                    ORDER BY bid_time DESC, id DESC
+                    LIMIT 1
+                ),
+                version = version + 1
+            WHERE id = ?
+            AND status IN ('SCHEDULED', 'ACTIVE')
+            AND EXISTS (
+                SELECT 1
+                FROM bids
+                WHERE auction_id = ?
+                AND status = 'WINNING'
+            )
+            """;
+
+        int rowsAffected;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            statement.setLong(2, auctionId);
+            statement.setLong(3, auctionId);
+            rowsAffected = statement.executeUpdate();
+        }
+
+        return rowsAffected > 0 ? findVersionById(auctionId) : 0L;
+    }
+
+    @Override
+    public List<Auction> findPendingSchedules() throws SQLException {
+        String sql = """
+            SELECT id, product_id, seller_id, title, description, minimum_bid_step,
+                   starting_price, current_price, reserve_price, buy_now_price,
+                   starting_time, ending_time, status, version
+            FROM auctions
+            WHERE status IN ('SCHEDULED', 'ACTIVE')
+            ORDER BY starting_time ASC, ending_time ASC, id ASC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            return mapAuctions(rs);
+        }
+    }
+
+    @Override
+    public List<Auction> findRecoverableSchedules(LocalDateTime dbNow) throws SQLException {
+        String sql = """
+            SELECT id, product_id, seller_id, title, description, minimum_bid_step,
+                   starting_price, current_price, reserve_price, buy_now_price,
+                   starting_time, ending_time, status, version
+            FROM auctions
+            WHERE (status = 'SCHEDULED' AND starting_time <= ?)
+               OR (status IN ('SCHEDULED', 'ACTIVE') AND ending_time <= ?)
+            ORDER BY ending_time ASC, starting_time ASC, id ASC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            Timestamp now = Timestamp.valueOf(dbNow);
+            statement.setTimestamp(1, now);
+            statement.setTimestamp(2, now);
+            try (ResultSet rs = statement.executeQuery()) {
+                return mapAuctions(rs);
+            }
+        }
+    }
+
+    @Override
+    public List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException {
         StringBuilder sql = new StringBuilder("""
             SELECT
                 a.id AS auction_id,
@@ -337,7 +443,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
             }
 
             try (ResultSet rs = statement.executeQuery()) {
-                List<AuctionListItemPayload> items = new ArrayList<>();
+                List<AuctionListItemResult> items = new ArrayList<>();
                 while (rs.next()) {
                     items.add(mapAuctionListItem(rs));
                 }
@@ -346,8 +452,59 @@ public class JdbcAuctionRepository implements AuctionRepository {
         }
     }
 
-    private AuctionListItemPayload mapAuctionListItem(ResultSet rs) throws SQLException {
-        return new AuctionListItemPayload(
+    @Override
+    public Optional<AuctionListItemResult> findAuctionListItemById(long auctionId) throws SQLException {
+        String sql = """
+            SELECT
+                a.id AS auction_id,
+                a.version AS auction_version,
+                a.product_id,
+                a.seller_id,
+                a.title,
+                a.description,
+                p.name AS product_name,
+                p.category_id,
+                a.status,
+                a.starting_price,
+                a.current_price,
+                a.minimum_bid_step,
+                a.buy_now_price,
+                (
+                    SELECT image_url
+                    FROM product_images
+                    WHERE product_id = p.id
+                    ORDER BY is_thumbnail DESC, id ASC
+                    LIMIT 1
+                ) AS thumbnail_url,
+                a.starting_time,
+                a.ending_time,
+                a.updated_at
+            FROM auctions a
+            JOIN products p ON p.id = a.product_id
+            WHERE a.id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.of(mapAuctionListItem(rs));
+            }
+        }
+    }
+
+    private List<Auction> mapAuctions(ResultSet rs) throws SQLException {
+        List<Auction> auctions = new ArrayList<>();
+        while (rs.next()) {
+            auctions.add(AuctionRowMapper.mapAuction(rs));
+        }
+        return auctions;
+    }
+
+    private AuctionListItemResult mapAuctionListItem(ResultSet rs) throws SQLException {
+        return new AuctionListItemResult(
             rs.getLong("auction_id"),
             rs.getLong("auction_version"),
             rs.getLong("product_id"),

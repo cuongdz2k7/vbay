@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
@@ -39,6 +40,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.stage.Window;
@@ -62,9 +64,13 @@ public class CreateAuctionController {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/uuuu")
         .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
 
     private final ImageUploadClient imageUploadClient = new ImageUploadClient();
     private final List<File> selectedImageFiles = new ArrayList<>();
+    private boolean reservePriceEnabled;
+    private boolean buyNowPriceEnabled;
 
     private Runnable onBack;
     private Runnable onAuctionCreated;
@@ -90,7 +96,15 @@ public class CreateAuctionController {
     @FXML
     private TextField reservePriceField;
     @FXML
+    private StackPane reservePriceToggle;
+    @FXML
+    private Circle reservePriceToggleDot;
+    @FXML
     private TextField buyNowPriceField;
+    @FXML
+    private StackPane buyNowPriceToggle;
+    @FXML
+    private Circle buyNowPriceToggleDot;
     @FXML
     private DatePicker startingDatePicker;
     @FXML
@@ -108,6 +122,8 @@ public class CreateAuctionController {
         MoneyInput.install(minimumBidStepField);
         MoneyInput.install(reservePriceField);
         MoneyInput.install(buyNowPriceField);
+        setReservePriceEnabled(false);
+        setBuyNowPriceEnabled(false);
     }
 
     public void setOnBack(Runnable onBack) {
@@ -191,6 +207,16 @@ public class CreateAuctionController {
             .limit(remainingSlots)
             .forEach(selectedImageFiles::add);
         renderSelectedImages();
+    }
+
+    @FXML
+    private void handleReservePriceToggle() {
+        setReservePriceEnabled(!reservePriceEnabled);
+    }
+
+    @FXML
+    private void handleBuyNowPriceToggle() {
+        setBuyNowPriceEnabled(!buyNowPriceEnabled);
     }
 
     private void renderSelectedImages() {
@@ -280,8 +306,8 @@ public class CreateAuctionController {
 
         BigDecimal startingPrice = requireMoney(startingPriceField, "Starting price");
         BigDecimal minimumBidStep = requireMoney(minimumBidStepField, "Bid step");
-        BigDecimal reservePrice = optionalMoney(reservePriceField, "Reserve price");
-        BigDecimal buyNowPrice = optionalMoney(buyNowPriceField, "Buy now price");
+        BigDecimal reservePrice = optionalReserveMoney();
+        BigDecimal buyNowPrice = optionalBuyNowMoney();
         LocalDateTime startingTime = requireDateTime(startingDatePicker, startingTimeField, "Starting date/time");
         LocalDateTime endingTime = requireDateTime(endingDatePicker, endingTimeField, "Ending date/time");
 
@@ -339,14 +365,61 @@ public class CreateAuctionController {
             formInput.reservePrice(),
             formInput.buyNowPrice(),
             formInput.minimumBidStep(),
-            formInput.startingTime(),
-            formInput.endingTime()
+            vietnamTimeToUtc(formInput.startingTime()),
+            vietnamTimeToUtc(formInput.endingTime())
         );
+    }
+
+    private LocalDateTime vietnamTimeToUtc(LocalDateTime vietnamTime) {
+        return vietnamTime
+            .atZone(VIETNAM_ZONE)
+            .withZoneSameInstant(UTC_ZONE)
+            .toLocalDateTime();
     }
 
     private void validateRequiredImages() {
         if (selectedImageFiles.isEmpty()) {
             throw new IllegalArgumentException("Select at least one product image.");
+        }
+    }
+
+    private void setReservePriceEnabled(boolean enabled) {
+        reservePriceEnabled = enabled;
+        reservePriceField.setDisable(!enabled);
+        reservePriceField.setEditable(enabled);
+        if (!enabled) {
+            reservePriceField.clear();
+        }
+
+        if (reservePriceToggle != null) {
+            reservePriceToggle.getStyleClass().remove("switch-track-active");
+            if (enabled) {
+                reservePriceToggle.getStyleClass().add("switch-track-active");
+            }
+        }
+
+        if (reservePriceToggleDot != null) {
+            reservePriceToggleDot.setTranslateX(enabled ? 9 : -9);
+        }
+    }
+
+    private void setBuyNowPriceEnabled(boolean enabled) {
+        buyNowPriceEnabled = enabled;
+        buyNowPriceField.setDisable(!enabled);
+        buyNowPriceField.setEditable(enabled);
+        if (!enabled) {
+            buyNowPriceField.clear();
+        }
+
+        if (buyNowPriceToggle != null) {
+            buyNowPriceToggle.getStyleClass().remove("switch-track-active");
+            if (enabled) {
+                buyNowPriceToggle.getStyleClass().add("switch-track-active");
+            }
+        }
+
+        if (buyNowPriceToggleDot != null) {
+            buyNowPriceToggleDot.setTranslateX(enabled ? 9 : -9);
         }
     }
 
@@ -398,6 +471,20 @@ public class CreateAuctionController {
         }
         textField.setText(money.toPlainString());
         return money;
+    }
+
+    private BigDecimal optionalReserveMoney() {
+        if (!reservePriceEnabled) {
+            return null;
+        }
+        return optionalMoney(reservePriceField, "Reserve price");
+    }
+
+    private BigDecimal optionalBuyNowMoney() {
+        if (!buyNowPriceEnabled) {
+            return null;
+        }
+        return optionalMoney(buyNowPriceField, "Buy now price");
     }
 
     private LocalDateTime requireDateTime(DatePicker datePicker, TextField timeField, String fieldName) {

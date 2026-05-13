@@ -5,10 +5,11 @@ import java.util.List;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.network_connection.RequestDistributor;
-import com.vbay.server.realtime.handler.AuctionCreatedRealtimeHandler;
+import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
+import com.vbay.server.realtime.handler.UserBalanceUpdatedRealtimeHandler;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.realtime.publisher.InMemoryDomainEventPublisher;
@@ -22,11 +23,14 @@ import com.vbay.server.realtime.subscription.validation.UserRoomSubscriptionRule
 import com.vbay.server.realtime.transport.RealtimeBroadcaster;
 import com.vbay.server.repository.JDBCrepository.JdbcRepositoryFactory;
 import com.vbay.server.repository.RepositoryFactory;
+import com.vbay.server.scheduler.AuctionScheduleDomainEventHandler;
+import com.vbay.server.scheduler.AuctionTaskScheduler;
 import com.vbay.server.security.Argon2PasswordHasher;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.service.UserAccountService;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -45,15 +49,17 @@ public class AppConfig {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final BidService bidService;
+    private final UserAccountService userAccountService;
     private final RequestDistributor requestDistributor;
     private final ImageStorageService imageStorageService;
     private final SubscriptionRegistry subscriptionRegistry;
     private final RealtimeBroadcaster realtimeBroadcaster;
     private final SubscriptionService subscriptionService;
     private final RoomSubscriptionValidator subscriptionValidator;
-    private final DomainEventPublisher domainEventPublisher;
+    private final InMemoryDomainEventPublisher domainEventPublisher;
     private final List<DomainEventHandler> domainEventHandlers;
     private final RealtimeEventMapper realtimeEventMapper;
+    private final AuctionTaskScheduler auctionScheduler;
 
     
 /*
@@ -102,14 +108,8 @@ new AppConfig()
         this.subscriptionRegistry = new InMemorySubscriptionRegistry();
         this.realtimeBroadcaster = new RealtimeBroadcaster(subscriptionRegistry);
         this.realtimeEventMapper = new RealtimeEventMapper();
-
-        this.domainEventHandlers = List.of(
-            new AuctionCreatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
-            new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
-            new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
-        );
-
-        this.domainEventPublisher = new InMemoryDomainEventPublisher(domainEventHandlers);
+        
+        this.domainEventPublisher = new InMemoryDomainEventPublisher();
 
         this.subscriptionValidator = new RoomSubscriptionValidator(List.of(
             new AuctionRoomSubscriptionRule(),
@@ -121,13 +121,29 @@ new AppConfig()
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.imageStorageService = imageStorageService;
+        this.auctionScheduler = new AuctionTaskScheduler(auctionService);
+        this.domainEventHandlers = List.of(
+            new AuctionListItemUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AuctionScheduleDomainEventHandler(auctionScheduler),
+            new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new UserBalanceUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
+        );
+        this.domainEventPublisher.registerAll(domainEventHandlers);
+
         this.requestDistributor = new RequestDistributor(
             authService, 
             auctionService, 
             bidService, 
+            userAccountService,
             subscriptionService, 
             imageStorageService);
+    }
+
+     public AuctionTaskScheduler getAuctionScheduler() {
+        return auctionScheduler;
     }
 
     public RealtimeBroadcaster getRealtimeBroadcaster() {

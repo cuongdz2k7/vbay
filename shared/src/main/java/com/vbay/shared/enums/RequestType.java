@@ -33,6 +33,7 @@ public enum RequestType {
 
     // Payment
     CREATE_PAYMENT,
+    DEPOSIT_BALANCE,
     PAY_DEPOSIT,
     PAY_REST,
     VERIFY_PAYMENT,

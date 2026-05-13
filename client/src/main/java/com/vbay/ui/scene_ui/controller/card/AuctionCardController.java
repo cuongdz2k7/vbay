@@ -1,11 +1,20 @@
 package com.vbay.ui.scene_ui.controller.card;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.util.ProductImageLoader;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -16,6 +25,12 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 
 public class AuctionCardController {
+    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter DISPLAY_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm", Locale.US);
+
     @FXML
     private VBox cardRoot;
     @FXML
@@ -35,22 +50,28 @@ public class AuctionCardController {
 
     private Auction auction;
     private Consumer<Auction> onSelected;
+    private Timeline timeUpdater;
 
     @FXML
     private void initialize() {
         cardRoot.setFocusTraversable(true);
+        cardRoot.sceneProperty().addListener((observable, oldScene, newScene) -> {
+            if (newScene == null) {
+                stopTimeUpdater();
+            }
+        });
     }
 
     public void setAuction(Auction auction) {
+        stopTimeUpdater();
         this.auction = auction;
         Product product = auction.getProduct();
         titleLabel.setText(auction.getTitle());
-        priceLabel.setText("Current Bid  " + product.getPrice());
-        startingPriceLabel.setText("Starting Price  " + product.getStartingPrice());
-        bidStepLabel.setText("Step  " + product.getBidStep());
-        timeLabel.setText(product.getTimeLeft());
-        progressBar.setProgress(product.getProgress());
+        priceLabel.setText("Current Bid  " + formatCurrency(auction.getCurrentPrice()));
+        startingPriceLabel.setText("Starting Price  " + formatCurrency(auction.getStartingPrice()));
+        bidStepLabel.setText("Step  " + formatCurrency(auction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
+        startTimeUpdater();
     }
 
     public void setOnSelected(Consumer<Auction> onSelected) {
@@ -74,5 +95,97 @@ public class AuctionCardController {
         if (auction != null && onSelected != null) {
             onSelected.accept(auction);
         }
+    }
+
+    private void startTimeUpdater() {
+        updateTimeState();
+        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeState()));
+        timeUpdater.setCycleCount(Timeline.INDEFINITE);
+        timeUpdater.play();
+    }
+
+    private void stopTimeUpdater() {
+        if (timeUpdater != null) {
+            timeUpdater.stop();
+            timeUpdater = null;
+        }
+    }
+
+    private void updateTimeState() {
+        if (auction == null) {
+            return;
+        }
+        timeLabel.setText(formatAuctionTime(auction));
+        progressBar.setProgress(calculateProgress(auction.getStartingTime(), auction.getEndingTime()));
+    }
+
+    private static String formatCurrency(BigDecimal value) {
+        return value == null ? "-" : CURRENCY_FORMAT.format(value);
+    }
+
+    private static String formatAuctionTime(Auction auction) {
+        String status = auction.getStatus();
+        if ("CANCELLED".equals(status)) {
+            return "Cancelled";
+        }
+        if ("FAILED".equals(status)) {
+            return "Failed";
+        }
+        if ("ENDED".equals(status)) {
+            return "Ended";
+        }
+
+        LocalDateTime now = utcNow();
+        LocalDateTime startingTime = auction.getStartingTime();
+        LocalDateTime endingTime = auction.getEndingTime();
+        if (endingTime == null || !now.isBefore(endingTime)) {
+            return "Ended";
+        }
+        if ("SCHEDULED".equals(status)) {
+            return startingTime == null ? "Starts: -" : "Starts: " + formatVietnamTime(startingTime);
+        }
+        if (!"ACTIVE".equals(status)) {
+            return "-";
+        }
+
+        Duration remaining = Duration.between(now, endingTime);
+        if (remaining.compareTo(Duration.ofHours(24)) >= 0) {
+            return "Ends: " + formatVietnamTime(endingTime);
+        }
+        return formatRemainingDuration(remaining) + " Remaining";
+    }
+
+    private static String formatRemainingDuration(Duration remaining) {
+        long seconds = remaining.getSeconds();
+        long hours = seconds / 3600;
+        long minutes = (seconds % 3600) / 60;
+        long remainingSeconds = seconds % 60;
+        return String.format("%02d:%02d:%02d", hours, minutes, remainingSeconds);
+    }
+
+    private static String formatVietnamTime(LocalDateTime utcTime) {
+        return utcTime
+            .atZone(UTC_ZONE)
+            .withZoneSameInstant(VIETNAM_ZONE)
+            .format(DISPLAY_TIME_FORMATTER);
+    }
+
+    private static double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {
+        if (startingTime == null || endingTime == null) {
+            return 0.0;
+        }
+
+        long totalMillis = Duration.between(startingTime, endingTime).toMillis();
+        if (totalMillis <= 0) {
+            return 1.0;
+        }
+
+        long remainingMillis = Duration.between(utcNow(), endingTime).toMillis();
+        double progress = (double) remainingMillis / totalMillis;
+        return Math.max(0.0, Math.min(1.0, progress));
+    }
+
+    private static LocalDateTime utcNow() {
+        return LocalDateTime.now(UTC_ZONE);
     }
 }

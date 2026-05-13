@@ -1,18 +1,19 @@
 package com.vbay.server.realtime.mapper;
 
-import java.util.List;
-
-import com.vbay.server.realtime.domain.AuctionCreatedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
+import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.service.result.BuyNowResult;
-import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.PlaceBidResult;
+import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
@@ -62,37 +63,11 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
-    public RealtimeEvent<AuctionListItemPayload> toAuctionCreatedListItemEvent(AuctionCreatedDomainEvent event) {
-        return toAuctionListItemUpdatedEvent(event);
-    }
-
-    public RealtimeEvent<AuctionListItemPayload> toAuctionListItemUpdatedEvent(AuctionCreatedDomainEvent event) {
-        CreateAuctionResult result = event.getResult();
-        AuctionListItemPayload payload = new AuctionListItemPayload(
-            result.getAuctionId(),
-            result.getAuctionVersion(),
-            result.getProductId(),
-            result.getSellerId(),
-            result.getTitle(),
-            null,
-            result.getTitle(),
-            result.getCategoryId(),
-            result.getStatus().name(),
-            result.getStartingPrice(),
-            result.getCurrentPrice(),
-            result.getMinimumBidStep(),
-            null,
-            null,
-            List.of(),
-            result.getStartingTime(),
-            result.getEndingTime(),
-            event.occurredAt()
-        );
-
+    public RealtimeEvent<AuctionListItemPayload> toAuctionListItemUpdatedEvent(AuctionListItemUpdatedDomainEvent event) {
         RealtimeEvent<AuctionListItemPayload> realtimeEvent = new RealtimeEvent<>(
             RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
             auctionListRoom(),
-            payload
+            ResultMapper.toAuctionListItemPayload(event.getAuctionListItem())
         );
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;
@@ -142,6 +117,17 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
+    public RealtimeEvent<UserBalanceUpdatedPayload> toUserBalanceUpdatedEvent(UserBalanceUpdatedDomainEvent event) {
+        UserBalanceResult result = event.getResult();
+        RealtimeEvent<UserBalanceUpdatedPayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.USER_BALANCE_UPDATED,
+            userRoom(result.getUserId()),
+            ResultMapper.toUserBalanceUpdatedPayload(result)
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
     private Room auctionRoom(long auctionId) {
         Room room = new Room();
         room.setType(RoomType.AUCTION);
@@ -152,6 +138,13 @@ public class RealtimeEventMapper {
     private Room auctionListRoom() {
         Room room = new Room();
         room.setType(RoomType.AUCTION_LIST);
+        return room;
+    }
+
+    private Room userRoom(long userId) {
+        Room room = new Room();
+        room.setType(RoomType.USER);
+        room.setTargetId(userId);
         return room;
     }
 }

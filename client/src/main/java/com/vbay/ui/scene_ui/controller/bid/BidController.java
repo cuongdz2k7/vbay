@@ -5,22 +5,35 @@ import java.io.IOException;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
 import com.vbay.network.SocketClient;
+import com.vbay.network.dispatcher.RealtimeEventDispatcher;
+import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
+import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneDataReceiver;
-import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.util.MoneyInput;
 import com.vbay.ui.util.ProductImageLoader;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
@@ -35,7 +48,9 @@ import javafx.scene.layout.VBox;
 
 public class BidController implements SceneDataReceiver<Auction> {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
     private static final String ACTIVE_TAB_STYLE_CLASS = "active-tab";
+    private static final String ACTIVE_THUMBNAIL_STYLE_CLASS = "active-thumb";
     private static final BigDecimal AVAILABLE_BALANCE = new BigDecimal("42500.00");
     private static final String[] HISTORY_BIDDERS = {
         "Mia Tran",
@@ -54,8 +69,6 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private ImageView thumbnailFourImageView;
     @FXML
-    private Label lotLabel;
-    @FXML
     private Label titleLabel;
     @FXML
     private Label descriptionLabel;
@@ -72,11 +85,17 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Label nextBidLabel;
     @FXML
+    private Label timePrefixLabel;
+    @FXML
     private Label timeLabel;
     @FXML
     private ProgressBar progressBar;
     @FXML
     private TextField bidAmountField;
+    @FXML
+    private Button placeBidButton;
+    @FXML
+    private Button buyNowButton;
     @FXML
     private Label productNameLabel;
     @FXML
@@ -96,6 +115,14 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Label historyAmountThreeLabel;
     @FXML
+    private VBox thumbnailOneFrame;
+    @FXML
+    private VBox thumbnailTwoFrame;
+    @FXML
+    private VBox thumbnailThreeFrame;
+    @FXML
+    private VBox thumbnailFourFrame;
+    @FXML
     private Button productInfoTabButton;
     @FXML
     private Button auctionDetailsTabButton;
@@ -110,6 +137,14 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private Auction currentAuction;
     private BigDecimal nextMinimumBid = BigDecimal.ZERO;
+    private List<String> currentImageUrls = List.of();
+    private final List<BidHistoryItemPayload> recentBidHistory = new ArrayList<>();
+    private Runnable onBack;
+    private Timeline timeUpdater;
+    private RealtimeEventListener<AuctionStateUpdatedPayload> auctionStateListener;
+    private RealtimeEventListener<BidHistoryItemPayload> bidHistoryListener;
+    private RealtimeEventListener<AuctionEndedPayload> auctionEndedListener;
+    private Long subscribedAuctionId;
 
     @FXML
     private void initialize() {
@@ -123,7 +158,14 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
 
+        disposeRealtime();
         currentAuction = data;
+        renderAuction(data);
+        subscribeAuctionRoom(data.getId());
+        subscribeAuctionRealtimeListeners();
+    }
+
+    private void renderAuction(Auction data) {
         Product product = data.getProduct();
         BigDecimal currentPrice = valueOrZero(data.getCurrentPrice());
         BigDecimal startingPrice = valueOrZero(data.getStartingPrice());
@@ -131,7 +173,6 @@ public class BidController implements SceneDataReceiver<Auction> {
         BigDecimal buyNowPrice = data.getBuyNowPrice();
         nextMinimumBid = currentPrice.add(bidStep);
 
-        lotLabel.setText("LOT " + data.getId());
         titleLabel.setText(data.getTitle());
         descriptionLabel.setText(descriptionFor(data));
         longDescriptionLabel.setText(descriptionFor(data));
@@ -140,28 +181,33 @@ public class BidController implements SceneDataReceiver<Auction> {
         startingPriceLabel.setText(formatCurrency(startingPrice));
         stepLabel.setText(formatCurrency(bidStep));
         nextBidLabel.setText(formatCurrency(nextMinimumBid));
-        timeLabel.setText(formatRemainingTime(data.getEndingTime(), product.getTimeLeft()));
-        progressBar.setProgress(product.getProgress());
+        startTimeUpdater();
         bidAmountField.setText(MoneyInput.toInputText(nextMinimumBid));
         productNameLabel.setText(product.getTitle());
         auctionIdLabel.setText("#" + data.getId());
         statusLabel.setText(data.getStatus() == null || data.getStatus().isBlank() ? "-" : data.getStatus());
+        setBidControlsEnabled(!isClosedStatus(data.getStatus()));
 
-        ProductImageLoader.loadCover(productImageView, product.getImagePath());
-        ProductImageLoader.loadCover(thumbnailOneImageView, product.getImagePath());
-        ProductImageLoader.loadCover(thumbnailTwoImageView, product.getImagePath());
-        ProductImageLoader.loadCover(thumbnailThreeImageView, product.getImagePath());
-        ProductImageLoader.loadCover(thumbnailFourImageView, product.getImagePath());
+        loadGalleryImages(product);
         populateBidHistory(data);
     }
 
     @FXML
     private void handleBack(ActionEvent event) {
-        try {
-            SceneManager.switchScene("/jfx/scene/Home.fxml");
-        } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Navigation failed", "Could not return to the home scene.");
+        disposeRealtime();
+        stopTimeUpdater();
+        if (onBack != null) {
+            onBack.run();
         }
+    }
+
+    public void setOnBack(Runnable onBack) {
+        this.onBack = onBack;
+    }
+
+    public void dispose() {
+        disposeRealtime();
+        stopTimeUpdater();
     }
 
     @FXML
@@ -226,6 +272,26 @@ public class BidController implements SceneDataReceiver<Auction> {
     }
 
     @FXML
+    private void handleThumbnailOneSelected() {
+        selectGalleryImage(0);
+    }
+
+    @FXML
+    private void handleThumbnailTwoSelected() {
+        selectGalleryImage(1);
+    }
+
+    @FXML
+    private void handleThumbnailThreeSelected() {
+        selectGalleryImage(2);
+    }
+
+    @FXML
+    private void handleThumbnailFourSelected() {
+        selectGalleryImage(3);
+    }
+
+    @FXML
     private void handleProductInformationTab(ActionEvent event) {
         selectTab(productInfoTabButton, true);
     }
@@ -263,16 +329,219 @@ public class BidController implements SceneDataReceiver<Auction> {
         return value == null ? BigDecimal.ZERO : value;
     }
 
-    private String formatRemainingTime(LocalDateTime endingTime, String fallback) {
-        if (endingTime == null) {
-            return fallback == null || fallback.isBlank() ? "-" : fallback;
+    private void subscribeAuctionRoom(long auctionId) {
+        try {
+            Room room = new Room();
+            room.setType(RoomType.AUCTION);
+            room.setTargetId(auctionId);
+            SocketClient.getClient().sendMessage(new Request<>(RequestType.SUBSCRIBE_ROOM, room));
+            subscribedAuctionId = auctionId;
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+    }
+
+    private void unsubscribeAuctionRoom() {
+        if (subscribedAuctionId == null) {
+            return;
+        }
+        try {
+            Room room = new Room();
+            room.setType(RoomType.AUCTION);
+            room.setTargetId(subscribedAuctionId);
+            SocketClient.getClient().sendMessage(new Request<>(RequestType.UNSUBSCRIBE_ROOM, room));
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        } finally {
+            subscribedAuctionId = null;
+        }
+    }
+
+    private void subscribeAuctionRealtimeListeners() {
+        RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
+
+        auctionStateListener = event -> {
+            AuctionStateUpdatedPayload payload = event.getPayload();
+            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+                return;
+            }
+            Platform.runLater(() -> applyAuctionStateUpdate(payload));
+        };
+        bidHistoryListener = event -> {
+            BidHistoryItemPayload payload = event.getPayload();
+            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+                return;
+            }
+            Platform.runLater(() -> applyBidHistoryItem(payload));
+        };
+        auctionEndedListener = event -> {
+            AuctionEndedPayload payload = event.getPayload();
+            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+                return;
+            }
+            Platform.runLater(() -> applyAuctionEnded(payload));
+        };
+
+        dispatcher.subscribe(RealtimeEventType.AUCTION_STATE_UPDATED, auctionStateListener);
+        dispatcher.subscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
+        dispatcher.subscribe(RealtimeEventType.AUCTION_ENDED, auctionEndedListener);
+    }
+
+    private void disposeRealtime() {
+        RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
+        if (auctionStateListener != null) {
+            dispatcher.unsubscribe(RealtimeEventType.AUCTION_STATE_UPDATED, auctionStateListener);
+            auctionStateListener = null;
+        }
+        if (bidHistoryListener != null) {
+            dispatcher.unsubscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
+            bidHistoryListener = null;
+        }
+        if (auctionEndedListener != null) {
+            dispatcher.unsubscribe(RealtimeEventType.AUCTION_ENDED, auctionEndedListener);
+            auctionEndedListener = null;
+        }
+        unsubscribeAuctionRoom();
+    }
+
+    private void applyAuctionStateUpdate(AuctionStateUpdatedPayload payload) {
+        BigDecimal currentPrice = valueOrZero(payload.getCurrentPrice());
+        nextMinimumBid = payload.getNextMinimumBid() == null
+            ? currentPrice.add(valueOrZero(currentAuction.getMinimumBidStep()))
+            : payload.getNextMinimumBid();
+        currentAuction = copyAuction(
+            payload.getAuctionVersion(),
+            payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
+            currentPrice,
+            payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
+            payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
+        );
+
+        currentBidLabel.setText(formatCurrency(currentPrice));
+        nextBidLabel.setText(formatCurrency(nextMinimumBid));
+        bidAmountField.setText(MoneyInput.toInputText(nextMinimumBid));
+        statusLabel.setText(currentAuction.getStatus());
+        updateTimeState();
+    }
+
+    private void applyBidHistoryItem(BidHistoryItemPayload payload) {
+        recentBidHistory.add(0, payload);
+        while (recentBidHistory.size() > 3) {
+            recentBidHistory.remove(recentBidHistory.size() - 1);
+        }
+        renderRecentBidHistory();
+    }
+
+    private void applyAuctionEnded(AuctionEndedPayload payload) {
+        BigDecimal finalPrice = valueOrZero(payload.getFinalPrice());
+        currentAuction = copyAuction(
+            payload.getAuctionVersion(),
+            payload.getStatus() == null ? "ENDED" : payload.getStatus(),
+            finalPrice,
+            currentAuction.getStartingTime(),
+            currentAuction.getEndingTime()
+        );
+        currentBidLabel.setText(formatCurrency(finalPrice));
+        statusLabel.setText(currentAuction.getStatus());
+        nextBidLabel.setText("-");
+        setBidControlsEnabled(false);
+        updateTimeState();
+    }
+
+    private Auction copyAuction(
+            long version,
+            String status,
+            BigDecimal currentPrice,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime) {
+        return new Auction(
+            currentAuction.getId(),
+            version,
+            currentAuction.getSellerId(),
+            currentAuction.getTitle(),
+            currentAuction.getDescription(),
+            status,
+            currentAuction.getStartingPrice(),
+            currentPrice,
+            currentAuction.getMinimumBidStep(),
+            currentAuction.getBuyNowPrice(),
+            startingTime,
+            endingTime,
+            currentAuction.getProduct()
+        );
+    }
+
+    private void setBidControlsEnabled(boolean enabled) {
+        bidAmountField.setDisable(!enabled);
+        placeBidButton.setDisable(!enabled);
+        buyNowButton.setDisable(!enabled || currentAuction == null || currentAuction.getBuyNowPrice() == null);
+    }
+
+    private boolean isClosedStatus(String status) {
+        return "ENDED".equals(status) || "FAILED".equals(status) || "SOLD".equals(status) || "CANCELLED".equals(status);
+    }
+
+    private void startTimeUpdater() {
+        stopTimeUpdater();
+        updateTimeState();
+        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeState()));
+        timeUpdater.setCycleCount(Timeline.INDEFINITE);
+        timeUpdater.play();
+    }
+
+    private void stopTimeUpdater() {
+        if (timeUpdater != null) {
+            timeUpdater.stop();
+            timeUpdater = null;
+        }
+    }
+
+    private void updateTimeState() {
+        if (currentAuction == null) {
+            return;
+        }
+        updateAuctionTimeLabels(currentAuction);
+        progressBar.setProgress(calculateProgress(currentAuction.getStartingTime(), currentAuction.getEndingTime()));
+    }
+
+    private void updateAuctionTimeLabels(Auction auction) {
+        String status = auction.getStatus();
+        if ("CANCELLED".equals(status)) {
+            setTimeLabels("", "Cancelled");
+            return;
+        }
+        if ("FAILED".equals(status)) {
+            setTimeLabels("", "Failed");
+            return;
+        }
+        if ("ENDED".equals(status)) {
+            setTimeLabels("", "Ended");
+            return;
         }
 
-        Duration remaining = Duration.between(LocalDateTime.now(), endingTime);
-        if (remaining.isNegative() || remaining.isZero()) {
-            return "Ended";
+        LocalDateTime now = utcNow();
+        LocalDateTime startingTime = auction.getStartingTime();
+        LocalDateTime endingTime = auction.getEndingTime();
+        if (endingTime == null || !now.isBefore(endingTime)) {
+            setTimeLabels("", "Ended");
+            return;
         }
+        if ("SCHEDULED".equals(status) && startingTime != null && now.isBefore(startingTime)) {
+            setTimeLabels("Starts in", formatDuration(Duration.between(now, startingTime)));
+            return;
+        }
+        setTimeLabels("Ends in", formatDuration(Duration.between(now, endingTime)));
+    }
 
+    private void setTimeLabels(String prefix, String value) {
+        boolean hasPrefix = prefix != null && !prefix.isBlank();
+        timePrefixLabel.setText(hasPrefix ? prefix : "");
+        timePrefixLabel.setManaged(hasPrefix);
+        timePrefixLabel.setVisible(hasPrefix);
+        timeLabel.setText(value);
+    }
+
+    private String formatDuration(Duration remaining) {
         long totalMinutes = remaining.toMinutes();
         long days = totalMinutes / (24 * 60);
         long hours = (totalMinutes % (24 * 60)) / 60;
@@ -283,7 +552,27 @@ public class BidController implements SceneDataReceiver<Auction> {
         return hours + "h " + minutes + "m";
     }
 
+    private double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {
+        if (startingTime == null || endingTime == null) {
+            return 0.0;
+        }
+
+        long totalMillis = Duration.between(startingTime, endingTime).toMillis();
+        if (totalMillis <= 0) {
+            return 1.0;
+        }
+
+        long remainingMillis = Duration.between(utcNow(), endingTime).toMillis();
+        double progress = (double) remainingMillis / totalMillis;
+        return Math.max(0.0, Math.min(1.0, progress));
+    }
+
+    private LocalDateTime utcNow() {
+        return LocalDateTime.now(UTC_ZONE);
+    }
+
     private void populateBidHistory(Auction data) {
+        recentBidHistory.clear();
         BigDecimal currentBid = valueOrZero(data.getCurrentPrice());
         BigDecimal step = valueOrZero(data.getMinimumBidStep());
         BigDecimal startingBid = valueOrZero(data.getStartingPrice());
@@ -298,9 +587,96 @@ public class BidController implements SceneDataReceiver<Auction> {
         );
     }
 
+    private void renderRecentBidHistory() {
+        setHistoryRow(
+            historyBidderOneLabel,
+            historyAmountOneLabel,
+            bidderName(recentBidHistory, 0),
+            bidAmount(recentBidHistory, 0)
+        );
+        setHistoryRow(
+            historyBidderTwoLabel,
+            historyAmountTwoLabel,
+            bidderName(recentBidHistory, 1),
+            bidAmount(recentBidHistory, 1)
+        );
+        setHistoryRow(
+            historyBidderThreeLabel,
+            historyAmountThreeLabel,
+            bidderName(recentBidHistory, 2),
+            bidAmount(recentBidHistory, 2)
+        );
+    }
+
+    private String bidderName(List<BidHistoryItemPayload> items, int index) {
+        if (index >= items.size()) {
+            return "-";
+        }
+        BidHistoryItemPayload item = items.get(index);
+        if (item.getBidderDisplayName() != null && !item.getBidderDisplayName().isBlank()) {
+            return item.getBidderDisplayName();
+        }
+        return item.getBidderId() == null ? "Bidder" : "User #" + item.getBidderId();
+    }
+
+    private BigDecimal bidAmount(List<BidHistoryItemPayload> items, int index) {
+        if (index >= items.size()) {
+            return BigDecimal.ZERO;
+        }
+        return valueOrZero(items.get(index).getBidAmount());
+    }
+
     private void setHistoryRow(Label bidderLabel, Label amountLabel, String bidder, BigDecimal amount) {
         bidderLabel.setText(bidder);
         amountLabel.setText(formatCurrency(amount));
+    }
+
+    private void loadGalleryImages(Product product) {
+        List<String> imageUrls = new ArrayList<>();
+        if (product.getImageUrls() != null) {
+            imageUrls.addAll(product.getImageUrls().stream()
+                .filter(url -> url != null && !url.isBlank())
+                .toList());
+        }
+        if (imageUrls.isEmpty() && product.getImagePath() != null && !product.getImagePath().isBlank()) {
+            imageUrls.add(product.getImagePath());
+        }
+
+        currentImageUrls = List.copyOf(imageUrls);
+        selectGalleryImage(0);
+        configureThumbnail(thumbnailOneFrame, thumbnailOneImageView, 0);
+        configureThumbnail(thumbnailTwoFrame, thumbnailTwoImageView, 1);
+        configureThumbnail(thumbnailThreeFrame, thumbnailThreeImageView, 2);
+        configureThumbnail(thumbnailFourFrame, thumbnailFourImageView, 3);
+    }
+
+    private void configureThumbnail(VBox frame, ImageView imageView, int imageIndex) {
+        boolean hasImage = imageIndex < currentImageUrls.size();
+        setNodeVisibility(frame, hasImage);
+        if (hasImage) {
+            ProductImageLoader.loadCover(imageView, currentImageUrls.get(imageIndex));
+        }
+    }
+
+    private void selectGalleryImage(int imageIndex) {
+        if (currentImageUrls.isEmpty() || imageIndex < 0 || imageIndex >= currentImageUrls.size()) {
+            return;
+        }
+        ProductImageLoader.loadCover(productImageView, currentImageUrls.get(imageIndex));
+        setActiveThumbnail(thumbnailOneFrame, imageIndex == 0);
+        setActiveThumbnail(thumbnailTwoFrame, imageIndex == 1);
+        setActiveThumbnail(thumbnailThreeFrame, imageIndex == 2);
+        setActiveThumbnail(thumbnailFourFrame, imageIndex == 3);
+    }
+
+    private void setActiveThumbnail(VBox frame, boolean active) {
+        if (frame == null) {
+            return;
+        }
+        frame.getStyleClass().remove(ACTIVE_THUMBNAIL_STYLE_CLASS);
+        if (active) {
+            frame.getStyleClass().add(ACTIVE_THUMBNAIL_STYLE_CLASS);
+        }
     }
 
     private void selectTab(Button activeTab, boolean showProductInfo) {

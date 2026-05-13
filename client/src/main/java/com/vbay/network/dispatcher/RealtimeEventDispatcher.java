@@ -32,6 +32,10 @@ public class RealtimeEventDispatcher {
         }
     }
 
+    public void clear() {
+        listeners.clear();
+    }
+
     @SuppressWarnings("unchecked")
     public <T> void dispatch(RealtimeEvent<T> event) {
         List<RealtimeEventListener<?>> eventListeners = listeners.get(event.getType());

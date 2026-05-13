@@ -1,11 +1,11 @@
 package com.vbay.ui.scene_ui.controller.home;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.vbay.network.ClientAuthSession;
@@ -17,6 +17,7 @@ import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
@@ -27,7 +28,9 @@ import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
+import com.vbay.ui.scene_ui.controller.bid.BidController;
 import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
+import com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -36,7 +39,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -44,8 +46,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 public class HomeController {
+    private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
     private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
+    private static final String BID_VIEW = "/jfx/scene/bid/Bid.fxml";
+    private static final String BID_CSS = "/jfx/css/Bid.css";
+    private static final String DEPOSIT_BALANCE_VIEW = "/jfx/scene/DepositBalance.fxml";
 
     private static final String VIEW_HOME = "Home";
     private static final String VIEW_COMING_SOON = "Coming Soon";
@@ -53,16 +59,8 @@ public class HomeController {
     private static final String VIEW_BID_HISTORY = "Bid History";
     private static final String VIEW_MY_AUCTION = "My Auction";
 
-    private static final String CATEGORY_ALL = "All";
-    private static final String CATEGORY_ALL_LABEL = "All Categories";
-    private static final String CATEGORY_ELECTRONICS = "Electronics";
-    private static final String CATEGORY_COLLECTIBLES = "Collectibles";
-    private static final String CATEGORY_ARTS = "Arts";
-    private static final String CATEGORY_JEWELRY_WATCHES = "Jewelry & Watches";
-    private static final DateTimeFormatter AUCTION_END_DATE_FORMAT =
-        DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm");
-
-
+    @FXML
+    private Label balanceLabel;
     @FXML
     private BorderPane homeRoot;
     @FXML
@@ -78,11 +76,7 @@ public class HomeController {
     @FXML
     private Label sidebarSubtitle;
     @FXML
-    private Label catalogTitle;
-    @FXML
-    private Label catalogSubtitle;
-    @FXML
-    private ComboBox<String> categoryFilterComboBox;
+    private Label accountNameLabel;
     @FXML
     private VBox homeDashboard;
     @FXML
@@ -101,7 +95,6 @@ public class HomeController {
     private final Map<Button, String> moduleButtons = new LinkedHashMap<>();
 
     private String activeView = VIEW_HOME;
-    private String activeCategory = CATEGORY_ALL;
     private Node homeCenter;
     private Node homeLeft;
     private Node homeRight;
@@ -112,6 +105,9 @@ public class HomeController {
     private final Map<Long, AuctionListItemPayload> comingSoonPreviewAuctions = new LinkedHashMap<>();
     private final Map<Long, AuctionListItemPayload> activeViewAuctions = new LinkedHashMap<>();
     private RealtimeEventListener<AuctionListItemPayload> auctionListItemListener;
+    private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
+    private DepositBalanceController activeDepositController;
+    private BidController activeBidController;
     private Long currentUserId;
 
 
@@ -124,6 +120,8 @@ public class HomeController {
         currentUserId = ClientAuthSession.getUserId();
 
         initializeNavigationMaps();
+        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateAccountDisplay();
         subscribeRealtimeListener();
         subscribeServerRooms();
 
@@ -163,10 +161,9 @@ public class HomeController {
             default -> null;
         };
 
-        Long categoryId = categoryIdForActiveFilter();
         Long sellerId = VIEW_MY_AUCTION.equals(activeView) ? currentUserId : null;
 
-        fetchAuctionList(status, categoryId, sellerId, null)
+        fetchAuctionList(status, null, sellerId, null)
             .forEach(item -> activeViewAuctions.put(item.getAuctionId(), item));
     }
 
@@ -201,6 +198,14 @@ public class HomeController {
             SocketClient.getClient().sendMessage(
                 new Request<>(RequestType.SUBSCRIBE_ROOM, room)
             );
+            if (currentUserId != null) {
+                Room userRoom = new Room();
+                userRoom.setType(RoomType.USER);
+                userRoom.setTargetId(currentUserId);
+                SocketClient.getClient().sendMessage(
+                    new Request<>(RequestType.SUBSCRIBE_ROOM, userRoom)
+                );
+            }
         } catch (IOException exception) {
             exception.printStackTrace();
         }
@@ -214,6 +219,28 @@ public class HomeController {
                 RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
                 auctionListItemListener
             );
+        userBalanceListener = event -> handleUserBalanceUpdated(event);
+        dispatcher.subscribe(
+            RealtimeEventType.USER_BALANCE_UPDATED,
+            userBalanceListener
+        );
+    }
+
+    private void unsubscribeRealtimeListener() {
+        if (auctionListItemListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
+                auctionListItemListener
+            );
+            auctionListItemListener = null;
+        }
+        if (userBalanceListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.USER_BALANCE_UPDATED,
+                userBalanceListener
+            );
+            userBalanceListener = null;
+        }
     }
 
     private void handleAuctionListItemUpdated(RealtimeEvent<AuctionListItemPayload> event) {
@@ -229,6 +256,15 @@ public class HomeController {
             renderActiveView();
         });
     }
+    
+    private boolean matchesActiveViewQuery(AuctionListItemPayload item) {
+        return switch (activeView) {
+            case VIEW_LIVE_AUCTION -> "ACTIVE".equals(item.getStatus());
+            case VIEW_COMING_SOON -> "SCHEDULED".equals(item.getStatus());
+            case VIEW_MY_AUCTION -> currentUserId != null && item.getSellerId() == currentUserId;
+            default -> true;
+        };
+    }
 
     private void updateActiveViewCache(AuctionListItemPayload item) {
         if (matchesActiveViewQuery(item)) {
@@ -236,6 +272,10 @@ public class HomeController {
         } else {
             activeViewAuctions.remove(item.getAuctionId());
         }
+    }
+
+    private boolean matchesPreviewQuery(AuctionListItemPayload item, String status) {
+        return status.equals(item.getStatus());
     }
 
     private void updateHomePreviewCaches(AuctionListItemPayload item) {
@@ -254,28 +294,6 @@ public class HomeController {
         }
     }
 
-    private boolean matchesPreviewQuery(AuctionListItemPayload item, String status) {
-        return status.equals(item.getStatus()) && matchesCategoryFilter(item);
-    }
-
-    private boolean matchesActiveViewQuery(AuctionListItemPayload item) {
-        if (!matchesCategoryFilter(item)) {
-            return false;
-        }
-
-        return switch (activeView) {
-            case VIEW_LIVE_AUCTION -> "ACTIVE".equals(item.getStatus());
-            case VIEW_COMING_SOON -> "SCHEDULED".equals(item.getStatus());
-            case VIEW_MY_AUCTION -> currentUserId != null && item.getSellerId() == currentUserId;
-            default -> true;
-        };
-    }
-
-    private boolean matchesCategoryFilter(AuctionListItemPayload item) {
-        Long categoryId = categoryIdForActiveFilter();
-        return categoryId == null || item.getCategoryId() == categoryId;
-    }
-
     private void trimCache(Map<Long, AuctionListItemPayload> cache, int limit) {
         List<AuctionListItemPayload> sorted = cache.values().stream()
             .sorted(this::compareAuction)
@@ -292,44 +310,32 @@ public class HomeController {
     private void handleModuleSelection(ActionEvent event) {
         String selectedView = moduleButtons.get(event.getSource());
         if (selectedView != null) {
+            restoreShellIfInSubView();
             selectView(selectedView);
         }
     }
 
     @FXML
-    private void handleCategoryFilterChange(ActionEvent event) {
-        activeCategory = normalizeCategoryFilter(categoryFilterComboBox.getValue());
-
-        if (VIEW_HOME.equals(activeView)) {
-            loadHomePreviewAuctions();
-        } else {
-            loadActiveViewAuctions();
-        }
-
-        renderActiveView();
-    }
-
-    @FXML
     private void handleViewAllBidHistory(ActionEvent event) {
-        activeCategory = CATEGORY_ALL;
-        categoryFilterComboBox.setValue(CATEGORY_ALL_LABEL);
+        restoreShellIfInSubView();
         selectView(VIEW_BID_HISTORY);
     }
 
     @FXML
     private void handleViewAllMyAuction(ActionEvent event) {
-        activeCategory = CATEGORY_ALL;
-        categoryFilterComboBox.setValue(CATEGORY_ALL_LABEL);
+        restoreShellIfInSubView();
         selectView(VIEW_MY_AUCTION);
     }
 
     @FXML
     private void handleViewAllComingSoon(ActionEvent event) {
+        restoreShellIfInSubView();
         selectView(VIEW_COMING_SOON);
     }
 
     @FXML
     private void handleViewAllLiveAuction(ActionEvent event) {
+        restoreShellIfInSubView();
         selectView(VIEW_LIVE_AUCTION);
     }
 
@@ -347,6 +353,7 @@ public class HomeController {
             return;
         }
         try {
+            unsubscribeRealtimeListener();
             SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception exception) {
             exception.printStackTrace();
@@ -387,10 +394,78 @@ public class HomeController {
         }
     }
 
+    private void handleUserBalanceUpdated(RealtimeEvent<UserBalanceUpdatedPayload> event) {
+        UserBalanceUpdatedPayload payload = event.getPayload();
+        if (payload == null || currentUserId == null || payload.getUserId() != currentUserId) {
+            return;
+        }
+        Platform.runLater(() -> {
+            ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+            updateBalanceDisplay(payload.getAvailableBalance());
+        });
+    }
+
+    private void updateBalanceDisplay(BigDecimal availableBalance) {
+        BigDecimal balance = availableBalance == null ? BigDecimal.ZERO : availableBalance;
+        balanceLabel.setText("BALANCE: " + CURRENCY_FORMAT.format(balance));
+    }
+
+    private void updateAccountDisplay() {
+        String username = ClientAuthSession.getUsername();
+        accountNameLabel.setText(username == null || username.isBlank() ? "Account" : username);
+    }
+
+    @FXML
+    private void handleDepositBalance(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(DEPOSIT_BALANCE_VIEW));
+            Node depositCenter = loader.load();
+            if (activeDepositController != null) {
+                activeDepositController.dispose();
+            }
+            DepositBalanceController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            activeDepositController = controller;
+
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(depositCenter);
+            homeRoot.setBottom(null);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Navigation failed",
+                "Could not open the deposit balance screen."
+            );
+        }
+    }
+
     public void handleCardClick(Auction auction) {
         try {
-            SceneManager.switchScene("/jfx/scene/bid/Bid.fxml", auction);
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(BID_VIEW));
+            BorderPane bidRoot = loader.load();
+            if (activeBidController != null) {
+                activeBidController.dispose();
+            }
+            BidController controller = loader.getController();
+            controller.setOnBack(this::restoreHomeLayout);
+            controller.setSceneData(auction);
+            activeBidController = controller;
+            attachBidStylesheet();
+
+            Node bidCenter = bidRoot.getCenter();
+            Node bidBottom = bidRoot.getBottom();
+            ///gỡ node ra khỏi parent cũ
+            bidRoot.setCenter(null);
+            bidRoot.setBottom(null);
+
+            homeRoot.setLeft(null);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(bidCenter);
+            homeRoot.setBottom(bidBottom);
         } catch (Exception exception) {
+            exception.printStackTrace();
             showMessage(
                 Alert.AlertType.ERROR,
                 "Navigation failed",
@@ -408,6 +483,7 @@ public class HomeController {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response.getMessage() : "Logout failed.");
         }
+        System.out.println("Logout successfully.");
         ClientAuthSession.clear();
     }
 
@@ -433,8 +509,6 @@ public class HomeController {
     private void renderActiveView() {
         List<AuctionListItemPayload> auctions = auctionsForActiveView();
         sidebarSubtitle.setText(subtitleForSidebar());
-        catalogTitle.setText(activeView);
-        catalogSubtitle.setText(subtitleForCatalog(auctions.size()));
         setActiveNavigationState();
         if (VIEW_HOME.equals(activeView)) {
             renderHomeDashboard();
@@ -446,21 +520,7 @@ public class HomeController {
     }
 
     private String subtitleForSidebar() {
-        if (CATEGORY_ALL.equals(activeCategory)) {
-            return activeView.toLowerCase();
-        }
-        return activeView.toLowerCase() + " / " + activeCategory;
-    }
-
-    private String subtitleForCatalog(int productCount) {
-        String categoryLabel = CATEGORY_ALL.equals(activeCategory) ? "all categories" : activeCategory;
-        return switch (activeView) {
-            case VIEW_COMING_SOON -> productCount + " upcoming auctions in " + categoryLabel + ".";
-            case VIEW_LIVE_AUCTION -> productCount + " active auctions in " + categoryLabel + ".";
-            case VIEW_BID_HISTORY -> "Your bid records filtered by " + categoryLabel + ".";
-            case VIEW_MY_AUCTION -> "Auctions you created, filtered by " + categoryLabel + ".";
-            default -> "Previewing upcoming and live auctions across " + categoryLabel + ".";
-        };
+        return activeView.toLowerCase();
     }
 
     private void setActiveNavigationState() {
@@ -510,9 +570,6 @@ public class HomeController {
     }
 
     private Auction toAuction(AuctionListItemPayload payload) {
-        String price = formatMoney(payload.getCurrentPrice());
-        String startingPrice = formatMoney(payload.getStartingPrice());
-        String minimumBidStep = formatMoney(payload.getMinimumBidStep());
         String imagePath = payload.getThumbnailUrl() == null || payload.getThumbnailUrl().isBlank()
             ? "/jfx/image/products/collectibles.png"
             : payload.getThumbnailUrl();
@@ -528,12 +585,8 @@ public class HomeController {
             payload.getProductName() == null || payload.getProductName().isBlank() ? payload.getTitle() : payload.getProductName(),
             description,
             payload.getCategoryId(),
-            price,
-            startingPrice,
-            minimumBidStep,
-            formatAuctionEndTime(payload.getEndingTime()),
-            0.5,
-            imagePath
+            imagePath,
+            imageUrls
         );
 
         return new Auction(
@@ -549,34 +602,8 @@ public class HomeController {
             payload.getBuyNowPrice(),
             payload.getStartingTime(),
             payload.getEndingTime(),
-            imageUrls,
             product
         );
-    }
-
-    private String formatMoney(java.math.BigDecimal amount) {
-        return amount == null ? "-" : amount.toPlainString();
-    }
-
-    private String formatAuctionEndTime(LocalDateTime endingTime) {
-        if (endingTime == null) {
-            return "Ends -";
-        }
-
-        Duration remaining = Duration.between(LocalDateTime.now(), endingTime);
-        if (remaining.isNegative() || remaining.isZero()) {
-            return "Ended";
-        }
-
-        if (remaining.compareTo(Duration.ofHours(24)) < 0) {
-            long seconds = remaining.getSeconds();
-            long hours = seconds / 3600;
-            long minutes = (seconds % 3600) / 60;
-            long remainingSeconds = seconds % 60;
-            return String.format("Ends %02d:%02d:%02d", hours, minutes, remainingSeconds);
-        }
-
-        return "Ends: " + endingTime.format(AUCTION_END_DATE_FORMAT);
     }
 
     private int compareAuction(AuctionListItemPayload left, AuctionListItemPayload right) {
@@ -585,16 +612,6 @@ public class HomeController {
             return byStartingTime;
         }
         return Long.compare(right.getAuctionId(), left.getAuctionId());
-    }
-
-    private Long categoryIdForActiveFilter() {
-        return switch (activeCategory) {
-            case CATEGORY_ELECTRONICS -> 1L;
-            case CATEGORY_COLLECTIBLES -> 2L;
-            case CATEGORY_ARTS -> 3L;
-            case CATEGORY_JEWELRY_WATCHES -> 4L;
-            default -> null;
-        };
     }
 
     private String emptyMessage() {
@@ -615,29 +632,56 @@ public class HomeController {
 
     private void openMyAuctionAfterCreate() {
         restoreHomeLayout();
-        activeCategory = CATEGORY_ALL;
-        categoryFilterComboBox.setValue(CATEGORY_ALL_LABEL);
         selectView(VIEW_MY_AUCTION);
     }
 
-    private String normalizeCategoryFilter(String selectedFilter) {
-        if (selectedFilter == null || 
-            selectedFilter.isBlank() || 
-            CATEGORY_ALL_LABEL.equals(selectedFilter)) {
-            return CATEGORY_ALL;
-        }
-        return selectedFilter;
-    }
-
     private void restoreHomeLayout() {
+        if (activeDepositController != null) {
+            activeDepositController.dispose();
+            activeDepositController = null;
+        }
+        if (activeBidController != null) {
+            activeBidController.dispose();
+            activeBidController = null;
+        }
         homeRoot.setLeft(homeLeft);
         homeRoot.setRight(homeRight);
         homeRoot.setCenter(homeCenter);
         homeRoot.setBottom(homeBottom);
+        if (VIEW_HOME.equals(activeView)) {
+            loadHomePreviewAuctions();
+        } else {
+            loadActiveViewAuctions();
+        }
+        renderActiveView();
+    }
+
+    private void restoreShellIfInSubView() {
+        if (activeDepositController != null) {
+            activeDepositController.dispose();
+            activeDepositController = null;
+        }
+        if (activeBidController != null) {
+            activeBidController.dispose();
+            activeBidController = null;
+        }
+        if (homeRoot.getCenter() != homeCenter) {
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(homeRight);
+            homeRoot.setCenter(homeCenter);
+            homeRoot.setBottom(homeBottom);
+        }
     }
 
     private void attachCreateAuctionStylesheet() {
         String stylesheet = getClass().getResource(CREATE_AUCTION_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
+    }
+
+    private void attachBidStylesheet() {
+        String stylesheet = getClass().getResource(BID_CSS).toExternalForm();
         if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
             homeRoot.getScene().getStylesheets().add(stylesheet);
         }

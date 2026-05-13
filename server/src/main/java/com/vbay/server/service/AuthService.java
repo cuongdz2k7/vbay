@@ -40,7 +40,7 @@ public class AuthService {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
         ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
     //
@@ -54,26 +54,28 @@ public class AuthService {
 
     public LoginResponse login (LoginRequest request) throws SQLException {
         validateLoginRequest(request);
-        String email = request.getEmail().trim();
-        logInfo("LOGIN_ATTEMPT", "email=" + email);
+        String username = request.getUsername().trim();
+        logInfo("LOGIN_ATTEMPT", "username=" + username);
 
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-            Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
+            Optional<User> userOptional = userRepository.findByUsername(username);
             if (userOptional.isEmpty()) { 
-                logError("LOGIN_FAILED", "email=" + email + ", reason: user_not_found");
-                throw new AuthenticationException("Invalid email or password");
+                logError("LOGIN_FAILED", "username=" + username + ", reason: user_not_found");
+                throw new AuthenticationException("Invalid username or password");
             }
             User user = userOptional.get(); 
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
-                logError("LOGIN_FAILED", "email=" + email + ", reason: invalid_password");
+                logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
                 throw new AuthenticationException("Invalid username or password");
             }
-            logInfo("LOGIN_SUCCESS", "userId=" + user.getId() + ", email=" + user.getEmail());
+            logInfo("LOGIN_SUCCESS", "userId=" + user.getId() + ", username=" + user.getUserName());
             return new LoginResponse(user.getId(),
                                     user.getUserName(),
                                     user.getEmail(),
-                                    user.getPosition());
+                                    user.getPosition(),
+                                    user.getAvailableBalance(),
+                                    user.getHoldBalance());
         }
         finally {
             ///xóa pass trong request để tránh leak, bị attacker dump từ RAM

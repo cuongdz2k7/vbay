@@ -2,7 +2,6 @@ package com.vbay.ui.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class Auction {
     private final long id;
@@ -17,7 +16,6 @@ public class Auction {
     private final BigDecimal buyNowPrice;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
-    private final List<String> imageUrls;
     private final Product product;
 
     public Auction(
@@ -35,40 +33,6 @@ public class Auction {
         LocalDateTime endingTime,
         Product product
     ) {
-        this(
-            id,
-            version,
-            sellerId,
-            title,
-            description,
-            status,
-            startingPrice,
-            currentPrice,
-            minimumBidStep,
-            buyNowPrice,
-            startingTime,
-            endingTime,
-            product == null || product.getImagePath() == null ? List.of() : List.of(product.getImagePath()),
-            product
-        );
-    }
-
-    public Auction(
-        long id,
-        long version,
-        long sellerId,
-        String title,
-        String description,
-        String status,
-        BigDecimal startingPrice,
-        BigDecimal currentPrice,
-        BigDecimal minimumBidStep,
-        BigDecimal buyNowPrice,
-        LocalDateTime startingTime,
-        LocalDateTime endingTime,
-        List<String> imageUrls,
-        Product product
-    ) {
         this.id = id;
         this.version = version;
         this.sellerId = sellerId;
@@ -81,7 +45,6 @@ public class Auction {
         this.buyNowPrice = buyNowPrice;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
-        this.imageUrls = imageUrls == null ? List.of() : List.copyOf(imageUrls);
         this.product = product;
     }
 
@@ -131,10 +94,6 @@ public class Auction {
 
     public LocalDateTime getEndingTime() {
         return endingTime;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
     }
 
     public Product getProduct() {

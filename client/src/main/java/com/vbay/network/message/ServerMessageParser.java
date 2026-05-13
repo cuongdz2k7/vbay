@@ -13,6 +13,7 @@ import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.NotificationPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.WatcherCountPayload;
 import com.vbay.shared.enums.MessageType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
@@ -118,6 +119,7 @@ public class ServerMessageParser {
         types.put(RealtimeEventType.NOTIFICATION_CREATED, NotificationPayload.class);
         types.put(RealtimeEventType.AUCTION_ENDED, AuctionEndedPayload.class);
         types.put(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, AuctionListItemPayload.class);
+        types.put(RealtimeEventType.USER_BALANCE_UPDATED, UserBalanceUpdatedPayload.class);
         types.put(RealtimeEventType.WATCHER_COUNT_CHANGED, WatcherCountPayload.class);
         return types;
     }

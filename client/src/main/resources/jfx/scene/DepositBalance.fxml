@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.SVGPath?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            styleClass="deposit-scroll"
+            fx:controller="com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController">
+    <content>
+        <VBox spacing="28" styleClass="deposit-page">
+            <padding>
+                <Insets top="30" right="34" bottom="34" left="34"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT">
+                <VBox spacing="8">
+                    <Label text="SỐ DƯ HIỆN TẠI" styleClass="deposit-eyebrow"/>
+                    <HBox alignment="BOTTOM_LEFT" spacing="26">
+                        <Label fx:id="balanceLabel" text="\$0.00" styleClass="deposit-balance-value"/>
+                        <HBox alignment="CENTER_LEFT" spacing="9">
+                            <SVGPath content="M3 13L8 8L11 11L16 5M12 5H16V9" styleClass="deposit-trend-icon"/>
+                            <Label text="+2.4% VS THÁNG TRƯỚC" styleClass="deposit-trend-label"/>
+                        </HBox>
+                    </HBox>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="BACK" onAction="#handleBack" styleClass="deposit-back-btn"/>
+            </HBox>
+
+            <HBox alignment="TOP_LEFT" spacing="30">
+                <VBox spacing="18" prefWidth="290" minWidth="260" maxWidth="290" styleClass="deposit-info-card">
+                    <Label text="Thông Tin Nạp Tiền" wrapText="true" styleClass="deposit-info-title"/>
+                    <Label text="Các khoản nạp được xử lý ngay lập tức thông qua mạng lưới bảo mật của VBay. Vui lòng nhập số tiền bạn muốn nạp để bắt đầu giao dịch."
+                           wrapText="true"
+                           styleClass="deposit-info-copy"/>
+                    <Region prefHeight="4"/>
+                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="deposit-security-row">
+                        <SVGPath content="M10 1L17 4V9C17 13.5 14 17 10 19C6 17 3 13.5 3 9V4Z M7 10L9 12L13 7" styleClass="deposit-security-icon"/>
+                        <Label text="Mã hóa 256-bit AES bảo mật giao dịch" wrapText="true" styleClass="deposit-security-copy"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="24" prefWidth="520" minWidth="420" styleClass="deposit-form-card">
+                    <VBox spacing="12">
+                        <Label text="SỐ TIỀN NẠP (USD)" styleClass="deposit-field-label"/>
+                        <HBox alignment="CENTER_LEFT" styleClass="deposit-amount-shell">
+                            <TextField fx:id="amountField" promptText="0.00" HBox.hgrow="ALWAYS" styleClass="deposit-amount-field"/>
+                            <Label text="\$" styleClass="deposit-currency-label"/>
+                        </HBox>
+                    </VBox>
+
+                    <Button maxWidth="Infinity" onAction="#handleConfirmDeposit" styleClass="deposit-confirm-btn">
+                        <graphic>
+                            <HBox alignment="CENTER" spacing="16">
+                                <Label text="XÁC NHẬN NẠP TIỀN" styleClass="deposit-confirm-label"/>
+                                <SVGPath content="M3 10H15M11 6L15 10L11 14" styleClass="deposit-confirm-icon"/>
+                            </HBox>
+                        </graphic>
+                    </Button>
+                </VBox>
+            </HBox>
+        </VBox>
+    </content>
+</ScrollPane>

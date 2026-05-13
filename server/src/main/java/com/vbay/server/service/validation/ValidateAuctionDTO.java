@@ -52,8 +52,8 @@ public class ValidateAuctionDTO {
     private static void validateAuctionBusinessRules(CreateAuctionRequest auction) {
         if (auction.getReservePrice() != null
                 && auction.getReservePrice().compareTo(BigDecimal.ZERO) > 0
-                && auction.getReservePrice().compareTo(auction.getStartingPrice()) < 0) {
-            throw new ValidationException("Reserve price must be greater than or equal to starting price");
+                && auction.getReservePrice().compareTo(auction.getStartingPrice()) <= 0) {
+            throw new ValidationException("Reserve price must be greater than starting price");
         }
         if (auction.getReservePrice() != null
                 && auction.getReservePrice().compareTo(BigDecimal.ZERO) > 0

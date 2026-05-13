@@ -53,6 +53,27 @@
     -fx-font-weight: 800;
 }
 
+.deposit-balance-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.58);
+    -fx-border-radius: 0;
+    -fx-border-width: 1;
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-padding: 11 15 11 15;
+    -fx-cursor: hand;
+}
+
+.deposit-balance-btn:hover,
+.deposit-balance-btn:focused,
+.deposit-balance-btn:armed {
+    -fx-background-color: rgba(217, 95, 26, 0.12);
+    -fx-border-color: #d95f1a;
+    -fx-effect: null;
+}
+
 .account-chip {
     -fx-background-color: transparent;
 }
@@ -660,4 +681,163 @@
 .portfolio-mini-link:hover {
     -fx-background-color: rgba(217, 95, 26, 0.1);
     -fx-border-color: #d95f1a;
+}
+
+.deposit-scroll,
+.deposit-scroll > .viewport {
+    -fx-background-color: #121414;
+    -fx-background: #121414;
+}
+
+.deposit-page {
+    -fx-background-color: #121414;
+    -fx-min-width: 720;
+}
+
+.deposit-eyebrow,
+.deposit-field-label {
+    -fx-text-fill: rgba(224, 192, 178, 0.58);
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+}
+
+.deposit-balance-value {
+    -fx-text-fill: #e3e2e2;
+    -fx-font-family: "Noto Serif", "Georgia", serif;
+    -fx-font-size: 36px;
+    -fx-font-weight: 800;
+}
+
+.deposit-trend-label {
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+}
+
+.deposit-trend-icon,
+.deposit-confirm-icon {
+    -fx-fill: transparent;
+    -fx-stroke: #e3e2e2;
+    -fx-stroke-width: 1.8;
+}
+
+.deposit-trend-icon {
+    -fx-stroke: #d95f1a;
+}
+
+.deposit-back-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.42);
+    -fx-border-radius: 0;
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+    -fx-padding: 8 14 8 14;
+    -fx-cursor: hand;
+}
+
+.deposit-back-btn:hover {
+    -fx-background-color: rgba(217, 95, 26, 0.1);
+    -fx-border-color: #d95f1a;
+}
+
+.deposit-info-card,
+.deposit-form-card {
+    -fx-background-color: #1a1c1c;
+    -fx-background-radius: 0;
+    -fx-border-color: rgba(89, 66, 56, 0.55);
+    -fx-border-radius: 0;
+    -fx-border-width: 1;
+    -fx-padding: 24;
+}
+
+.deposit-info-card {
+    -fx-border-color: transparent rgba(89, 66, 56, 0.55) rgba(89, 66, 56, 0.55) #d95f1a;
+    -fx-border-width: 0 1 1 2;
+}
+
+.deposit-info-title {
+    -fx-text-fill: #e3e2e2;
+    -fx-font-family: "Noto Serif", "Georgia", serif;
+    -fx-font-size: 22px;
+    -fx-font-weight: 700;
+}
+
+.deposit-info-copy {
+    -fx-text-fill: rgba(224, 192, 178, 0.72);
+    -fx-font-size: 13px;
+    -fx-line-spacing: 4;
+}
+
+.deposit-security-row {
+    -fx-border-color: rgba(89, 66, 56, 0.55) transparent transparent transparent;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 18 0 0 0;
+}
+
+.deposit-security-icon {
+    -fx-fill: transparent;
+    -fx-stroke: rgba(224, 192, 178, 0.72);
+    -fx-stroke-width: 1.6;
+}
+
+.deposit-security-copy {
+    -fx-text-fill: rgba(224, 192, 178, 0.58);
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.deposit-amount-shell {
+    -fx-background-color: #1e2020;
+    -fx-border-color: rgba(89, 66, 56, 0.7);
+    -fx-border-width: 1;
+    -fx-padding: 0 0 0 0;
+}
+
+.deposit-amount-field {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-text-fill: #e3e2e2;
+    -fx-prompt-text-fill: rgba(224, 192, 178, 0.16);
+    -fx-font-family: "Noto Serif", "Georgia", serif;
+    -fx-font-size: 34px;
+    -fx-font-weight: 700;
+    -fx-padding: 18 16 18 16;
+}
+
+.deposit-amount-field:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-effect: null;
+}
+
+.deposit-currency-label {
+    -fx-text-fill: rgba(224, 192, 178, 0.58);
+    -fx-font-family: "Noto Serif", "Georgia", serif;
+    -fx-font-size: 22px;
+    -fx-padding: 0 18 0 0;
+}
+
+.deposit-confirm-btn {
+    -fx-background-color: #d35400;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 16 22 16 22;
+    -fx-content-display: GRAPHIC_ONLY;
+    -fx-cursor: hand;
+}
+
+.deposit-confirm-btn:hover,
+.deposit-confirm-btn:focused,
+.deposit-confirm-btn:armed {
+    -fx-background-color: #a23f00;
+    -fx-effect: null;
+}
+
+.deposit-confirm-label {
+    -fx-text-fill: #e3e2e2;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
 }

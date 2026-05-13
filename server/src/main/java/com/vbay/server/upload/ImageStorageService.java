@@ -103,6 +103,9 @@ public class ImageStorageService {
         if (imageUrl == null || imageUrl.isBlank()) {
             return null;
         }
+        if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+            return imageUrl;
+        }
 
         String fileName = fileNameOf(imageUrl);
         if (fileName == null) {

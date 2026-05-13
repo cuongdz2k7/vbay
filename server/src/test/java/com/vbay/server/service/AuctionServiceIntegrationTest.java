@@ -40,6 +40,7 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
+import com.vbay.server.model.Auction;
 
 class AuctionServiceIntegrationTest {
     private static final long SELLER_ID = 1L;

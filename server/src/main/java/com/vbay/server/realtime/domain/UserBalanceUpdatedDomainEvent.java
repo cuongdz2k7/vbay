@@ -2,18 +2,18 @@ package com.vbay.server.realtime.domain;
 
 import java.time.LocalDateTime;
 
-import com.vbay.server.service.result.CreateAuctionResult;
+import com.vbay.server.service.result.UserBalanceResult;
 
-public class AuctionCreatedDomainEvent implements DomainEvent {
-    private final CreateAuctionResult result;
+public class UserBalanceUpdatedDomainEvent implements DomainEvent {
+    private final UserBalanceResult result;
     private final LocalDateTime occurredAt;
 
-    public AuctionCreatedDomainEvent(CreateAuctionResult result, LocalDateTime occurredAt) {
+    public UserBalanceUpdatedDomainEvent(UserBalanceResult result, LocalDateTime occurredAt) {
         this.result = result;
         this.occurredAt = occurredAt;
     }
 
-    public CreateAuctionResult getResult() {
+    public UserBalanceResult getResult() {
         return result;
     }
 
@@ -22,4 +22,3 @@ public class AuctionCreatedDomainEvent implements DomainEvent {
         return occurredAt;
     }
 }
-

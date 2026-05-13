@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.model.Auction;
+import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 
 public interface AuctionRepository {
     Auction save(Auction auction) throws SQLException;
@@ -18,11 +19,16 @@ public interface AuctionRepository {
     boolean existsActiveAuctionByProductId(long productId) throws SQLException;
     Optional<Auction> lockAuctionForUpdate (long auctionId) throws SQLException;
     LocalDateTime getCurrentDatabaseTime () throws SQLException;
-    void syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException;
+    AuctionTransition syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException;
     long updateCurrentBid(long auctionId, 
                             BigDecimal currentBid, 
                             long winningUserId) throws SQLException;   
     long completeByBuyNow(long auctionId, long buyerId) throws SQLException;
-    List<AuctionListItemPayload> findAuctionList(AuctionListRequest request) throws SQLException;
+    long terminateAuction(long auctionId) throws SQLException;
+    long finalizeAuction(long auctionId) throws SQLException;
+    List<Auction> findPendingSchedules() throws SQLException;
+    List<Auction> findRecoverableSchedules(LocalDateTime dbNow) throws SQLException;
+    Optional<AuctionListItemResult> findAuctionListItemById(long auctionId) throws SQLException;
+    List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException;
     
 }
