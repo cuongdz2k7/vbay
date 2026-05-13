@@ -21,7 +21,7 @@ public class BidUpdatedRealtimeHandler extends AbstractRealtimeHandler implement
     public void handle(DomainEvent event) {
         BidUpdatedDomainEvent bidEvent = (BidUpdatedDomainEvent) event; 
 
-        broadcaster.broadcast(mapper.toAuctionStateUpdatedEvent(bidEvent));
+        broadcaster.broadcast(mapper.toAuctionStateEvent(bidEvent));
         broadcaster.broadcast(mapper.toBidHistoryItemAddedEvent(bidEvent));
 
         // Notification OUTBID để sau.

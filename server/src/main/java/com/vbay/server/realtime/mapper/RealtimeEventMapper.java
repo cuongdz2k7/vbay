@@ -9,21 +9,21 @@ import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.shared.dto.realtimeDTO.Room;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.realtime.AuctionStateChangeReason;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
 
 public class RealtimeEventMapper {
-    public RealtimeEvent<AuctionStateUpdatedPayload> toAuctionStateUpdatedEvent(BidUpdatedDomainEvent event) {
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BidUpdatedDomainEvent event) {
         PlaceBidResult result = event.getResult();
-        AuctionStateUpdatedPayload payload = new AuctionStateUpdatedPayload();
+        AuctionStatePayload payload = new AuctionStatePayload();
         payload.setAuctionId(result.getAuctionId());
         payload.setAuctionVersion(result.getAuctionVersion());
         payload.setCurrentPrice(result.getCurrentPrice());
@@ -31,8 +31,9 @@ public class RealtimeEventMapper {
         payload.setReserveMet(result.getReserveMet());
         payload.setWinnerUserId(result.getBidderId());
         payload.setUpdatedAt(result.getBidTime());
+        payload.setStateChangeReason(AuctionStateChangeReason.BID_PLACED);
 
-        RealtimeEvent<AuctionStateUpdatedPayload> realtimeEvent = new RealtimeEvent<>(
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
             RealtimeEventType.AUCTION_STATE_UPDATED,
             auctionRoom(result.getAuctionId()),
             payload
@@ -74,20 +75,21 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
-    public RealtimeEvent<AuctionEndedPayload> toAuctionEndedEvent(BuyNowDomainEvent event) {
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BuyNowDomainEvent event) {
         BuyNowResult result = event.getResult();
-        AuctionEndedPayload payload = new AuctionEndedPayload(
-            result.getAuctionId(),
-            result.getAuctionVersion(),
-            "ENDED",
-            result.getFinalPrice(),
-            result.getBuyerId(),
-            result.getBoughtAt(),
-            "BUY_NOW"
-        );
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus("ENDED");
+        payload.setCurrentPrice(result.getFinalPrice());
+        payload.setWinnerUserId(result.getBuyerId());
+        payload.setUpdatedAt(result.getBoughtAt());
+        payload.setEndedAt(result.getBoughtAt());
+        payload.setStateChangeReason(AuctionStateChangeReason.BUY_NOW);
+        payload.setReserveMet(true);
 
-        RealtimeEvent<AuctionEndedPayload> realtimeEvent = new RealtimeEvent<>(
-            RealtimeEventType.AUCTION_ENDED,
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
             auctionRoom(result.getAuctionId()),
             payload
         );

@@ -21,8 +21,7 @@ public class BuyNowRealtimeHandler extends AbstractRealtimeHandler implements Do
     public void handle(DomainEvent event) {
         BuyNowDomainEvent buyNowEvent = (BuyNowDomainEvent) event;
 
-        broadcaster.broadcast(mapper.toAuctionEndedEvent(buyNowEvent));
-        broadcaster.broadcast(mapper.toBuyNowHistoryItemEvent(buyNowEvent));
+        broadcaster.broadcast(mapper.toAuctionStateEvent(buyNowEvent));
 
         // Notification BUY_NOW_PURCHASED / BUY_NOW_SOLD để sau.
     }

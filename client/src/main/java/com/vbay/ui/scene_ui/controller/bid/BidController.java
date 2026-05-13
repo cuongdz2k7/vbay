@@ -1,7 +1,7 @@
 package com.vbay.ui.scene_ui.controller.bid;
 
-import java.math.BigDecimal;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -19,12 +19,13 @@ import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.realtimeDTO.Room;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.realtime.AuctionStateChangeReason;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
+import com.vbay.shared.protocol.RealtimeEvent;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.model.Auction;
@@ -148,9 +149,8 @@ public class BidController implements SceneDataReceiver<Auction> {
     private final List<BidHistoryItemPayload> recentBidHistory = new ArrayList<>();
     private Runnable onBack;
     private Timeline timeUpdater;
-    private RealtimeEventListener<AuctionStateUpdatedPayload> auctionStateListener;
+    private RealtimeEventListener<AuctionStatePayload> auctionStateListener;
     private RealtimeEventListener<BidHistoryItemPayload> bidHistoryListener;
-    private RealtimeEventListener<AuctionEndedPayload> auctionEndedListener;
     private Long subscribedAuctionId;
 
     @FXML
@@ -320,34 +320,6 @@ public class BidController implements SceneDataReceiver<Auction> {
         selectTab(shippingTabButton, true);
     }
 
-    private String descriptionFor(Auction auction) {
-        if (auction.getDescription() != null && !auction.getDescription().isBlank()) {
-            return auction.getDescription();
-        }
-        Product product = auction.getProduct();
-        return product.getDescription() == null || product.getDescription().isBlank()
-            ? "No description is available for this lot."
-            : product.getDescription();
-    }
-
-    private String categoryName(long categoryId) {
-        return switch ((int) categoryId) {
-            case 1 -> "Electronics";
-            case 2 -> "Collectibles";
-            case 3 -> "Arts";
-            case 4 -> "Jewelry & Watches";
-            default -> "Category #" + categoryId;
-        };
-    }
-
-    private static String formatCurrency(BigDecimal value) {
-        return CURRENCY_FORMAT.format(value);
-    }
-
-    private static BigDecimal valueOrZero(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
-    }
-
     private void subscribeAuctionRoom(long auctionId) {
         try {
             Room room = new Room();
@@ -376,34 +348,99 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
     }
 
-    private void subscribeAuctionRealtimeListeners() {
+    private void applyAuctionStateUpdate(AuctionStatePayload payload) {
+        BigDecimal currentPrice = valueOrZero(payload.getCurrentPrice());
+        boolean ended = isAuctionEnded(payload);
+        nextMinimumBid = ended
+            ? BigDecimal.ZERO
+            : payload.getNextMinimumBid() == null
+                ? currentPrice.add(valueOrZero(currentAuction.getMinimumBidStep()))
+                : payload.getNextMinimumBid();
+        currentAuction = copyAuction(
+            payload.getAuctionVersion(),
+            payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
+            currentPrice,
+            payload.getWinnerUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinnerUserId(),
+            payload.getReserveMet() == null ? currentAuction.getReserveMet() : payload.getReserveMet(),
+            payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
+            payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
+        );
+
+        updateCurrentBidLabel(currentAuction.getWinnerUserId(), currentPrice);
+        nextBidLabel.setText(ended ? "-" : formatCurrency(nextMinimumBid));
+        updateBidPrompt();
+        updateReserveStatus(currentAuction);
+        statusLabel.setText(currentAuction.getStatus());
+        setBidControlsEnabled(!ended && canCurrentUserBid(currentAuction));
+        updateTimeState();
+    }
+
+    private boolean isAuctionEnded(AuctionStatePayload payload) {
+        return payload.getStateChangeReason() == AuctionStateChangeReason.BUY_NOW
+            || "ENDED".equalsIgnoreCase(payload.getStatus());
+    }
+
+    private void handleAuctionStateEvent(RealtimeEvent<AuctionStatePayload> event) {
+        AuctionStatePayload payload = event.getPayload();
+        if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+            return;
+        }
+        Platform.runLater(() -> applyAuctionStateUpdate(payload));
+    }
+
+    private void applyBidHistoryItem(BidHistoryItemPayload payload) {
+        recentBidHistory.add(0, payload);
+        while (recentBidHistory.size() > 3) {
+            recentBidHistory.remove(recentBidHistory.size() - 1);
+        }
+        renderRecentBidHistory();
+    }
+
+    private void handleBidHistoryEvent(RealtimeEvent<BidHistoryItemPayload> event) {
+        BidHistoryItemPayload payload = event.getPayload();
+        if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+            return;
+        }
+        Platform.runLater(() -> applyBidHistoryItem(payload));
+    }
+
+    private void subscribeAuctionRealtimeListeners () {
         RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
 
-        auctionStateListener = event -> {
-            AuctionStateUpdatedPayload payload = event.getPayload();
-            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
-                return;
-            }
-            Platform.runLater(() -> applyAuctionStateUpdate(payload));
-        };
-        bidHistoryListener = event -> {
-            BidHistoryItemPayload payload = event.getPayload();
-            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
-                return;
-            }
-            Platform.runLater(() -> applyBidHistoryItem(payload));
-        };
-        auctionEndedListener = event -> {
-            AuctionEndedPayload payload = event.getPayload();
-            if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
-                return;
-            }
-            Platform.runLater(() -> applyAuctionEnded(payload));
-        };
+        auctionStateListener = this::handleAuctionStateEvent;
+        bidHistoryListener = this::handleBidHistoryEvent;
 
         dispatcher.subscribe(RealtimeEventType.AUCTION_STATE_UPDATED, auctionStateListener);
         dispatcher.subscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
-        dispatcher.subscribe(RealtimeEventType.AUCTION_ENDED, auctionEndedListener);
+    }
+
+
+    private String descriptionFor(Auction auction) {
+        if (auction.getDescription() != null && !auction.getDescription().isBlank()) {
+            return auction.getDescription();
+        }
+        Product product = auction.getProduct();
+        return product.getDescription() == null || product.getDescription().isBlank()
+            ? "No description is available for this lot."
+            : product.getDescription();
+    }
+
+    private String categoryName(long categoryId) {
+        return switch ((int) categoryId) {
+            case 1 -> "Electronics";
+            case 2 -> "Collectibles";
+            case 3 -> "Arts";
+            case 4 -> "Jewelry & Watches";
+            default -> "Category #" + categoryId;
+        };
+    }
+
+    private static String formatCurrency(BigDecimal value) {
+        return CURRENCY_FORMAT.format(value);
+    }
+
+    private static BigDecimal valueOrZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 
     private void disposeRealtime() {
@@ -416,61 +453,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             dispatcher.unsubscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
             bidHistoryListener = null;
         }
-        if (auctionEndedListener != null) {
-            dispatcher.unsubscribe(RealtimeEventType.AUCTION_ENDED, auctionEndedListener);
-            auctionEndedListener = null;
-        }
         unsubscribeAuctionRoom();
-    }
-
-    private void applyAuctionStateUpdate(AuctionStateUpdatedPayload payload) {
-        BigDecimal currentPrice = valueOrZero(payload.getCurrentPrice());
-        nextMinimumBid = payload.getNextMinimumBid() == null
-            ? currentPrice.add(valueOrZero(currentAuction.getMinimumBidStep()))
-            : payload.getNextMinimumBid();
-        currentAuction = copyAuction(
-            payload.getAuctionVersion(),
-            payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
-            currentPrice,
-            payload.getWinningUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinningUserId(),
-            payload.getReserveMet(),
-            payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
-            payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
-        );
-
-        updateCurrentBidLabel(currentAuction.getWinnerUserId(), currentPrice);
-        nextBidLabel.setText(formatCurrency(nextMinimumBid));
-        updateBidPrompt();
-        updateReserveStatus(currentAuction);
-        statusLabel.setText(currentAuction.getStatus());
-        setBidControlsEnabled(canCurrentUserBid(currentAuction));
-        updateTimeState();
-    }
-
-    private void applyBidHistoryItem(BidHistoryItemPayload payload) {
-        recentBidHistory.add(0, payload);
-        while (recentBidHistory.size() > 3) {
-            recentBidHistory.remove(recentBidHistory.size() - 1);
-        }
-        renderRecentBidHistory();
-    }
-
-    private void applyAuctionEnded(AuctionEndedPayload payload) {
-        BigDecimal finalPrice = valueOrZero(payload.getFinalPrice());
-        currentAuction = copyAuction(
-            payload.getAuctionVersion(),
-            payload.getStatus() == null ? "ENDED" : payload.getStatus(),
-            finalPrice,
-            payload.getWinnerUserId(),
-            currentAuction.getReserveMet(),
-            currentAuction.getStartingTime(),
-            currentAuction.getEndingTime()
-        );
-        updateCurrentBidLabel(currentAuction.getWinnerUserId(), finalPrice);
-        statusLabel.setText(currentAuction.getStatus());
-        nextBidLabel.setText("-");
-        setBidControlsEnabled(false);
-        updateTimeState();
     }
 
     private Auction copyAuction(

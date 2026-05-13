@@ -14,8 +14,6 @@ Client dispatcher subscription
    Nếu client nhận được event AUCTION_STATE_UPDATED thì gọi method của nó
 Cái map trong dispatcher là:
     RealtimeEventType -> các listener/controller muốn nghe type đó
-
-
 */
 
 public class RealtimeEventDispatcher {
