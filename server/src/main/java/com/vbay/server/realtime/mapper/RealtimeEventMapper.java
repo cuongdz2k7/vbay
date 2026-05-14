@@ -12,6 +12,7 @@ import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
@@ -27,7 +28,6 @@ public class RealtimeEventMapper {
         payload.setAuctionId(result.getAuctionId());
         payload.setAuctionVersion(result.getAuctionVersion());
         payload.setCurrentPrice(result.getCurrentPrice());
-        payload.setNextMinimumBid(result.getNextMinimumBid());
         payload.setReserveMet(result.getReserveMet());
         payload.setWinnerUserId(result.getBidderId());
         payload.setUpdatedAt(result.getBidTime());
@@ -61,6 +61,33 @@ public class RealtimeEventMapper {
             auctionRoom(result.getAuctionId()),
             payload
         );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+    public RealtimeEvent<MyBidListItemPayload> toMyBidListItemUpdatedEvent(BidUpdatedDomainEvent event) {
+        PlaceBidResult result = event.getResult();
+        MyBidListItemPayload payload = new MyBidListItemPayload(
+            result.getBidId(),
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getAuctionTitle(),
+            null,
+            result.getCurrentPrice(),
+            result.getAuctionStatus(),
+            result.getBidAmount(),
+            result.getBidStatus(),
+            result.getBidSource(),
+            result.getBidTime(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getBidTime()
+        );
+
+        RealtimeEvent<MyBidListItemPayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
+            userRoom(result.getBidderId()),
+            payload
+        );  
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;
     }
@@ -130,6 +157,8 @@ public class RealtimeEventMapper {
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;
     }
+
+    
 
     private Room auctionRoom(long auctionId) {
         Room room = new Room();

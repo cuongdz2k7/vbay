@@ -177,6 +177,7 @@
 .my-bid-status-winning,
 .my-bid-status-won,
 .my-bid-status-outbid,
+.my-bid-status-lost,
 .my-bid-status-cancelled,
 .my-bid-status-ended {
     -fx-background-color: rgba(38, 213, 105, 0.11);
@@ -198,6 +199,12 @@
     -fx-background-color: rgba(146, 28, 28, 0.18);
     -fx-border-color: rgba(255, 84, 84, 0.45);
     -fx-text-fill: #ff5454;
+}
+
+.my-bid-status-lost {
+    -fx-background-color: rgba(160, 160, 160, 0.1);
+    -fx-border-color: rgba(160, 160, 160, 0.35);
+    -fx-text-fill: #a0a0a0;
 }
 
 .my-bid-status-cancelled {

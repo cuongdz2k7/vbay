@@ -50,6 +50,22 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 
+/*
+PlaceBid
+
+Broadcast public cho auction:{auctionId}:
+AUCTION_STATE_UPDATED: currentPrice, winnerUserId, nextMinimumBid...
+BID_HISTORY_ITEM_ADDED
+Broadcast personal cho user:{newBidderId}:
+MY_BID_LIST_ITEM_UPDATED với bidStatus = WINNING
+Nếu có previousWinningUserId và khác new bidder:
+Broadcast personal cho user:{previousWinningUserId}:
+MY_BID_LIST_ITEM_UPDATED với bidStatus = OUTBID
+currentPrice cũng là giá mới, để MyBid row của người bị outbid update luôn.
+
+
+*/
+
 public class BidController implements SceneDataReceiver<Auction> {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
@@ -179,7 +195,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         BigDecimal startingPrice = valueOrZero(data.getStartingPrice());
         BigDecimal bidStep = valueOrZero(data.getMinimumBidStep());
         BigDecimal buyNowPrice = data.getBuyNowPrice();
-        nextMinimumBid = data.getWinnerUserId() == null ? currentPrice : currentPrice.add(bidStep);
+        nextMinimumBid = calculateNextMinimumBid(currentPrice, bidStep, buyNowPrice, data.getWinnerUserId());
 
         titleLabel.setText(data.getTitle());
         descriptionLabel.setText(categoryName(product.getCategoryId()));
@@ -354,9 +370,12 @@ public class BidController implements SceneDataReceiver<Auction> {
         boolean ended = isAuctionEnded(payload);
         nextMinimumBid = ended
             ? BigDecimal.ZERO
-            : payload.getNextMinimumBid() == null
-                ? currentPrice.add(valueOrZero(currentAuction.getMinimumBidStep()))
-                : payload.getNextMinimumBid();
+            : calculateNextMinimumBid(
+                currentPrice,
+                valueOrZero(currentAuction.getMinimumBidStep()),
+                currentAuction.getBuyNowPrice(),
+                payload.getWinnerUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinnerUserId()
+            );
         currentAuction = copyAuction(
             payload.getAuctionVersion(),
             payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
@@ -376,6 +395,21 @@ public class BidController implements SceneDataReceiver<Auction> {
         updateTimeState();
     }
 
+    private BigDecimal calculateNextMinimumBid(
+            BigDecimal currentPrice,
+            BigDecimal minimumBidStep,
+            BigDecimal buyNowPrice,
+            Long winnerUserId) {
+        BigDecimal nextBid = winnerUserId == null
+            ? currentPrice
+            : currentPrice.add(minimumBidStep);
+
+        if (buyNowPrice != null && nextBid.compareTo(buyNowPrice) > 0) {
+            return buyNowPrice;
+        }
+        return nextBid;
+    }
+
     private boolean isAuctionEnded(AuctionStatePayload payload) {
         return payload.getStateChangeReason() == AuctionStateChangeReason.BUY_NOW
             || "ENDED".equalsIgnoreCase(payload.getStatus());
@@ -384,6 +418,9 @@ public class BidController implements SceneDataReceiver<Auction> {
     private void handleAuctionStateEvent(RealtimeEvent<AuctionStatePayload> event) {
         AuctionStatePayload payload = event.getPayload();
         if (payload == null || currentAuction == null || payload.getAuctionId() != currentAuction.getId()) {
+            return;
+        }
+        if (payload.getAuctionVersion() <= currentAuction.getVersion()) {
             return;
         }
         Platform.runLater(() -> applyAuctionStateUpdate(payload));

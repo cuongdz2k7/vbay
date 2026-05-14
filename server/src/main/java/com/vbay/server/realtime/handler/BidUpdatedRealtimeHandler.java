@@ -23,7 +23,7 @@ public class BidUpdatedRealtimeHandler extends AbstractRealtimeHandler implement
 
         broadcaster.broadcast(mapper.toAuctionStateEvent(bidEvent));
         broadcaster.broadcast(mapper.toBidHistoryItemAddedEvent(bidEvent));
-
+        broadcaster.broadcast(mapper.toMyBidListItemUpdatedEvent(bidEvent));
         // Notification OUTBID để sau.
     }
 }

@@ -2,6 +2,7 @@ package com.vbay.server.service.result;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
@@ -12,15 +13,19 @@ public class PlaceBidResult {
     private final long sellerId;
     private final long bidderId;
     private final long bidId;
+    private final String auctionTitle;
     private final BigDecimal bidAmount;
     private final BigDecimal currentPrice;
-    private final BigDecimal nextMinimumBid;
     private final Boolean reserveMet;
+    private final String auctionStatus;
     private final Long previousWinningUserId;
     private final Long previousWinningBidId;
     private final BidStatus bidStatus;
     private final BidSource bidSource;
     private final LocalDateTime bidTime;
+    private final LocalDateTime startingTime;
+    private final LocalDateTime endingTime;
+    private final List<UserMyBidListItemResult> affectedMyBidItems;
 
     public PlaceBidResult(
             long auctionId,
@@ -28,29 +33,37 @@ public class PlaceBidResult {
             long sellerId,
             long bidderId,
             long bidId,
+            String auctionTitle,
             BigDecimal bidAmount,
             BigDecimal currentPrice,
-            BigDecimal nextMinimumBid,
             Boolean reserveMet,
+            String auctionStatus,
             Long previousWinningUserId,
             Long previousWinningBidId,
             BidStatus bidStatus,
             BidSource bidSource,
-            LocalDateTime bidTime) {
+            LocalDateTime bidTime,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
         this.sellerId = sellerId;
         this.bidderId = bidderId;
         this.bidId = bidId;
+        this.auctionTitle = auctionTitle;
         this.bidAmount = bidAmount;
         this.currentPrice = currentPrice;
-        this.nextMinimumBid = nextMinimumBid;
         this.reserveMet = reserveMet;
+        this.auctionStatus = auctionStatus;
         this.previousWinningUserId = previousWinningUserId;
         this.previousWinningBidId = previousWinningBidId;
         this.bidStatus = bidStatus;
         this.bidSource = bidSource;
         this.bidTime = bidTime;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
+        this.affectedMyBidItems = affectedMyBidItems == null ? List.of() : List.copyOf(affectedMyBidItems);
     }
 
     public long getAuctionId() {
@@ -73,6 +86,10 @@ public class PlaceBidResult {
         return bidId;
     }
 
+    public String getAuctionTitle() {
+        return auctionTitle;
+    }
+
     public BigDecimal getBidAmount() {
         return bidAmount;
     }
@@ -80,13 +97,12 @@ public class PlaceBidResult {
     public BigDecimal getCurrentPrice() {
         return currentPrice;
     }
-
-    public BigDecimal getNextMinimumBid() {
-        return nextMinimumBid;
-    }
-
     public Boolean getReserveMet() {
         return reserveMet;
+    }
+
+    public String getAuctionStatus() {
+        return auctionStatus;
     }
 
     public Long getPreviousWinningUserId() {
@@ -107,5 +123,17 @@ public class PlaceBidResult {
 
     public LocalDateTime getBidTime() {
         return bidTime;
+    }
+
+    public LocalDateTime getStartingTime() {
+        return startingTime;
+    }
+
+    public LocalDateTime getEndingTime() {
+        return endingTime;
+    }
+
+    public List<UserMyBidListItemResult> getAffectedMyBidItems() {
+        return affectedMyBidItems;
     }
 }

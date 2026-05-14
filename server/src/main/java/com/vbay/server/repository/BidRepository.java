@@ -1,5 +1,6 @@
 package com.vbay.server.repository;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.model.Bid;
@@ -11,4 +12,5 @@ public interface BidRepository {
     Optional<Bid> findWinningBidByAuctionId(long auctionId) throws SQLException;
     Optional<Bid> findById(long bidId) throws SQLException;
     void updateStatus(long bidId, BidStatus newStatus) throws SQLException;
+    List<Bid> findLatestBidPerBidderByAuctionId(long auctionId) throws SQLException;
 }

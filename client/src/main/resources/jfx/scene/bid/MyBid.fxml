@@ -35,6 +35,7 @@
                             <String fx:value="Winning"/>
                             <String fx:value="Outbid"/>
                             <String fx:value="Won"/>
+                            <String fx:value="Lost"/>
                             <String fx:value="Canceled"/>
                         </FXCollections>
                     </items>

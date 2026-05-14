@@ -19,6 +19,7 @@ import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
@@ -124,8 +125,10 @@ public class HomeController {
     private final Map<Long, AuctionListItemPayload> livePreviewAuctions = new LinkedHashMap<>();
     private final Map<Long, AuctionListItemPayload> comingSoonPreviewAuctions = new LinkedHashMap<>();
     private final Map<Long, AuctionListItemPayload> activeViewAuctions = new LinkedHashMap<>();
+    private final Map<Long, MyBidListItemPayload> myBidItemsByAuctionId = new LinkedHashMap<>();
     private RealtimeEventListener<AuctionListItemPayload> auctionListItemListener;
     private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
+    private RealtimeEventListener<MyBidListItemPayload> myBidListener;
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
     private MyBidController activeMyBidController;
@@ -246,6 +249,11 @@ public class HomeController {
             RealtimeEventType.USER_BALANCE_UPDATED,
             userBalanceListener
         );
+        myBidListener = event -> handleMyBidListItemUpdated(event);
+        dispatcher.subscribe(
+            RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
+            myBidListener
+        );
     }
 
     private void unsubscribeRealtimeListener() {
@@ -263,10 +271,20 @@ public class HomeController {
             );
             userBalanceListener = null;
         }
+        if (myBidListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
+                myBidListener
+            );
+            myBidListener = null;
+        }
     }
 
     private void handleAuctionListItemUpdated(RealtimeEvent<AuctionListItemPayload> event) {
         AuctionListItemPayload item = event.getPayload();
+        if (item == null) {
+            return;
+        }
 
         Platform.runLater(() -> {
             if (VIEW_HOME.equals(activeView)) {
@@ -298,6 +316,11 @@ public class HomeController {
     }
 
     private void updateActiveViewCache(AuctionListItemPayload item) {
+        AuctionListItemPayload existing = activeViewAuctions.get(item.getAuctionId());
+        if (isStaleAuctionListItem(item, existing)) {
+            return;
+        }
+
         if (matchesActiveViewQuery(item)) {
             activeViewAuctions.put(item.getAuctionId(), item);
         } else {
@@ -310,18 +333,34 @@ public class HomeController {
     }
 
     private void updateHomePreviewCaches(AuctionListItemPayload item) {
+        if (isStaleAuctionListItem(item, livePreviewAuctions.get(item.getAuctionId()))
+            || isStaleAuctionListItem(item, comingSoonPreviewAuctions.get(item.getAuctionId()))) {
+            return;
+        }
+
         if (matchesPreviewQuery(item, "ACTIVE")) {
             livePreviewAuctions.put(item.getAuctionId(), item);
             trimCache(livePreviewAuctions, 3);
         } else {
-            livePreviewAuctions.remove(item.getAuctionId());
+            removeIfNewerOrSameVersion(livePreviewAuctions, item);
         }
 
         if (matchesPreviewQuery(item, "SCHEDULED")) {
             comingSoonPreviewAuctions.put(item.getAuctionId(), item);
             trimCache(comingSoonPreviewAuctions, 3);
         } else {
-            comingSoonPreviewAuctions.remove(item.getAuctionId());
+            removeIfNewerOrSameVersion(comingSoonPreviewAuctions, item);
+        }
+    }
+
+    private boolean isStaleAuctionListItem(AuctionListItemPayload incoming, AuctionListItemPayload existing) {
+        return existing != null && incoming.getAuctionVersion() <= existing.getAuctionVersion();
+    }
+
+    private void removeIfNewerOrSameVersion(Map<Long, AuctionListItemPayload> cache, AuctionListItemPayload incoming) {
+        AuctionListItemPayload existing = cache.get(incoming.getAuctionId());
+        if (existing == null || incoming.getAuctionVersion() >= existing.getAuctionVersion()) {
+            cache.remove(incoming.getAuctionId());
         }
     }
 
@@ -444,6 +483,36 @@ public class HomeController {
             ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
         });
+    }
+
+    private void handleMyBidListItemUpdated(RealtimeEvent<MyBidListItemPayload> event) {
+        MyBidListItemPayload item = event.getPayload();
+        if (item == null) {
+            return;
+        }
+        Platform.runLater(() -> {
+            MyBidListItemPayload existing = myBidItemsByAuctionId.get(item.getAuctionId());
+            if (isStaleMyBidItem(item, existing)) {
+                return;
+            }
+            myBidItemsByAuctionId.put(item.getAuctionId(), item);
+            if (activeMyBidController != null) {
+                activeMyBidController.setInitialItems(myBidItemsByAuctionId.values());
+            }
+        });
+    }
+
+    private boolean isStaleMyBidItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
+        if (existing == null) {
+            return false;
+        }
+        if (incoming.getAuctionVersion() != existing.getAuctionVersion()) {
+            return incoming.getAuctionVersion() < existing.getAuctionVersion();
+        }
+        if (incoming.getUpdatedAt() == null || existing.getUpdatedAt() == null) {
+            return false;
+        }
+        return incoming.getUpdatedAt().isBefore(existing.getUpdatedAt());
     }
 
     private void updateBalanceDisplay(BigDecimal availableBalance) {
@@ -865,6 +934,7 @@ public class HomeController {
             Node myBidCenter = loader.load();
             MyBidController controller = loader.getController();
             controller.setOnAuctionSelected(this::handleMyBidAuctionSelected);
+            controller.setInitialItems(myBidItemsByAuctionId.values());
             activeMyBidController = controller;
             attachMyBidStylesheet();
 

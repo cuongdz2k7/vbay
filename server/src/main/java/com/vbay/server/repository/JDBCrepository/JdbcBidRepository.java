@@ -6,6 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.mapper.rowmapper.BidRowMapper;
@@ -97,4 +99,30 @@ public class JdbcBidRepository implements BidRepository {
             statement.executeUpdate();
         }
     }
+
+    @Override
+    public List<Bid> findLatestBidPerBidderByAuctionId(long auctionId) throws SQLException {
+        String sql = """
+            SELECT b.id, b.auction_id, b.bidder_id, b.bid_amount, b.bid_time, b.bid_source, b.status
+            FROM bids b
+            JOIN (
+                SELECT bidder_id, MAX(id) AS latest_bid_id
+                FROM bids
+                WHERE auction_id = ?
+                GROUP BY bidder_id
+            ) latest ON latest.latest_bid_id = b.id
+            ORDER BY b.bid_time DESC
+            """; ///join bảng theo lastet_bid_id = b.id
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Bid> bids = new ArrayList<>();
+                while (rs.next()) {
+                    bids.add(BidRowMapper.mapBid(rs));
+                }
+                return bids;
+            }
+        }    
+    }
+        
 }

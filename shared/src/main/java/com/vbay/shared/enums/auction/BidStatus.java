@@ -12,6 +12,6 @@ public enum BidStatus {
     WINNING,
     OUTBID,
     WON,
+    LOST,
     CANCELLED
 }
-

@@ -30,8 +30,8 @@ import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
  /*
@@ -113,7 +113,11 @@ public class AuctionService {
                 ProductRepository productRepository = repositoryFactory.createProductRepository(connection);
                 ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-
+                
+                LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
+                if (!request.getStartingTime().isAfter(dbNow)) {
+                    throw new ValidationException("Starting time must be in the future");
+                }
                 // 1. tạo Product object
                 Product product = createProduct(request.getProduct(), session, productRepository, productImageRepository);
                 // 4. auctionRepository.save(auction)

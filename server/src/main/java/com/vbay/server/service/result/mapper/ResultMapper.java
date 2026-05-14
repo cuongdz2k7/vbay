@@ -2,22 +2,25 @@ package com.vbay.server.service.result.mapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.User;
-import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.AuctionItemResult;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
+import com.vbay.shared.enums.auction.BidStatus;
 
 public class ResultMapper {
     private ResultMapper() {
@@ -44,25 +47,28 @@ public class ResultMapper {
     public static PlaceBidResult toPlaceBidResult(
             Auction auction,
             Bid currentBid,
-            long auctionVersion,
-            BigDecimal nextMinimumBid,
             Long previousWinningUserId,
-            Long previousWinningBidId) {
+            Long previousWinningBidId,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         return new PlaceBidResult(
             auction.getId(),
-            auctionVersion,
+            auction.getVersion(),
             auction.getSellerId(),
             currentBid.getBidderId(),
             currentBid.getId(),
+            auction.getTitle(),
             currentBid.getBidAmount(),
             currentBid.getBidAmount(),
-            nextMinimumBid,
             reserveMet(auction, currentBid.getBidAmount()),
+            auction.getStatus().name(),
             previousWinningUserId,
             previousWinningBidId,
             currentBid.getStatus(),
             currentBid.getBidSource(),
-            currentBid.getBidTime()
+            currentBid.getBidTime(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            affectedMyBidItems
         );
     }
 
@@ -177,4 +183,31 @@ public class ResultMapper {
             result.getUpdatedAt()
         );
     }
+
+
+    public static UserMyBidListItemResult toUserMyBidListItemResult(
+            Auction auction,
+            Bid bid,
+            BidStatus bidStatus,
+            LocalDateTime updatedAt
+    ) {
+        return new UserMyBidListItemResult(
+            bid.getBidderId(),
+            bid.getId(),
+            auction.getId(),
+            auction.getVersion(),
+            auction.getTitle(),
+            null, // thumbnailUrl nếu chưa query ảnh
+            auction.getCurrentPrice(),
+            auction.getStatus(),
+            bid.getBidAmount(),
+            bidStatus,
+            bid.getBidSource(),
+            bid.getBidTime(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            updatedAt
+        );
+    }
+
 }

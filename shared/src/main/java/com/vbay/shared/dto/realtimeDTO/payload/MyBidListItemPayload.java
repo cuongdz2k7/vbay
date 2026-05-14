@@ -2,36 +2,60 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
+
+import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.bid.BidSource;
 
 public class MyBidListItemPayload {
     private long bidId;
     private long auctionId;
     private long auctionVersion;
-    private long sellerId;
-    private long productId;
-    private String productName;
-    private String title;
-    private String description;
-    private long categoryId;
+
+    private String auctionTitle;
     private String thumbnailUrl;
-    private List<String> imageUrls;
-    private BigDecimal startingPrice;
     private BigDecimal currentPrice;
-    private BigDecimal buyNowPrice;
-    private BigDecimal minimumBidStep;
-    private Long winnerUserId;
-    private Boolean reserveMet;
     private String auctionStatus;
     private BigDecimal myBidAmount;
-    private String bidStatus;
-    private String bidSource;
-    private String bidActionType;
+    private BidStatus bidStatus;
+    private BidSource bidSource;
     private LocalDateTime bidTime;
+
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
+    private LocalDateTime updatedAt;
 
     public MyBidListItemPayload() {
+    }
+
+    public MyBidListItemPayload(
+            long bidId,
+            long auctionId,
+            long auctionVersion,
+            String auctionTitle,
+            String thumbnailUrl,
+            BigDecimal currentPrice,
+            String auctionStatus,
+            BigDecimal myBidAmount,
+            BidStatus bidStatus,
+            BidSource bidSource,
+            LocalDateTime bidTime,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime,
+            LocalDateTime updatedAt) {
+        this.bidId = bidId;
+        this.auctionId = auctionId;
+        this.auctionVersion = auctionVersion;
+        this.auctionTitle = auctionTitle;
+        this.thumbnailUrl = thumbnailUrl;
+        this.currentPrice = currentPrice;
+        this.auctionStatus = auctionStatus;
+        this.myBidAmount = myBidAmount;
+        this.bidStatus = bidStatus;
+        this.bidSource = bidSource;
+        this.bidTime = bidTime;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
+        this.updatedAt = updatedAt;
     }
 
     public long getBidId() {
@@ -58,52 +82,12 @@ public class MyBidListItemPayload {
         this.auctionVersion = auctionVersion;
     }
 
-    public long getSellerId() {
-        return sellerId;
+    public String getAuctionTitle() {
+        return auctionTitle;
     }
 
-    public void setSellerId(long sellerId) {
-        this.sellerId = sellerId;
-    }
-
-    public long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(long productId) {
-        this.productId = productId;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public long getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(long categoryId) {
-        this.categoryId = categoryId;
+    public void setAuctionTitle(String auctionTitle) {
+        this.auctionTitle = auctionTitle;
     }
 
     public String getThumbnailUrl() {
@@ -114,22 +98,6 @@ public class MyBidListItemPayload {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
-    }
-
-    public BigDecimal getStartingPrice() {
-        return startingPrice;
-    }
-
-    public void setStartingPrice(BigDecimal startingPrice) {
-        this.startingPrice = startingPrice;
-    }
-
     public BigDecimal getCurrentPrice() {
         return currentPrice;
     }
@@ -137,39 +105,6 @@ public class MyBidListItemPayload {
     public void setCurrentPrice(BigDecimal currentPrice) {
         this.currentPrice = currentPrice;
     }
-
-    public BigDecimal getBuyNowPrice() {
-        return buyNowPrice;
-    }
-
-    public void setBuyNowPrice(BigDecimal buyNowPrice) {
-        this.buyNowPrice = buyNowPrice;
-    }
-
-    public BigDecimal getMinimumBidStep() {
-        return minimumBidStep;
-    }
-
-    public void setMinimumBidStep(BigDecimal minimumBidStep) {
-        this.minimumBidStep = minimumBidStep;
-    }
-
-    public Long getWinnerUserId() {
-        return winnerUserId;
-    }
-
-    public void setWinnerUserId(Long winnerUserId) {
-        this.winnerUserId = winnerUserId;
-    }
-
-    public Boolean getReserveMet() {
-        return reserveMet;
-    }
-
-    public void setReserveMet(Boolean reserveMet) {
-        this.reserveMet = reserveMet;
-    }
-
     public String getAuctionStatus() {
         return auctionStatus;
     }
@@ -186,28 +121,20 @@ public class MyBidListItemPayload {
         this.myBidAmount = myBidAmount;
     }
 
-    public String getBidStatus() {
+    public BidStatus getBidStatus() {
         return bidStatus;
     }
 
-    public void setBidStatus(String bidStatus) {
+    public void setBidStatus(BidStatus bidStatus) {
         this.bidStatus = bidStatus;
     }
 
-    public String getBidSource() {
+    public BidSource getBidSource() {
         return bidSource;
     }
 
-    public void setBidSource(String bidSource) {
+    public void setBidSource(BidSource bidSource) {
         this.bidSource = bidSource;
-    }
-
-    public String getBidActionType() {
-        return bidActionType;
-    }
-
-    public void setBidActionType(String bidActionType) {
-        this.bidActionType = bidActionType;
     }
 
     public LocalDateTime getBidTime() {
@@ -232,5 +159,13 @@ public class MyBidListItemPayload {
 
     public void setEndingTime(LocalDateTime endingTime) {
         this.endingTime = endingTime;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

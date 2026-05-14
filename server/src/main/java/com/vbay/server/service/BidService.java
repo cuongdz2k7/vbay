@@ -28,6 +28,7 @@ import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
@@ -205,8 +206,7 @@ public class BidService {
     Điều này ảnh hưởng lớn đến các thao tác autobid, khi thằng a nó đến thời điểm đặt bid, chưa bid được nma nó đc cộng tiền bởi 1 Auction khác (bị outbid chẳng hạn)
     Flow nên là: lock Auction trước -> validate -> lock user để thay đổi balance
     */
-   private PlaceBidResult placeBid (Auction auction, long bidderId, BigDecimal bidAmount, Optional<Bid> oldWinningBid, LocalDateTime dbNow, Connection connection) throws SQLException {
-        long auctionId = auction.getId();
+   private PlaceBidResult placeBid (long auctionId, long bidderId, BigDecimal bidAmount, Optional<Bid> oldWinningBid, LocalDateTime dbNow, Connection connection) throws SQLException {
         BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
         UserRepository userRepository = repositoryFactory.createUserRepository(connection);
         AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
@@ -233,14 +233,34 @@ public class BidService {
         );
         bidRepository.save(currentBid);
         ///4. Update Auction
-        long auctionVersion = auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
-        return ResultMapper.toPlaceBidResult(
-            auction,
+        auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
+        Auction refreshedAuction = auctionRepository.findById(auctionId).orElseThrow(() -> new ValidationException("Auction not found"));
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+            refreshedAuction,
             currentBid,
-            auctionVersion,
-            bidAmount.add(auction.getMinimumBidStep()),
+            BidStatus.WINNING,
+            dbNow
+        ));
+
+        if (!oldWinningBid.isEmpty()) {
+            Bid oldBid = oldWinningBid.get();
+            if (oldBid.getBidderId() != bidderId) {
+                affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                    refreshedAuction,
+                    oldBid,
+                    BidStatus.OUTBID,
+                    dbNow
+                ));
+            }
+        }
+
+        return ResultMapper.toPlaceBidResult(
+            refreshedAuction,
+            currentBid,
             previousWinningUserId,
-            previousWinningBidId
+            previousWinningBidId,
+            affectedMyBidItems
         );
     }
 
@@ -283,7 +303,8 @@ public class BidService {
                 validateUserEligibility (user, request.getBidAmount(), currentWinningBid);
                 ///sau khi validate xong xuôi -> currentwinningbid sẽ thành oldwinningbid
                 Optional<Bid> oldWinningBid = currentWinningBid;
-                PlaceBidResult result = placeBid(auction, session.getUserId(), request.getBidAmount(), oldWinningBid, dbNow, connection);
+                PlaceBidResult result = placeBid(auction.getId(), session.getUserId(), request.getBidAmount(), oldWinningBid, dbNow, connection);
+                
                 List<UserBalanceResult> balanceResults = new ArrayList<>();
                 LocalDateTime balanceUpdatedAt = LocalDateTime.now();
 
@@ -372,7 +393,7 @@ public class BidService {
     }
 
 
-    public BuyNowResult buyNow(BuyNowRequest request, ClientSession session) throws SQLException {
+    public BuyNowResult buyNow (BuyNowRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
         ValidateBidDTO.validateBuyNowRequest(request);
@@ -416,6 +437,7 @@ public class BidService {
                     "BUY_NOW_PAYMENT",
                     balanceUpdatedAt
                 ));
+
                 Long previousWinningUserId = buyNowResult.getPreviousWinningUserId();
                 if (previousWinningUserId != null && previousWinningUserId != session.getUserId()) {
                     balanceResults.add(readUserBalanceResult(

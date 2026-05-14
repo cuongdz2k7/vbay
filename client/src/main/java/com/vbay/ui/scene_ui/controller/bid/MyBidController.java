@@ -1,11 +1,13 @@
 package com.vbay.ui.scene_ui.controller.bid;
 
 import java.math.BigDecimal;
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Comparator;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,12 +15,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.LongConsumer;
 
+import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
+import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
+import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
+import com.vbay.shared.protocol.Request;
 import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.animation.KeyFrame;
@@ -43,6 +51,7 @@ public class MyBidController {
     private static final String FILTER_WINNING = "Winning";
     private static final String FILTER_OUTBID = "Outbid";
     private static final String FILTER_WON = "Won";
+    private static final String FILTER_LOST = "Lost";
     private static final String FILTER_CANCELLED = "Canceled";
 
     @FXML
@@ -52,7 +61,7 @@ public class MyBidController {
     @FXML
     private Label emptyStateLabel;
 
-    private final Map<Long, MyBidListItemPayload> bidItems = new LinkedHashMap<>();
+    private final Map<Long, MyBidListItemPayload> bidItemsByAuctionId = new LinkedHashMap<>();
     private final Map<Long, Label> timeLabels = new HashMap<>();
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
     private Timeline timeUpdater;
@@ -62,8 +71,8 @@ public class MyBidController {
     private void initialize() {
         statusFilterComboBox.setValue(FILTER_ALL);
         statusFilterComboBox.setOnAction(event -> renderRows());
+        subscribeUserRoom();
         subscribeRealtime();
-        loadPlaceholderItems();
         startTimeUpdater();
     }
     ///lúc select acution mới bắt đầu có auctionId....
@@ -82,10 +91,41 @@ public class MyBidController {
         }
     }
 
+    public void setInitialItems(Collection<MyBidListItemPayload> items) {
+        bidItemsByAuctionId.clear();
+        if (items != null) {
+            for (MyBidListItemPayload item : items) {
+                if (item != null) {
+                    bidItemsByAuctionId.put(item.getAuctionId(), item);
+                }
+            }
+        }
+        renderRows();
+    }
+
     private void subscribeRealtime() {
+        if (myBidListener != null) {
+            return;
+        }
         myBidListener = this::handleMyBidUpdated;
         RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
         dispatcher.subscribe(RealtimeEventType.MY_BID_LIST_ITEM_UPDATED, myBidListener);
+    }
+
+    private void subscribeUserRoom() {
+        Long currentUserId = ClientAuthSession.getUserId();
+        if (currentUserId == null) {
+            return;
+        }
+
+        Room userRoom = new Room();
+        userRoom.setType(RoomType.USER);
+        userRoom.setTargetId(currentUserId);
+        try {
+            SocketClient.getClient().sendMessage(new Request<>(RequestType.SUBSCRIBE_ROOM, userRoom));
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     private void handleMyBidUpdated(RealtimeEvent<MyBidListItemPayload> event) {
@@ -94,62 +134,27 @@ public class MyBidController {
             return;
         }
         Platform.runLater(() -> {
-            bidItems.put(item.getBidId(), item);
+            MyBidListItemPayload existing = bidItemsByAuctionId.get(item.getAuctionId());
+            if (isStaleItem(item, existing)) {
+                return;
+            }
+            bidItemsByAuctionId.put(item.getAuctionId(), item);
             renderRows();
         });
     }
 
-    private void loadPlaceholderItems() {
-        // Replace this with GET_MY_BIDS when the backend endpoint is ready.
-        addPlaceholder(1L, 101L, "1964 Porsche 911 Coupe", "Classic sports coupe", "WINNING",
-            "AUTO_BID", "AUTO_BID", "145000", "160000", 2);
-        addPlaceholder(2L, 102L, "Rolex Submariner Ref. 5513", "Vintage watch", "OUTBID",
-            "USER_BID", "PLACE_BID", "18500", "18000", 14);
-        addPlaceholder(3L, 103L, "Untitled No. 12 (1958)", "Modern artwork", "WON",
-            "USER_BID", "PLACE_BID", "42000", "45000", 65);
-        addPlaceholder(4L, 104L, "Leica M3 Rangefinder", "Film camera", "CANCELLED",
-            "USER_BID", "PLACE_BID", "4250", "4000", 5);
-        renderRows();
-    }
-
-    private void addPlaceholder(
-            long bidId,
-            long auctionId,
-            String title,
-            String description,
-            String bidStatus,
-            String bidSource,
-            String bidActionType,
-            String currentPrice,
-            String myBidAmount,
-            long minutesLeft) {
-        MyBidListItemPayload item = new MyBidListItemPayload();
-        item.setBidId(bidId);
-        item.setAuctionId(auctionId);
-        item.setAuctionVersion(1L);
-        item.setSellerId(9L);
-        item.setProductId(auctionId + 1000);
-        item.setProductName(title);
-        item.setTitle(title);
-        item.setDescription(description);
-        item.setCategoryId(2L);
-        item.setThumbnailUrl(DEFAULT_IMAGE);
-        item.setImageUrls(List.of(DEFAULT_IMAGE));
-        item.setStartingPrice(new BigDecimal("1000"));
-        item.setCurrentPrice(new BigDecimal(currentPrice));
-        item.setBuyNowPrice(null);
-        item.setMinimumBidStep(new BigDecimal("100"));
-        item.setWinnerUserId("WINNING".equals(bidStatus) ? 1L : 7L);
-        item.setReserveMet(true);
-        item.setAuctionStatus("WON".equals(bidStatus) || "CANCELLED".equals(bidStatus) ? "ENDED" : "ACTIVE");
-        item.setMyBidAmount(new BigDecimal(myBidAmount));
-        item.setBidStatus(bidStatus);
-        item.setBidSource(bidSource);
-        item.setBidActionType(bidActionType);
-        item.setBidTime(LocalDateTime.now(UTC_ZONE).minusMinutes(20 - Math.min(minutesLeft, 20)));
-        item.setStartingTime(LocalDateTime.now(UTC_ZONE).minusHours(1));
-        item.setEndingTime(LocalDateTime.now(UTC_ZONE).plusMinutes(minutesLeft));
-        bidItems.put(item.getBidId(), item);
+    private boolean isStaleItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
+        if (existing == null) {
+            return false;
+        }
+        if (incoming.getAuctionVersion() != existing.getAuctionVersion()) {
+            return incoming.getAuctionVersion() < existing.getAuctionVersion();
+        }
+        LocalDateTime incomingUpdatedAt = incoming.getUpdatedAt();
+        LocalDateTime existingUpdatedAt = existing.getUpdatedAt();
+        return incomingUpdatedAt != null
+            && existingUpdatedAt != null
+            && incomingUpdatedAt.isBefore(existingUpdatedAt);
     }
 
     private void renderRows() {
@@ -168,8 +173,8 @@ public class MyBidController {
 
     private List<MyBidListItemPayload> filteredItems() {
         String selectedStatus = statusForFilter(statusFilterComboBox.getValue());
-        return bidItems.values().stream()
-            .filter(item -> selectedStatus == null || selectedStatus.equals(item.getBidStatus()))
+        return bidItemsByAuctionId.values().stream()
+            .filter(item -> selectedStatus == null || selectedStatus.equals(statusText(item)))
             .sorted(Comparator.comparing(MyBidListItemPayload::getBidTime, Comparator.nullsLast(Comparator.reverseOrder())))
             .toList();
     }
@@ -179,6 +184,7 @@ public class MyBidController {
             case FILTER_WINNING -> "WINNING";
             case FILTER_OUTBID -> "OUTBID";
             case FILTER_WON -> "WON";
+            case FILTER_LOST -> "LOST";
             case FILTER_CANCELLED -> "CANCELLED";
             default -> null;
         };
@@ -221,7 +227,7 @@ public class MyBidController {
         imageFrame.getChildren().add(imageView);
 
         VBox textBox = new VBox(3);
-        Label title = new Label(safeText(item.getTitle()));
+        Label title = new Label(safeText(item.getAuctionTitle()));
         title.setWrapText(true);
         title.getStyleClass().add("my-bid-product-title");
         Label meta = new Label("Lot #" + item.getAuctionId());
@@ -244,7 +250,7 @@ public class MyBidController {
 
     private Label timeLabel(MyBidListItemPayload item) {
         Label label = priceLabel(formatTimeLeft(item), timeStyle(item), "my-bid-col-time");
-        timeLabels.put(item.getBidId(), label);
+        timeLabels.put(item.getAuctionId(), label);
         return label;
     }
 
@@ -255,7 +261,7 @@ public class MyBidController {
     }
 
     private String statusText(MyBidListItemPayload item) {
-        String status = item.getBidStatus();
+        String status = item.getBidStatus() == null ? null : item.getBidStatus().name();
         return status == null || status.isBlank() ? "-" : status;
     }
 
@@ -264,17 +270,15 @@ public class MyBidController {
             case "WON" -> "my-bid-status-won";
             case "WINNING" -> "my-bid-status-winning";
             case "OUTBID" -> "my-bid-status-outbid";
+            case "LOST" -> "my-bid-status-lost";
             case "CANCELLED" -> "my-bid-status-cancelled";
             default -> "my-bid-status-ended";
         };
     }
 
     private String sourceText(MyBidListItemPayload item) {
-        if ("AUTO_BID".equals(item.getBidSource())) {
+        if (item.getBidSource() == BidSource.AUTO_BID) {
             return "Auto Bid";
-        }
-        if ("BUY_NOW".equals(item.getBidActionType())) {
-            return "Buy Now";
         }
         return "Manual";
     }
@@ -307,7 +311,7 @@ public class MyBidController {
 
     private void updateTimeLabels() {
         for (Map.Entry<Long, Label> entry : timeLabels.entrySet()) {
-            MyBidListItemPayload item = bidItems.get(entry.getKey());
+            MyBidListItemPayload item = bidItemsByAuctionId.get(entry.getKey());
             Label label = entry.getValue();
             if (item == null || label == null) {
                 continue;
