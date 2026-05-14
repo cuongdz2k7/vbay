@@ -11,6 +11,7 @@ import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.NotificationPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.WatcherCountPayload;
@@ -115,6 +116,7 @@ public class ServerMessageParser {
         Map<RealtimeEventType, Class<?>> types = new EnumMap<>(RealtimeEventType.class);
         types.put(RealtimeEventType.AUCTION_STATE_UPDATED, AuctionStatePayload.class);
         types.put(RealtimeEventType.BID_HISTORY_ITEM_ADDED, BidHistoryItemPayload.class);
+        types.put(RealtimeEventType.MY_BID_LIST_ITEM_UPDATED, MyBidListItemPayload.class);
         types.put(RealtimeEventType.NOTIFICATION_CREATED, NotificationPayload.class);
         types.put(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, AuctionListItemPayload.class);
         types.put(RealtimeEventType.USER_BALANCE_UPDATED, UserBalanceUpdatedPayload.class);

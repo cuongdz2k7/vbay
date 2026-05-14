@@ -29,6 +29,7 @@ import com.vbay.ui.model.Product;
 import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
 import com.vbay.ui.scene_ui.controller.bid.BidController;
+import com.vbay.ui.scene_ui.controller.bid.MyBidController;
 import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
 import com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController;
 
@@ -52,6 +53,8 @@ public class HomeController {
     private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
     private static final String BID_VIEW = "/jfx/scene/bid/Bid.fxml";
     private static final String BID_CSS = "/jfx/css/Bid.css";
+    private static final String MY_BID_VIEW = "/jfx/scene/bid/MyBid.fxml";
+    private static final String MY_BID_CSS = "/jfx/css/MyBid.css";
     private static final String DEPOSIT_BALANCE_VIEW = "/jfx/scene/DepositBalance.fxml";
 
     private static final String VIEW_HOME = "Home";
@@ -123,6 +126,7 @@ public class HomeController {
     private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
+    private MyBidController activeMyBidController;
     private Long currentUserId;
 
 
@@ -509,6 +513,14 @@ public class HomeController {
         }
     }
 
+    private void handleMyBidAuctionSelected(Auction auction) {
+        if (activeMyBidController != null) {
+            activeMyBidController.dispose();
+            activeMyBidController = null;
+        }
+        handleCardClick(auction);
+    }
+
     private void logoutUser() throws IOException {
         Request<Void> request = new Request<>(RequestType.LOGOUT, null);
         Respond<?> response = SocketClient.getClient().sendMessage(request);
@@ -532,6 +544,10 @@ public class HomeController {
 
     private void selectView(String view) {
         activeView = view;
+        if (VIEW_BID_HISTORY.equals(view)) {
+            openMyBidHistoryView();
+            return;
+        }
         if (VIEW_HOME.equals(view)) {
             loadHomePreviewAuctions();
         } else {
@@ -542,6 +558,14 @@ public class HomeController {
     }
 
     private void renderActiveView() {
+        if (VIEW_BID_HISTORY.equals(activeView)) {
+            sidebarSubtitle.setText(subtitleForSidebar());
+            setActiveNavigationState();
+            if (activeMyBidController == null) {
+                openMyBidHistoryView();
+            }
+            return;
+        }
         List<AuctionListItemPayload> auctions = auctionsForActiveView();
         sidebarSubtitle.setText(subtitleForSidebar());
         homeRoot.setRight(VIEW_HOME.equals(activeView) ? homeRight : null);
@@ -713,6 +737,10 @@ public class HomeController {
             activeDepositController.dispose();
             activeDepositController = null;
         }
+        if (activeMyBidController != null) {
+            activeMyBidController.dispose();
+            activeMyBidController = null;
+        }
         if (activeBidController != null) {
             activeBidController.dispose();
             activeBidController = null;
@@ -733,6 +761,10 @@ public class HomeController {
         if (activeDepositController != null) {
             activeDepositController.dispose();
             activeDepositController = null;
+        }
+        if (activeMyBidController != null) {
+            activeMyBidController.dispose();
+            activeMyBidController = null;
         }
         if (activeBidController != null) {
             activeBidController.dispose();
@@ -757,6 +789,41 @@ public class HomeController {
         String stylesheet = getClass().getResource(BID_CSS).toExternalForm();
         if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
             homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
+    }
+
+    private void attachMyBidStylesheet() {
+        String stylesheet = getClass().getResource(MY_BID_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
+    }
+
+    private void openMyBidHistoryView() {
+        try {
+            if (activeMyBidController != null) {
+                activeMyBidController.dispose();
+            }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(MY_BID_VIEW));
+            Node myBidCenter = loader.load();
+            MyBidController controller = loader.getController();
+            controller.setOnAuctionSelected(this::handleMyBidAuctionSelected);
+            activeMyBidController = controller;
+            attachMyBidStylesheet();
+
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(myBidCenter);
+            homeRoot.setBottom(null);
+            sidebarSubtitle.setText(subtitleForSidebar());
+            setActiveNavigationState();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            showMessage(
+                Alert.AlertType.ERROR,
+                "Navigation failed",
+                "Could not open the bid history screen."
+            );
         }
     }
 
