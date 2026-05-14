@@ -41,12 +41,12 @@
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true" styleClass="bid-scroll">
             <content>
-                <VBox alignment="TOP_CENTER" fillWidth="false" spacing="22" styleClass="bid-page">
+                <VBox alignment="TOP_CENTER" fillWidth="true" spacing="22" styleClass="bid-page">
                     <padding>
                         <Insets top="24" right="24" bottom="42" left="24"/>
                     </padding>
 
-                    <HBox alignment="CENTER_LEFT" prefWidth="1080" maxWidth="1080">
+                    <HBox alignment="CENTER_LEFT" maxWidth="Infinity">
                         <Button text="BACK HOME" onAction="#handleBack" prefWidth="124" prefHeight="50" styleClass="secondary-top-action"/>
                     </HBox>
 
