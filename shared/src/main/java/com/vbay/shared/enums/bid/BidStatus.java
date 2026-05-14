@@ -1,4 +1,4 @@
-package com.vbay.shared.enums.auction;
+package com.vbay.shared.enums.bid;
 
 /*
 Khi user vừa bid hợp lệ: bid mới là WINNING, bid đang WINNING cũ chuyển thành OUTBID.

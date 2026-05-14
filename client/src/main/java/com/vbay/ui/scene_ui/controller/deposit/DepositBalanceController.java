@@ -48,9 +48,10 @@ public class DepositBalanceController {
 
     @FXML
     private void handleBack(ActionEvent event) {
+        Runnable backAction = onBack;
         dispose();
-        if (onBack != null) {
-            onBack.run();
+        if (backAction != null) {
+            backAction.run();
         }
     }
 
@@ -93,14 +94,17 @@ public class DepositBalanceController {
     }
 
     public void dispose() {
-        if (balanceListener == null) {
-            return;
+        if (balanceListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.USER_BALANCE_UPDATED,
+                balanceListener
+            );
+            balanceListener = null;
         }
-        SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
-            RealtimeEventType.USER_BALANCE_UPDATED,
-            balanceListener
-        );
-        balanceListener = null;
+        if (amountField != null) {
+            amountField.clear();
+        }
+        onBack = null;
     }
 
     private void subscribeBalanceUpdates() {

@@ -13,7 +13,7 @@ import java.util.Optional;
 import com.vbay.server.mapper.rowmapper.BidRowMapper;
 import com.vbay.server.model.Bid;
 import com.vbay.server.repository.BidRepository;
-import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.bid.BidStatus;
 
 public class JdbcBidRepository implements BidRepository {
     private final Connection connection;
@@ -101,6 +101,18 @@ public class JdbcBidRepository implements BidRepository {
     }
 
     @Override
+    public void updateStatusesByAuctionIdExceptBid(long auctionId, long excludedBidId, BidStatus newStatus) throws SQLException {
+        String sql = "UPDATE bids SET status = ? WHERE auction_id = ? AND id <> ?";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, newStatus.name());
+            statement.setLong(2, auctionId);
+            statement.setLong(3, excludedBidId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
     public List<Bid> findLatestBidPerBidderByAuctionId(long auctionId) throws SQLException {
         String sql = """
             SELECT b.id, b.auction_id, b.bidder_id, b.bid_amount, b.bid_time, b.bid_source, b.status
@@ -124,5 +136,20 @@ public class JdbcBidRepository implements BidRepository {
             }
         }    
     }
+    @Override
+    public int markAuctionBidsLost(long auctionId) throws SQLException {
+        String sql = """
+            UPDATE bids
+            SET status = 'LOST'
+            WHERE auction_id = ?
+            AND status IN ('WINNING', 'OUTBID')
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            return statement.executeUpdate();
+        }
+    }
+
         
 }

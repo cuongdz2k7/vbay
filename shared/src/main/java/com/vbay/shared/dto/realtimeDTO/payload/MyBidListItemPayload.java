@@ -3,8 +3,8 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 
 public class MyBidListItemPayload {
     private long bidId;

@@ -136,8 +136,10 @@ public class CreateAuctionController {
 
     @FXML
     private void handleBack(ActionEvent event) {
-        if (onBack != null) {
-            onBack.run();
+        Runnable backAction = onBack;
+        dispose();
+        if (backAction != null) {
+            backAction.run();
             return;
         }
 
@@ -169,8 +171,10 @@ public class CreateAuctionController {
                 "Auction created",
                 "Auction created successfully."
             );
-            if (onAuctionCreated != null) {
-                onAuctionCreated.run();
+            Runnable auctionCreatedAction = onAuctionCreated;
+            dispose();
+            if (auctionCreatedAction != null) {
+                auctionCreatedAction.run();
             }
         } catch (IllegalArgumentException exception) {
             showMessage(Alert.AlertType.WARNING, "Invalid auction data", exception.getMessage());
@@ -381,6 +385,15 @@ public class CreateAuctionController {
         if (selectedImageFiles.isEmpty()) {
             throw new IllegalArgumentException("Select at least one product image.");
         }
+    }
+
+    public void dispose() {
+        selectedImageFiles.clear();
+        if (imagePreviewContainer != null) {
+            imagePreviewContainer.getChildren().clear();
+        }
+        onBack = null;
+        onAuctionCreated = null;
     }
 
     private void setReservePriceEnabled(boolean enabled) {

@@ -1,7 +1,8 @@
 package com.vbay.server.repository.enums;
 
+///transition gây ra bởi realtime scheduler
 public enum AuctionTransition {
     STARTED,    // Đấu giá vừa bắt đầu
-    ENDED,      // Đấu giá vừa kết thúc
-    NO_CHANGE   // Không có thay đổi gì về trạng thái
+    TIME_EXPIRED,      // Đấu giá vừa kết thúc
+    NO_CHANGE,   // Không có thay đổi gì về trạng thái
 }

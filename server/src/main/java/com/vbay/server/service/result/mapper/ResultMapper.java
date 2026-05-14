@@ -20,7 +20,7 @@ import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
-import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.bid.BidStatus;
 
 public class ResultMapper {
     private ResultMapper() {
@@ -86,7 +86,8 @@ public class ResultMapper {
             long auctionVersion,
             Long previousWinningUserId,
             Long previousWinningBidId,
-            LocalDateTime boughtAt) {
+            LocalDateTime boughtAt,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         return new BuyNowResult(
             auction.getId(),
             auctionVersion,
@@ -97,7 +98,8 @@ public class ResultMapper {
             currentBid.getBidAmount(),
             previousWinningUserId,
             previousWinningBidId,
-            boughtAt
+            boughtAt,
+            affectedMyBidItems
         );
     }
 
@@ -187,6 +189,7 @@ public class ResultMapper {
 
     public static UserMyBidListItemResult toUserMyBidListItemResult(
             Auction auction,
+            String thumbnailUrl,
             Bid bid,
             BidStatus bidStatus,
             LocalDateTime updatedAt
@@ -197,7 +200,7 @@ public class ResultMapper {
             auction.getId(),
             auction.getVersion(),
             auction.getTitle(),
-            null, // thumbnailUrl nếu chưa query ảnh
+            thumbnailUrl,
             auction.getCurrentPrice(),
             auction.getStatus(),
             bid.getBidAmount(),

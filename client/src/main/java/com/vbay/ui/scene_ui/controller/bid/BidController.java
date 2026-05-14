@@ -220,10 +220,10 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     @FXML
     private void handleBack(ActionEvent event) {
-        disposeRealtime();
-        stopTimeUpdater();
-        if (onBack != null) {
-            onBack.run();
+        Runnable backAction = onBack;
+        dispose();
+        if (backAction != null) {
+            backAction.run();
         }
     }
 
@@ -234,6 +234,11 @@ public class BidController implements SceneDataReceiver<Auction> {
     public void dispose() {
         disposeRealtime();
         stopTimeUpdater();
+        recentBidHistory.clear();
+        currentImageUrls = List.of();
+        currentAuction = null;
+        nextMinimumBid = BigDecimal.ZERO;
+        onBack = null;
     }
 
     @FXML

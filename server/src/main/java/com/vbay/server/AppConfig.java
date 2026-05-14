@@ -11,7 +11,6 @@ import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
 import com.vbay.server.realtime.handler.UserBalanceUpdatedRealtimeHandler;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
-import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.realtime.publisher.InMemoryDomainEventPublisher;
 import com.vbay.server.realtime.subscription.InMemorySubscriptionRegistry;
 import com.vbay.server.realtime.subscription.SubscriptionRegistry;

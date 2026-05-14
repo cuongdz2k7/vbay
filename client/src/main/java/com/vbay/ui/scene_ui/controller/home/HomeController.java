@@ -3,6 +3,8 @@ package com.vbay.ui.scene_ui.controller.home;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -108,6 +110,8 @@ public class HomeController {
     @FXML
     private FlowPane productFlow;
     @FXML
+    private VBox myBidPreviewBox;
+    @FXML
     private Label emptyStateLabel;
     @FXML
     private HBox paginationBar;
@@ -129,6 +133,7 @@ public class HomeController {
     private RealtimeEventListener<AuctionListItemPayload> auctionListItemListener;
     private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
+    private CreateAuctionController activeCreateAuctionController;
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
     private MyBidController activeMyBidController;
@@ -433,6 +438,8 @@ public class HomeController {
             return;
         }
         try {
+            disposeActiveChildControllers();
+            clearRealtimeCaches();
             unsubscribeRealtimeListener();
             SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception exception) {
@@ -453,6 +460,8 @@ public class HomeController {
             CreateAuctionController controller = loader.getController();
             controller.setOnBack(this::restoreHomeLayout);
             controller.setOnAuctionCreated(this::openMyAuctionAfterCreate);
+            disposeActiveChildControllers();
+            activeCreateAuctionController = controller;
             attachCreateAuctionStylesheet();
 
             Node createAuctionCenter = createAuctionRoot.getCenter();
@@ -499,6 +508,9 @@ public class HomeController {
             if (activeMyBidController != null) {
                 activeMyBidController.setInitialItems(myBidItemsByAuctionId.values());
             }
+            if (VIEW_HOME.equals(activeView)) {
+                renderMyBidPreview();
+            }
         });
     }
 
@@ -530,9 +542,7 @@ public class HomeController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(DEPOSIT_BALANCE_VIEW));
             Node depositCenter = loader.load();
-            if (activeDepositController != null) {
-                activeDepositController.dispose();
-            }
+            disposeActiveChildControllers();
             DepositBalanceController controller = loader.getController();
             controller.setOnBack(this::restoreHomeLayout);
             activeDepositController = controller;
@@ -560,9 +570,7 @@ public class HomeController {
             Auction detailAuction = fetchAuctionDetail(auctionId);
             FXMLLoader loader = new FXMLLoader(getClass().getResource(BID_VIEW));
             BorderPane bidRoot = loader.load();
-            if (activeBidController != null) {
-                activeBidController.dispose();
-            }
+            disposeActiveChildControllers();
             BidController controller = loader.getController();
             controller.setOnBack(this::restoreHomeLayout);
             controller.setSceneData(detailAuction);
@@ -711,6 +719,7 @@ public class HomeController {
     private void renderHomeDashboard() {
         setNodeVisibility(homeDashboard, true);
         setNodeVisibility(catalogContent, false);
+        renderMyBidPreview();
         renderPreviewFlow(
             comingSoonPreviewFlow,
             comingSoonPreviewAuctions.values().stream()
@@ -726,6 +735,64 @@ public class HomeController {
                 .map(this::toAuction)
                 .toList()
         );
+    }
+
+    private void renderMyBidPreview() {
+        if (myBidPreviewBox == null) {
+            return;
+        }
+
+        myBidPreviewBox.getChildren().clear();
+        List<MyBidListItemPayload> items = myBidItemsByAuctionId.values().stream()
+            .sorted(Comparator.comparing(this::myBidSortTime, Comparator.nullsLast(Comparator.reverseOrder())))
+            .limit(2)
+            .toList();
+
+        if (items.isEmpty()) {
+            Label empty = new Label("No recent bids.");
+            empty.getStyleClass().add("bid-item-meta");
+            myBidPreviewBox.getChildren().add(empty);
+            return;
+        }
+
+        for (MyBidListItemPayload item : items) {
+            myBidPreviewBox.getChildren().add(createMyBidPreviewItem(item));
+        }
+    }
+
+    private LocalDateTime myBidSortTime(MyBidListItemPayload item) {
+        return item.getUpdatedAt() == null ? item.getBidTime() : item.getUpdatedAt();
+    }
+
+    private Node createMyBidPreviewItem(MyBidListItemPayload item) {
+        VBox row = new VBox(5);
+        row.getStyleClass().add("bid-line-item");
+        row.setOnMouseClicked(event -> handleMyBidAuctionSelected(item.getAuctionId()));
+
+        Label title = new Label(item.getAuctionTitle() == null || item.getAuctionTitle().isBlank()
+            ? "Auction #" + item.getAuctionId()
+            : item.getAuctionTitle());
+        title.setWrapText(true);
+        title.getStyleClass().add("bid-item-title");
+
+        HBox metaRow = new HBox();
+        metaRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        Label price = new Label("CURRENT: " + CURRENCY_FORMAT.format(item.getCurrentPrice() == null ? BigDecimal.ZERO : item.getCurrentPrice()));
+        price.getStyleClass().add("bid-item-meta");
+        Label status = new Label(item.getBidStatus() == null ? "-" : item.getBidStatus().name());
+        status.getStyleClass().add(isPositiveMyBidStatus(status.getText()) ? "bid-status-accent" : "bid-status-danger");
+
+        metaRow.getChildren().add(price);
+        metaRow.getChildren().add(new javafx.scene.layout.Region());
+        HBox.setHgrow(metaRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        metaRow.getChildren().add(status);
+
+        row.getChildren().addAll(title, metaRow);
+        return row;
+    }
+
+    private boolean isPositiveMyBidStatus(String status) {
+        return "WINNING".equals(status) || "WON".equals(status);
     }
 
     private void renderPreviewFlow(FlowPane flowPane, List<Auction> auctions) {
@@ -859,18 +926,7 @@ public class HomeController {
     }
 
     private void restoreHomeLayout() {
-        if (activeDepositController != null) {
-            activeDepositController.dispose();
-            activeDepositController = null;
-        }
-        if (activeMyBidController != null) {
-            activeMyBidController.dispose();
-            activeMyBidController = null;
-        }
-        if (activeBidController != null) {
-            activeBidController.dispose();
-            activeBidController = null;
-        }
+        disposeActiveChildControllers();
         homeRoot.setLeft(homeLeft);
         homeRoot.setRight(homeRight);
         homeRoot.setCenter(homeCenter);
@@ -884,18 +940,7 @@ public class HomeController {
     }
 
     private void restoreShellIfInSubView() {
-        if (activeDepositController != null) {
-            activeDepositController.dispose();
-            activeDepositController = null;
-        }
-        if (activeMyBidController != null) {
-            activeMyBidController.dispose();
-            activeMyBidController = null;
-        }
-        if (activeBidController != null) {
-            activeBidController.dispose();
-            activeBidController = null;
-        }
+        disposeActiveChildControllers();
         if (homeRoot.getCenter() != homeCenter) {
             homeRoot.setLeft(homeLeft);
             homeRoot.setRight(homeRight);
@@ -909,6 +954,32 @@ public class HomeController {
         if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
             homeRoot.getScene().getStylesheets().add(stylesheet);
         }
+    }
+
+    private void disposeActiveChildControllers() {
+        if (activeCreateAuctionController != null) {
+            activeCreateAuctionController.dispose();
+            activeCreateAuctionController = null;
+        }
+        if (activeDepositController != null) {
+            activeDepositController.dispose();
+            activeDepositController = null;
+        }
+        if (activeMyBidController != null) {
+            activeMyBidController.dispose();
+            activeMyBidController = null;
+        }
+        if (activeBidController != null) {
+            activeBidController.dispose();
+            activeBidController = null;
+        }
+    }
+
+    private void clearRealtimeCaches() {
+        livePreviewAuctions.clear();
+        comingSoonPreviewAuctions.clear();
+        activeViewAuctions.clear();
+        myBidItemsByAuctionId.clear();
     }
 
     private void attachBidStylesheet() {

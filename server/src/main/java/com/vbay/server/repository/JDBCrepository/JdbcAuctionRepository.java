@@ -200,7 +200,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
     @Override
     public AuctionTransition syncStatus (long auctionId, LocalDateTime dbNow) throws SQLException {
         if (endIfExpired(auctionId, dbNow)) {
-            return AuctionTransition.ENDED;
+            return AuctionTransition.TIME_EXPIRED;
         }
         else if(activateIfDue(auctionId, dbNow)) {
             return AuctionTransition.STARTED;

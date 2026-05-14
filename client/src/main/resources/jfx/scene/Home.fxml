@@ -203,24 +203,7 @@
                         <Region HBox.hgrow="ALWAYS"/>
                         <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
                     </HBox>
-                    <VBox spacing="16">
-                        <VBox spacing="5" styleClass="bid-line-item">
-                            <Label text="1967 E-Type Jaguar" styleClass="bid-item-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="CURRENT: \$98,000" styleClass="bid-item-meta"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="OUTBID" styleClass="bid-status-danger"/>
-                            </HBox>
-                        </VBox>
-                        <VBox spacing="5" styleClass="bid-line-item">
-                            <Label text="Cartier Tank 1920" styleClass="bid-item-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="CURRENT: \$14,200" styleClass="bid-item-meta"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="WINNING" styleClass="bid-status-accent"/>
-                            </HBox>
-                        </VBox>
-                    </VBox>
+                    <VBox fx:id="myBidPreviewBox" spacing="16"/>
                 </VBox>
 
                 <VBox spacing="16">

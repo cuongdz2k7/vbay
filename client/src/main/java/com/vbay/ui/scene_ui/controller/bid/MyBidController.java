@@ -1,13 +1,13 @@
 package com.vbay.ui.scene_ui.controller.bid;
 
-import java.math.BigDecimal;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Comparator;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -82,6 +82,18 @@ public class MyBidController {
 
     public void dispose() {
         stopTimeUpdater();
+        bidItemsByAuctionId.clear();
+        timeLabels.clear();
+        if (rowsBox != null) {
+            rowsBox.getChildren().clear();
+        }
+        if (statusFilterComboBox != null) {
+            statusFilterComboBox.setOnAction(null);
+        }
+        if (emptyStateLabel != null) {
+            emptyStateLabel.setVisible(false);
+            emptyStateLabel.setManaged(false);
+        }
         if (myBidListener != null) {
             SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
                 RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
@@ -89,6 +101,7 @@ public class MyBidController {
             );
             myBidListener = null;
         }
+        onAuctionSelected = null;
     }
 
     public void setInitialItems(Collection<MyBidListItemPayload> items) {
@@ -175,8 +188,12 @@ public class MyBidController {
         String selectedStatus = statusForFilter(statusFilterComboBox.getValue());
         return bidItemsByAuctionId.values().stream()
             .filter(item -> selectedStatus == null || selectedStatus.equals(statusText(item)))
-            .sorted(Comparator.comparing(MyBidListItemPayload::getBidTime, Comparator.nullsLast(Comparator.reverseOrder())))
+            .sorted(Comparator.comparing(this::sortTime, Comparator.nullsLast(Comparator.reverseOrder())))
             .toList();
+    }
+
+    private LocalDateTime sortTime(MyBidListItemPayload item) {
+        return item.getUpdatedAt() == null ? item.getBidTime() : item.getUpdatedAt();
     }
 
     private String statusForFilter(String selectedFilter) {

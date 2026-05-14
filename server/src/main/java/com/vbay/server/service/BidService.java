@@ -23,6 +23,7 @@ import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
+import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.result.BuyNowResult;
@@ -33,11 +34,10 @@ import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
-import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
-
 /*
 các bước để place bid:
 1. Insert bid mới
@@ -210,6 +210,7 @@ public class BidService {
         BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
         UserRepository userRepository = repositoryFactory.createUserRepository(connection);
         AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+        ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
         //1. Release Hold và Update Status
         Long previousWinningUserId = null;
         Long previousWinningBidId = null;
@@ -235,9 +236,11 @@ public class BidService {
         ///4. Update Auction
         auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
         Auction refreshedAuction = auctionRepository.findById(auctionId).orElseThrow(() -> new ValidationException("Auction not found"));
+        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
         List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
         affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
             refreshedAuction,
+            thumbnailUrl,
             currentBid,
             BidStatus.WINNING,
             dbNow
@@ -248,6 +251,7 @@ public class BidService {
             if (oldBid.getBidderId() != bidderId) {
                 affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
                     refreshedAuction,
+                    thumbnailUrl,
                     oldBid,
                     BidStatus.OUTBID,
                     dbNow
@@ -344,6 +348,7 @@ public class BidService {
         BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
         UserRepository userRepository = repositoryFactory.createUserRepository(connection);
         AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+        ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
         PaymentRepository paymentRepository = repositoryFactory.createPaymentRepository(connection);
         //1.Release Hold và Update Status 
         Long previousWinningUserId = null;
@@ -367,10 +372,26 @@ public class BidService {
             BidSource.USER_BID
         );
         bidRepository.save(currentBid);
+        bidRepository.updateStatusesByAuctionIdExceptBid(auctionId, currentBid.getId(), BidStatus.LOST);
         ///4. End Auction
         long auctionVersion = auctionRepository.completeByBuyNow(auctionId, buyerId);
+        Auction refreshedAuction = auctionRepository.findById(auctionId)
+            .orElseThrow(() -> new ValidationException("Auction not found"));
+
+        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auctionId)) {
+            BidStatus bidStatus = bid.getBidderId() == buyerId ? BidStatus.WON : BidStatus.LOST;
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                refreshedAuction,
+                thumbnailUrl,
+                bid,
+                bidStatus,
+                dbNow
+            ));
+        }
         
-        // 5. Create held payment
+        // 5. Create held payment (sau tách ra thành payment repository)
         Payment payment = new Payment(
             auctionId,
             buyerId,
@@ -382,13 +403,14 @@ public class BidService {
         );
         paymentRepository.save(payment);
         return ResultMapper.toBuyNowResult(
-            auction,
+            refreshedAuction,
             currentBid,
             payment,
             auctionVersion,
             previousWinningUserId,
             previousWinningBidId,
-            dbNow
+            dbNow,
+            affectedMyBidItems
         );
     }
 

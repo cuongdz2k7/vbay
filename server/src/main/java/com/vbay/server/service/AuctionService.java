@@ -18,6 +18,7 @@ import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
@@ -33,6 +34,7 @@ import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
+import com.vbay.shared.enums.bid.BidStatus;
 
  /*
 * Business rules:
@@ -201,19 +203,29 @@ public class AuctionService {
 
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);    
                 auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow(); //////lock auction first
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
                 AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow); 
                 Auction auction = auctionRepository.findById(auctionId).orElseThrow();
                 switch (transition) {
                     case NO_CHANGE, STARTED -> {}
-                    case ENDED -> { ///ended chỉ check xem auction có transition không, còn cập nhật trạng thái auction thì làm ở đây
+                    case TIME_EXPIRED -> { ///ended chỉ check xem auction có transition không, còn cập nhật trạng thái auction thì làm ở đây
                         ///không thỏa mãn reserve price
                         if (checkIfAuctionFailed(auction)) {
-                            auctionRepository.terminateAuction(auctionId); ///failed
-                        } else if (auctionRepository.finalizeAuction(auctionId) == 0L) {
-                            auctionRepository.terminateAuction(auctionId);
+                            long changes = auctionRepository.terminateAuction(auctionId); ///failed
+                            if (changes  == 0L) {
+                                return;
+                            }
+                            bidRepository.markAuctionBidsLost(auctionId);
+                            return;
+                        } 
+                        long changes = auctionRepository.finalizeAuction(auctionId);
+                        if (changes == 0L) {
+                            return;
                         }
+                        bidRepository.markAuctionBidsLost(auctionId);
+                        bidRepository.updateStatus(auction.getWinnerUserId(), BidStatus.WON);
                     }
                 }
                 connection.commit();

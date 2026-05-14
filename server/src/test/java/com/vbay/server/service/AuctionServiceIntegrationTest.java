@@ -33,10 +33,10 @@ import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.productDTO.ProductImageDTO;
 import com.vbay.shared.enums.auction.AuctionStatus;
-import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
@@ -346,7 +346,7 @@ class AuctionServiceIntegrationTest {
 
         bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
 
-        assertEquals(BidStatus.OUTBID.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
+        assertEquals(BidStatus.LOST.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
         assertDecimal("620.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
