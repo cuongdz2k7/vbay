@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
@@ -48,8 +48,8 @@ public class AuctionCardController {
     @FXML
     private ProgressBar progressBar;
 
-    private Auction auction;
-    private Consumer<Auction> onSelected;
+    private Auction listAuction;
+    private LongConsumer onSelected;
     private Timeline timeUpdater;
 
     @FXML
@@ -62,19 +62,19 @@ public class AuctionCardController {
         });
     }
 
-    public void setAuction(Auction auction) {
+    public void setAuction(Auction listAuction) {
         stopTimeUpdater();
-        this.auction = auction;
-        Product product = auction.getProduct();
-        titleLabel.setText(auction.getTitle());
-        priceLabel.setText("Current Bid  " + (auction.getWinnerUserId() == null ? "-" : formatCurrency(auction.getCurrentPrice())));
-        startingPriceLabel.setText("Starting Price  " + formatCurrency(auction.getStartingPrice()));
-        bidStepLabel.setText("Step  " + formatCurrency(auction.getMinimumBidStep()));
+        this.listAuction = listAuction;
+        Product product = listAuction.getProduct();
+        titleLabel.setText(listAuction.getTitle());
+        priceLabel.setText("Current Bid  " + (listAuction.getWinnerUserId() == null ? "-" : formatCurrency(listAuction.getCurrentPrice())));
+        startingPriceLabel.setText("Starting Price  " + formatCurrency(listAuction.getStartingPrice()));
+        bidStepLabel.setText("Step  " + formatCurrency(listAuction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
         startTimeUpdater();
     }
 
-    public void setOnSelected(Consumer<Auction> onSelected) {
+    public void setOnSelected(LongConsumer onSelected) {
         this.onSelected = onSelected;
     }
 
@@ -92,8 +92,8 @@ public class AuctionCardController {
     }
 
     private void notifySelection() {
-        if (auction != null && onSelected != null) {
-            onSelected.accept(auction);
+        if (listAuction != null && onSelected != null) {
+            onSelected.accept(listAuction.getId());
         }
     }
 
@@ -112,11 +112,11 @@ public class AuctionCardController {
     }
 
     private void updateTimeState() {
-        if (auction == null) {
+        if (listAuction == null) {
             return;
         }
-        timeLabel.setText(formatAuctionTime(auction));
-        progressBar.setProgress(calculateProgress(auction));
+        timeLabel.setText(formatAuctionTime(listAuction));
+        progressBar.setProgress(calculateProgress(listAuction));
     }
 
     private static String formatCurrency(BigDecimal value) {

@@ -9,11 +9,13 @@ import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.User;
 import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 
@@ -129,6 +131,30 @@ public class ResultMapper {
 
     public static AuctionListItemPayload toAuctionListItemPayload(AuctionListItemResult result) {
         return new AuctionListItemPayload(
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getProductId(),
+            result.getSellerId(),
+            result.getTitle(),
+            result.getDescription(),
+            result.getProductName(),
+            result.getCategoryId(),
+            result.getStatus(),
+            result.getStartingPrice(),
+            result.getCurrentPrice(),
+            result.getMinimumBidStep(),
+            result.getBuyNowPrice(),
+            result.getWinnerUserId(),
+            result.getReserveMet(),
+            result.getThumbnailUrl(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
+        );
+    }
+
+    public static AuctionItemPayload toAuctionItemPayload(AuctionItemResult result) {
+        return new AuctionItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
             result.getProductId(),

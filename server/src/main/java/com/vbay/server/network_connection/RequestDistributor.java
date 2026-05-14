@@ -134,6 +134,7 @@ public class RequestDistributor {
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
                 case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
+                case GET_AUCTION_DETAIL -> handleGetAuctionDetail(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -161,6 +162,20 @@ public class RequestDistributor {
 
         AuctionListResponse response = auctionService.getAuctionList(request, session);
         return new Respond<>(requestId, true, "Auction list loaded", response);
+    }
+
+    private Respond<?> handleGetAuctionDetail(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        com.vbay.shared.dto.auctionDTO.AuctionDetailRequest request =
+            JsonUtils.fromJson(payload, com.vbay.shared.dto.auctionDTO.AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction detail request", null);
+        }
+
+        return new Respond<>(requestId, true, "Auction detail loaded", auctionService.getAuctionDetail(request, session));
     }
 
     ///

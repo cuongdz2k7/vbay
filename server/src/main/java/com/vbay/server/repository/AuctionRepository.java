@@ -8,6 +8,7 @@ import java.util.Optional;
 
 import com.vbay.server.model.Auction;
 import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 
@@ -29,6 +30,7 @@ public interface AuctionRepository {
     List<Auction> findPendingSchedules() throws SQLException;
     List<Auction> findRecoverableSchedules(LocalDateTime dbNow) throws SQLException;
     Optional<AuctionListItemResult> findAuctionListItemById(long auctionId) throws SQLException;
+    Optional<AuctionItemResult> findAuctionItemById(long auctionId) throws SQLException;
     List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException;
     
 }

@@ -153,6 +153,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     private RealtimeEventListener<BidHistoryItemPayload> bidHistoryListener;
     private Long subscribedAuctionId;
 
+    ///không gộp vì lúc initialize thì chưa có auction data
     @FXML
     private void initialize() {
         MoneyInput.install(bidAmountField);

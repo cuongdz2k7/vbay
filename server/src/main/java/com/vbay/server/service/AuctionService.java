@@ -26,9 +26,11 @@ import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
+import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
@@ -155,6 +157,20 @@ public class AuctionService {
                     .map(ResultMapper::toAuctionListItemPayload)
                     .toList()
             );
+        }
+    }
+
+    public AuctionItemPayload getAuctionDetail(AuctionDetailRequest request, ClientSession session) throws SQLException {
+        checkSession(session);
+        if (request == null || request.getAuctionId() <= 0) {
+            throw new ValidationException("Auction detail request is invalid");
+        }
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            return auctionRepository.findAuctionItemById(request.getAuctionId())
+                .map(ResultMapper::toAuctionItemPayload)
+                .orElseThrow(() -> new ValidationException("Auction not found"));
         }
     }
 

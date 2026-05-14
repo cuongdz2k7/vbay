@@ -5,14 +5,13 @@ import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
@@ -20,8 +19,6 @@ import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.RealtimeEvent;
-import com.vbay.ui.model.Auction;
-import com.vbay.ui.model.Product;
 import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.animation.KeyFrame;
@@ -36,7 +33,6 @@ import javafx.scene.control.Label;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 public class MyBidController {
@@ -60,7 +56,7 @@ public class MyBidController {
     private final Map<Long, Label> timeLabels = new HashMap<>();
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
     private Timeline timeUpdater;
-    private Consumer<Auction> onAuctionSelected;
+    private LongConsumer onAuctionSelected;
 
     @FXML
     private void initialize() {
@@ -70,8 +66,8 @@ public class MyBidController {
         loadPlaceholderItems();
         startTimeUpdater();
     }
-
-    public void setOnAuctionSelected(Consumer<Auction> onAuctionSelected) {
+    ///lúc select acution mới bắt đầu có auctionId....
+    public void setOnAuctionSelected(LongConsumer onAuctionSelected) {
         this.onAuctionSelected = onAuctionSelected;
     }
 
@@ -324,40 +320,8 @@ public class MyBidController {
 
     private void openAuction(MyBidListItemPayload item) {
         if (onAuctionSelected != null) {
-            onAuctionSelected.accept(toAuction(item));
+            onAuctionSelected.accept(item.getAuctionId());
         }
-    }
-
-    private Auction toAuction(MyBidListItemPayload item) {
-        String imagePath = imagePath(item);
-        List<String> imageUrls = item.getImageUrls() == null || item.getImageUrls().isEmpty()
-            ? List.of(imagePath)
-            : item.getImageUrls();
-        Product product = new Product(
-            item.getProductId(),
-            blankToDefault(item.getProductName(), item.getTitle()),
-            blankToDefault(item.getDescription(), "Auction #" + item.getAuctionId()),
-            item.getCategoryId(),
-            imagePath,
-            imageUrls
-        );
-        return new Auction(
-            item.getAuctionId(),
-            item.getAuctionVersion(),
-            item.getSellerId(),
-            item.getTitle(),
-            item.getDescription(),
-            item.getAuctionStatus(),
-            item.getStartingPrice(),
-            item.getCurrentPrice(),
-            item.getMinimumBidStep(),
-            item.getBuyNowPrice(),
-            item.getWinnerUserId(),
-            item.getReserveMet(),
-            item.getStartingTime(),
-            item.getEndingTime(),
-            product
-        );
     }
 
     private String imagePath(MyBidListItemPayload item) {
@@ -368,10 +332,6 @@ public class MyBidController {
 
     private String safeText(String value) {
         return value == null || value.isBlank() ? "-" : value;
-    }
-
-    private String blankToDefault(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
     }
 
     private String formatCurrency(BigDecimal value) {

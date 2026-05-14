@@ -13,9 +13,11 @@ import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.enums.RequestType;
@@ -480,8 +482,13 @@ public class HomeController {
         }
     }
 
-    public void handleCardClick(Auction auction) {
+    public void handleCardClick(long auctionId) {
+        openAuctionById(auctionId);
+    }
+
+    private void openAuctionById(long auctionId) {
         try {
+            Auction detailAuction = fetchAuctionDetail(auctionId);
             FXMLLoader loader = new FXMLLoader(getClass().getResource(BID_VIEW));
             BorderPane bidRoot = loader.load();
             if (activeBidController != null) {
@@ -489,7 +496,7 @@ public class HomeController {
             }
             BidController controller = loader.getController();
             controller.setOnBack(this::restoreHomeLayout);
-            controller.setSceneData(auction);
+            controller.setSceneData(detailAuction);
             activeBidController = controller;
             attachBidStylesheet();
 
@@ -513,12 +520,26 @@ public class HomeController {
         }
     }
 
-    private void handleMyBidAuctionSelected(Auction auction) {
+    private Auction fetchAuctionDetail(long auctionId) throws IOException {
+        Respond<?> response = SocketClient.getClient().sendMessage(
+            new Request<>(RequestType.GET_AUCTION_DETAIL, new AuctionDetailRequest(auctionId))
+        );
+        if (response == null || !response.isStatus()) {
+            throw new IOException(response != null ? response.getMessage() : "No response");
+        }
+        AuctionItemPayload payload = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), AuctionItemPayload.class);
+        if (payload == null) {
+            throw new IOException("Auction detail response is empty.");
+        }
+        return toAuction(payload);
+    }
+
+    private void handleMyBidAuctionSelected(long auctionId) {
         if (activeMyBidController != null) {
             activeMyBidController.dispose();
             activeMyBidController = null;
         }
-        handleCardClick(auction);
+        openAuctionById(auctionId);
     }
 
     private void logoutUser() throws IOException {
@@ -646,6 +667,42 @@ public class HomeController {
     }
 
     private Auction toAuction(AuctionListItemPayload payload) {
+        String imagePath = payload.getThumbnailUrl() == null || payload.getThumbnailUrl().isBlank()
+            ? "/jfx/image/products/collectibles.png"
+            : payload.getThumbnailUrl();
+        String description = payload.getDescription() == null || payload.getDescription().isBlank()
+            ? "Auction #" + payload.getAuctionId()
+            : payload.getDescription();
+
+        Product product = new Product(
+            payload.getProductId(),
+            payload.getProductName() == null || payload.getProductName().isBlank() ? payload.getTitle() : payload.getProductName(),
+            description,
+            payload.getCategoryId(),
+            imagePath,
+            List.of(imagePath)
+        );
+
+        return new Auction(
+            payload.getAuctionId(),
+            payload.getAuctionVersion(),
+            payload.getSellerId(),
+            payload.getTitle(),
+            description,
+            payload.getStatus(),
+            payload.getStartingPrice(),
+            payload.getCurrentPrice(),
+            payload.getMinimumBidStep(),
+            payload.getBuyNowPrice(),
+            payload.getWinnerUserId(),
+            payload.getReserveMet(),
+            payload.getStartingTime(),
+            payload.getEndingTime(),
+            product
+        );
+    }
+
+    private Auction toAuction(AuctionItemPayload payload) {
         String imagePath = payload.getThumbnailUrl() == null || payload.getThumbnailUrl().isBlank()
             ? "/jfx/image/products/collectibles.png"
             : payload.getThumbnailUrl();
@@ -827,12 +884,12 @@ public class HomeController {
         }
     }
 
-    private Node createAuctionCard(Auction auction) {
+    private Node createAuctionCard(Auction listAuction) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/jfx/scene/AuctionCard.fxml"));
             Node card = loader.load();
             AuctionCardController controller = loader.getController();
-            controller.setAuction(auction);
+            controller.setAuction(listAuction);
             controller.setOnSelected(this::handleCardClick);
             return card;
         } catch (IOException exception) {

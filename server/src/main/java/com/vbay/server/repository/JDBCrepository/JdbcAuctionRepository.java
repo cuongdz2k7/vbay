@@ -16,6 +16,7 @@ import com.vbay.server.mapper.rowmapper.AuctionRowMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
@@ -358,7 +359,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
 
         try (PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet rs = statement.executeQuery()) {
-            return mapAuctions(rs);
+            return AuctionRowMapper.mapAuctions(rs);
         }
     }
 
@@ -379,7 +380,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
             statement.setTimestamp(1, now);
             statement.setTimestamp(2, now);
             try (ResultSet rs = statement.executeQuery()) {
-                return mapAuctions(rs);
+                return AuctionRowMapper.mapAuctions(rs);
             }
         }
     }
@@ -451,7 +452,8 @@ public class JdbcAuctionRepository implements AuctionRepository {
             try (ResultSet rs = statement.executeQuery()) {
                 List<AuctionListItemResult> items = new ArrayList<>();
                 while (rs.next()) {
-                    items.add(mapAuctionListItem(rs));
+                    String thumbnailUrl = imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url"));
+                    items.add(AuctionRowMapper.mapAuctionListItem(rs, thumbnailUrl));
                 }
                 return items;
             }
@@ -502,42 +504,61 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 if (!rs.next()) {
                     return Optional.empty();
                 }
-                return Optional.of(mapAuctionListItem(rs));
+                String thumbnailUrl = imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url"));
+                return Optional.of(AuctionRowMapper.mapAuctionListItem(rs, thumbnailUrl));
             }
         }
     }
 
-    private List<Auction> mapAuctions(ResultSet rs) throws SQLException {
-        List<Auction> auctions = new ArrayList<>();
-        while (rs.next()) {
-            auctions.add(AuctionRowMapper.mapAuction(rs));
-        }
-        return auctions;
-    }
+    @Override
+    public Optional<AuctionItemResult> findAuctionItemById(long auctionId) throws SQLException {
+        String sql = """
+            SELECT
+                a.id AS auction_id,
+                a.version AS auction_version,
+                a.product_id,
+                a.seller_id,
+                a.title,
+                a.description,
+                p.name AS product_name,
+                p.category_id,
+                a.status,
+                a.starting_price,
+                a.current_price,
+                a.minimum_bid_step,
+                a.buy_now_price,
+                a.winner_user_id,
+                CASE
+                    WHEN a.reserve_price IS NULL THEN NULL
+                    WHEN a.current_price >= a.reserve_price THEN TRUE
+                    ELSE FALSE
+                END AS reserve_met,
+                (
+                    SELECT image_url
+                    FROM product_images
+                    WHERE product_id = p.id
+                    ORDER BY is_thumbnail DESC, id ASC
+                    LIMIT 1
+                ) AS thumbnail_url,
+                a.starting_time,
+                a.ending_time,
+                a.updated_at
+            FROM auctions a
+            JOIN products p ON p.id = a.product_id
+            WHERE a.id = ?
+            """;
 
-    private AuctionListItemResult mapAuctionListItem(ResultSet rs) throws SQLException {
-        return new AuctionListItemResult(
-            rs.getLong("auction_id"),
-            rs.getLong("auction_version"),
-            rs.getLong("product_id"),
-            rs.getLong("seller_id"),
-            rs.getString("title"),
-            rs.getString("description"),
-            rs.getString("product_name"),
-            rs.getLong("category_id"),
-            rs.getString("status"),
-            rs.getBigDecimal("starting_price"),
-            rs.getBigDecimal("current_price"),
-            rs.getBigDecimal("minimum_bid_step"),
-            rs.getBigDecimal("buy_now_price"),
-            (Long) rs.getObject("winner_user_id"),
-            nullableBoolean(rs, "reserve_met"),
-            imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url")),
-            findProductImageUrls(rs.getLong("product_id")),
-            rs.getTimestamp("starting_time").toLocalDateTime(),
-            rs.getTimestamp("ending_time").toLocalDateTime(),
-            rs.getTimestamp("updated_at").toLocalDateTime()
-        );
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                List<String> productImages = findProductImageUrls(rs.getLong("product_id"));
+                String thumbnailUrl = imageStorageService.toPublicThumbnailUrl(rs.getString("thumbnail_url"));
+                return Optional.of(AuctionRowMapper.mapAuctionItem(rs, productImages, thumbnailUrl));
+            }
+        }
     }
 
     private List<String> findProductImageUrls(long productId) throws SQLException {
@@ -561,11 +582,6 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 return imageUrls;
             }
         }
-    }
-
-    private Boolean nullableBoolean(ResultSet rs, String columnName) throws SQLException {
-        boolean value = rs.getBoolean(columnName);
-        return rs.wasNull() ? null : value;
     }
 
     private long findVersionById(long auctionId) throws SQLException {
