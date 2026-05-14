@@ -49,6 +49,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+
 public class BidController implements SceneDataReceiver<Auction> {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
@@ -57,7 +58,6 @@ public class BidController implements SceneDataReceiver<Auction> {
         DateTimeFormatter.ofPattern("MMM d, yyyy, HH:mm", Locale.US);
     private static final String ACTIVE_TAB_STYLE_CLASS = "active-tab";
     private static final String ACTIVE_THUMBNAIL_STYLE_CLASS = "active-thumb";
-    private static final BigDecimal AVAILABLE_BALANCE = new BigDecimal("42500.00");
     private static final String[] HISTORY_BIDDERS = {
         "Mia Tran",
         "Alex Carter",
@@ -238,7 +238,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
         if (buyNowPrice != null && enteredBid.compareTo(buyNowPrice) >= 0) {
-            if (enteredBid.compareTo(AVAILABLE_BALANCE) > 0) {
+            if (enteredBid.compareTo(availableBalance()) > 0) {
                 showInsufficientBalance(enteredBid);
                 return;
             }
@@ -258,7 +258,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
 
-        if (enteredBid.compareTo(AVAILABLE_BALANCE) > 0) {
+        if (enteredBid.compareTo(availableBalance()) > 0) {
             showInsufficientBalance(enteredBid);
             return;
         }
@@ -405,7 +405,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         Platform.runLater(() -> applyBidHistoryItem(payload));
     }
 
-    private void subscribeAuctionRealtimeListeners () {
+    private void subscribeAuctionRealtimeListeners() {
         RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
 
         auctionStateListener = this::handleAuctionStateEvent;
@@ -826,7 +826,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             showMessage(Alert.AlertType.WARNING, "Buy Now unavailable", "This auction does not have a Buy Now price.");
             return;
         }
-        if (buyNowPrice.compareTo(AVAILABLE_BALANCE) > 0) {
+        if (buyNowPrice.compareTo(availableBalance()) > 0) {
             showInsufficientBalance(buyNowPrice);
             return;
         }
@@ -849,8 +849,12 @@ public class BidController implements SceneDataReceiver<Auction> {
         showMessage(
             Alert.AlertType.WARNING,
             "Insufficient balance",
-            "Available balance is " + formatCurrency(AVAILABLE_BALANCE) + ", but this action requires " + formatCurrency(amount) + "."
+            "Available balance is " + formatCurrency(availableBalance()) + ", but this action requires " + formatCurrency(amount) + "."
         );
+    }
+
+    private BigDecimal availableBalance() {
+        return valueOrZero(ClientAuthSession.getAvailableBalance());
     }
 
     private void showMessage(Alert.AlertType type, String title, String content) {
@@ -861,3 +865,4 @@ public class BidController implements SceneDataReceiver<Auction> {
         alert.showAndWait();
     }
 }
+    
