@@ -41,6 +41,8 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
+import com.vbay.server.service.result.BuyNowResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 
 class AuctionServiceIntegrationTest {
     private static final long SELLER_ID = 1L;
@@ -352,6 +354,33 @@ class AuctionServiceIntegrationTest {
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
         assertDecimal("800.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 3"));
         assertEquals(1, countRows(keepAliveConnection, "payments"));
+    }
+
+    @Test
+    void buyNow_withExistingBidder_returnsMyBidUpdatesForBuyerAndLoser() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "oldbidder", UserStatus.ACTIVE, new BigDecimal("500.00"), new BigDecimal("120.00"));
+        seedUser(3L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("120.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        updateAuctionWinner(auctionId, 2L);
+        seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
+
+        BuyNowResult result = bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
+
+        assertEquals(2, result.getAffectedMyBidItems().size());
+        UserMyBidListItemResult buyerItem = result.getAffectedMyBidItems().stream()
+            .filter(item -> item.getUserId() == 3L)
+            .findFirst()
+            .orElseThrow();
+        UserMyBidListItemResult oldBidderItem = result.getAffectedMyBidItems().stream()
+            .filter(item -> item.getUserId() == 2L)
+            .findFirst()
+            .orElseThrow();
+
+        assertEquals(BidStatus.WON, buyerItem.getBidStatus());
+        assertDecimal("200.00", buyerItem.getMyBidAmount());
+        assertEquals(BidStatus.LOST, oldBidderItem.getBidStatus());
+        assertDecimal("120.00", oldBidderItem.getMyBidAmount());
     }
 
     @Test

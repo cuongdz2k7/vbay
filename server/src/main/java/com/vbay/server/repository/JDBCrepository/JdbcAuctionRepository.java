@@ -303,11 +303,12 @@ public class JdbcAuctionRepository implements AuctionRepository {
             AND status IN ('SCHEDULED', 'ACTIVE')
             """;
 
+        int rowsAffected;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setLong(1, auctionId);
-            statement.executeUpdate();
+            rowsAffected = statement.executeUpdate();
         }
-        return findVersionById(auctionId);
+        return rowsAffected > 0 ? findVersionById(auctionId) : 0L;
     }
 
     @Override

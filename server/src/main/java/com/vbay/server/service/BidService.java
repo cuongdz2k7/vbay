@@ -380,13 +380,23 @@ public class BidService {
 
         String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
         List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+            refreshedAuction,
+            thumbnailUrl,
+            currentBid,
+            BidStatus.WON,
+            dbNow
+        ));
+
         for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auctionId)) {
-            BidStatus bidStatus = bid.getBidderId() == buyerId ? BidStatus.WON : BidStatus.LOST;
+            if (bid.getBidderId() == buyerId) {
+                continue;
+            }
             affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
                 refreshedAuction,
                 thumbnailUrl,
                 bid,
-                bidStatus,
+                BidStatus.LOST,
                 dbNow
             ));
         }

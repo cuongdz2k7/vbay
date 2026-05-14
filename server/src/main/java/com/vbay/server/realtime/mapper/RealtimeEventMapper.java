@@ -1,9 +1,12 @@
 package com.vbay.server.realtime.mapper;
 
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
+import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
@@ -102,6 +105,30 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(AuctionClosedDomainEvent event) {
+        AuctionClosedResult result = event.getResult();
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getAuctionStatus().name());
+        payload.setCurrentPrice(result.getCurrentPrice());
+        payload.setReserveMet(result.getReserveMet());
+        payload.setWinnerUserId(result.getWinnerUserId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
+        payload.setUpdatedAt(result.getClosedAt());
+        payload.setEndedAt(result.getClosedAt());
+        payload.setStateChangeReason(toAuctionStateChangeReason(result.getReason()));
+
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
+            auctionRoom(result.getAuctionId()),
+            payload
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
     public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BuyNowDomainEvent event) {
         BuyNowResult result = event.getResult();
         AuctionStatePayload payload = new AuctionStatePayload();
@@ -158,7 +185,12 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
-    
+    private AuctionStateChangeReason toAuctionStateChangeReason(AuctionCloseReason reason) {
+        return switch (reason) {
+            case TIME_EXPIRED_ENDED -> AuctionStateChangeReason.TIME_EXPIRED_ENDED;
+            case TIME_EXPIRED_FAILED -> AuctionStateChangeReason.TIME_EXPIRED_FAILED;
+        };
+    }
 
     private Room auctionRoom(long auctionId) {
         Room room = new Room();

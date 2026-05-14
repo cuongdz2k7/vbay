@@ -5,6 +5,7 @@ import java.util.List;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
@@ -124,6 +125,7 @@ new AppConfig()
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(
+            new AuctionClosedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionListItemUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionScheduleDomainEventHandler(auctionScheduler),
             new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),

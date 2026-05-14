@@ -3,6 +3,7 @@ package com.vbay.server.service;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,10 +12,13 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
+import com.vbay.server.model.Bid;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
@@ -23,8 +27,10 @@ import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.CreateAuctionResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
 import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
@@ -201,35 +207,38 @@ public class AuctionService {
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
 
+            AuctionClosedDomainEvent auctionClosedEvent = null;
+            boolean statusChanged = false;
+
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 BidRepository bidRepository = repositoryFactory.createBidRepository(connection);    
+                ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
                 auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow(); //////lock auction first
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
-                AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow); 
+                AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow);
                 Auction auction = auctionRepository.findById(auctionId).orElseThrow();
+
                 switch (transition) {
-                    case NO_CHANGE, STARTED -> {}
+                    case NO_CHANGE -> {}
+                    case STARTED -> statusChanged = true;
                     case TIME_EXPIRED -> { ///ended chỉ check xem auction có transition không, còn cập nhật trạng thái auction thì làm ở đây
                         ///không thỏa mãn reserve price
-                        if (checkIfAuctionFailed(auction)) {
-                            long changes = auctionRepository.terminateAuction(auctionId); ///failed
-                            if (changes  == 0L) {
-                                return;
-                            }
-                            bidRepository.markAuctionBidsLost(auctionId);
-                            return;
-                        } 
-                        long changes = auctionRepository.finalizeAuction(auctionId);
-                        if (changes == 0L) {
-                            return;
+                        AuctionClosedResult closeResult = closeExpiredAuction(
+                            auction,
+                            dbNow,
+                            auctionRepository,
+                            bidRepository,
+                            productImageRepository
+                        );
+                        if (closeResult != null) {
+                            auctionClosedEvent = new AuctionClosedDomainEvent(closeResult);
+                            statusChanged = true;
                         }
-                        bidRepository.markAuctionBidsLost(auctionId);
-                        bidRepository.updateStatus(auction.getWinnerUserId(), BidStatus.WON);
                     }
                 }
                 connection.commit();
-                if (transition != AuctionTransition.NO_CHANGE) {
+                if (statusChanged) {
                     AuctionListItemResult item = auctionRepository.findAuctionListItemById(auctionId).orElseThrow();
                     domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
                         item,
@@ -237,11 +246,95 @@ public class AuctionService {
                         java.time.LocalDateTime.now()
                     ));
                 }
+                if (auctionClosedEvent != null) {
+                    domainEventPublisher.publish(auctionClosedEvent);
+                }
             } catch (SQLException | RuntimeException exception) {
                 connection.rollback();
                 throw exception;
             }
         }
+    }
+
+    private AuctionClosedResult closeExpiredAuction(
+            Auction auction,
+            LocalDateTime closedAt,
+            AuctionRepository auctionRepository,
+            BidRepository bidRepository,
+            ProductImageRepository productImageRepository) throws SQLException {
+        if (checkIfAuctionFailed(auction)) {
+            long version = auctionRepository.terminateAuction(auction.getId());
+            if (version == 0L) {
+                return null;
+            }
+            bidRepository.markAuctionBidsLost(auction.getId());
+            Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+            return buildAuctionClosedResult(
+                refreshedAuction,
+                AuctionCloseReason.TIME_EXPIRED_FAILED,
+                closedAt,
+                bidRepository,
+                productImageRepository
+            );
+        }
+
+        Bid winningBid = bidRepository.findWinningBidByAuctionId(auction.getId())
+            .orElseThrow(() -> new ValidationException("Winning bid not found"));
+        long version = auctionRepository.finalizeAuction(auction.getId());
+        if (version == 0L) {
+            return null;
+        }
+
+        bidRepository.updateStatusesByAuctionIdExceptBid(auction.getId(), winningBid.getId(), BidStatus.LOST);
+        bidRepository.updateStatus(winningBid.getId(), BidStatus.WON);
+        Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+        return buildAuctionClosedResult(
+            refreshedAuction,
+            AuctionCloseReason.TIME_EXPIRED_ENDED,
+            closedAt,
+            bidRepository,
+            productImageRepository
+        );
+    }
+
+    private AuctionClosedResult buildAuctionClosedResult(
+            Auction auction,
+            AuctionCloseReason reason,
+            LocalDateTime closedAt,
+            BidRepository bidRepository,
+            ProductImageRepository productImageRepository) throws SQLException {
+        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auction.getId())) {
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                auction,
+                thumbnailUrl,
+                bid,
+                bid.getStatus(),
+                closedAt
+            ));
+        }
+
+        return new AuctionClosedResult(
+            auction.getId(),
+            auction.getVersion(),
+            auction.getStatus(),
+            auction.getCurrentPrice(),
+            reserveMet(auction),
+            auction.getWinnerUserId(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            reason,
+            closedAt,
+            affectedMyBidItems
+        );
+    }
+
+    private Boolean reserveMet(Auction auction) {
+        if (auction.getReservePrice() == null) {
+            return null;
+        }
+        return auction.getCurrentPrice().compareTo(auction.getReservePrice()) >= 0;
     }
 
     public List<Auction> findPendingSchedules() throws SQLException {
