@@ -37,8 +37,5 @@ hs_err_pid*
 replay_pid*
 
 
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.webp
+# Uploaded product images
+server/uploads/
