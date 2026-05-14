@@ -1,0 +1,127 @@
+.root {
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -app-bg: #131313;
+    -app-bg-elevated: #181616;
+    -app-bg-strong: #0f0f10;
+    -app-surface: #1b1818;
+    -app-surface-soft: #211d1d;
+    -app-border: rgba(255, 181, 160, 0.14);
+    -app-border-strong: rgba(255, 116, 68, 0.34);
+    -app-accent: #ff5f2e;
+    -app-accent-strong: #ff7a47;
+    -app-accent-soft: #ffb5a0;
+    -app-text: #f8efe6;
+    -app-muted: #dac7ba;
+    -app-muted-deep: #947f75;
+}
+
+.label {
+    -fx-text-fill: -app-text;
+}
+
+.button,
+.text-field,
+.password-field,
+.text-area,
+.combo-box-base,
+.date-picker,
+.list-cell,
+.menu-item {
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.button {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-cursor: hand;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.button:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.2), 22, 0.16, 0, 5);
+}
+
+.button:pressed {
+    -fx-opacity: 0.92;
+}
+
+.text-field,
+.password-field,
+.text-area,
+.combo-box-base,
+.date-picker {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.text-area .content,
+.text-area .viewport,
+.text-area .scroll-pane,
+.text-area .scroll-pane .viewport,
+.text-area .scroll-pane .content {
+    -fx-background-radius: 14;
+}
+
+.scroll-pane,
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-bar:vertical,
+.scroll-bar:horizontal {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:vertical .thumb,
+.scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(255, 181, 160, 0.2);
+    -fx-background-radius: 999;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: transparent;
+}
+
+.combo-box-popup .list-view,
+.context-menu {
+    -fx-background-color: -app-bg-strong;
+    -fx-background-insets: 0;
+    -fx-background-radius: 16;
+    -fx-border-color: -app-border-strong;
+    -fx-border-radius: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.18, 0, 7);
+    -fx-padding: 6;
+}
+
+.combo-box-popup .list-cell,
+.context-menu .menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-background-radius: 10;
+}
+
+.combo-box-popup .list-cell:hover,
+.combo-box-popup .list-cell:filled:selected,
+.context-menu .menu-item:focused {
+    -fx-background-color: rgba(255, 95, 46, 0.16);
+}
+
+.hyperlink {
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+
+.separator .line {
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+}

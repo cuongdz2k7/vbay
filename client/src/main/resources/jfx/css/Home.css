@@ -1,209 +1,200 @@
-.root {
-    -fx-font-family: "Inter", "Segoe UI", Arial, sans-serif;
-}
-
 .root-layout {
-    -fx-background-color: #121414;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #131313 0%, #131313 72%, #521300 100%);
 }
 
 .topbar {
-    -fx-background-color: #0d0e0f;
-    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.38) transparent;
+    -fx-background-color: rgba(10, 10, 11, 0.94);
+    -fx-border-color: transparent transparent rgba(255, 181, 160, 0.12) transparent;
     -fx-border-width: 0 0 1 0;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.24), 14, 0.14, 0, 4);
 }
 
 .brand-title {
-    -fx-text-fill: #d95f1a;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 19px;
-    -fx-font-weight: 700;
-}
-
-.top-nav-link,
-.top-nav-link-active {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-text-fill: rgba(224, 192, 178, 0.6);
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 12px;
-    -fx-font-weight: 700;
-    -fx-padding: 7 0 7 0;
-    -fx-cursor: hand;
-}
-
-.top-nav-link-active {
-    -fx-text-fill: #d95f1a;
-    -fx-border-color: transparent transparent #d95f1a transparent;
-    -fx-border-width: 0 0 1 0;
-}
-
-.top-nav-link:hover {
-    -fx-text-fill: #d95f1a;
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 24px;
+    -fx-font-weight: 800;
 }
 
 .balance-chip {
-    -fx-background-color: #292a2a;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(168, 138, 126, 0.3);
-    -fx-border-radius: 0;
-    -fx-padding: 11 16 11 16;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 12px;
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 181, 160, 0.18);
+    -fx-border-radius: 999;
+    -fx-padding: 11 18 11 18;
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 13px;
     -fx-font-weight: 800;
 }
 
 .deposit-balance-btn {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.58);
-    -fx-border-radius: 0;
-    -fx-border-width: 1;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 11px;
+    -fx-background-color: rgba(255, 95, 46, 0.12);
+    -fx-border-color: rgba(255, 116, 71, 0.42);
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 12px;
     -fx-font-weight: 900;
-    -fx-padding: 11 15 11 15;
-    -fx-cursor: hand;
+    -fx-padding: 11 16 11 16;
 }
 
 .deposit-balance-btn:hover,
 .deposit-balance-btn:focused,
 .deposit-balance-btn:armed {
-    -fx-background-color: rgba(217, 95, 26, 0.12);
-    -fx-border-color: #d95f1a;
-    -fx-effect: null;
+    -fx-background-color: rgba(255, 95, 46, 0.22);
+    -fx-border-color: -app-accent-strong;
 }
 
 .account-chip {
-    -fx-background-color: transparent;
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 999;
+    -fx-padding: 9 14 9 14;
 }
 
 .account-icon {
     -fx-fill: transparent;
-    -fx-stroke: #d95f1a;
+    -fx-stroke: -app-accent-soft;
     -fx-stroke-width: 1.8;
 }
 
 .account-label {
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 12px;
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 13px;
     -fx-font-weight: 800;
 }
 
 .sidebar-scroll,
 .sidebar-scroll > .viewport {
-    -fx-background-color: #0d0e0f;
+    -fx-background-color: transparent;
+    -fx-background: transparent;
 }
 
 .sidebar-scroll {
-    -fx-background: #0d0e0f;
-    -fx-border-color: transparent rgba(89, 66, 56, 0.38) transparent transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent rgba(255, 181, 160, 0.08) transparent transparent;
     -fx-border-width: 0 1 0 0;
 }
 
-.sidebar-scroll .scroll-bar:vertical {
+.sidebar-shell {
     -fx-background-color: transparent;
 }
 
-.sidebar-scroll .scroll-bar:vertical .thumb {
-    -fx-background-color: #292a2a;
-    -fx-background-radius: 0;
+.sidebar-frame {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(17, 15, 15, 0.98) 0%, rgba(10, 10, 10, 0.995) 100%);
+    -fx-background-radius: 34;
+    -fx-border-color: rgba(255, 152, 97, 0.2);
+    -fx-border-radius: 34;
+    -fx-min-height: 760;
+    -fx-padding: 22 16 20 16;
+    -fx-effect: dropshadow(gaussian, rgba(255, 132, 76, 0.12), 22, 0.14, 0, 6);
 }
 
-.sidebar {
-    -fx-background-color: #0d0e0f;
+.navigation-frame {
+    -fx-background-color: rgba(255, 255, 255, 0.01);
+    -fx-background-radius: 26;
+    -fx-border-color: rgba(255, 158, 105, 0.12);
+    -fx-border-radius: 26;
+    -fx-padding: 10 0 0 0;
+    -fx-effect: null;
+}
+
+.navigation-frame-header {
+    -fx-padding: 2 6 8 6;
 }
 
 .sidebar-title,
 .portfolio-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 15px;
-    -fx-font-weight: 500;
+    -fx-text-fill: -app-text;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
 }
 
 .sidebar-subtitle,
 .portfolio-subtitle {
-    -fx-text-fill: rgba(224, 192, 178, 0.55);
-    -fx-font-size: 12px;
+    -fx-text-fill: rgba(255, 181, 160, 0.58);
+    -fx-font-size: 13px;
     -fx-font-style: italic;
 }
 
+.sidebar-title {
+    -fx-effect: dropshadow(gaussian, rgba(255, 140, 84, 0.14), 12, 0.14, 0, 1);
+}
+
+.portfolio-title {
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 19px;
+    -fx-font-weight: 800;
+}
+
+.portfolio-subtitle {
+    -fx-text-fill: rgba(255, 236, 214, 0.76);
+}
+
 .module-nav-item {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.02) 0%, rgba(255, 160, 106, 0.03) 100%);
     -fx-content-display: GRAPHIC_ONLY;
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 13 16 13 16;
-    -fx-cursor: hand;
+    -fx-padding: 15 18 15 18;
+    -fx-border-color: rgba(255, 181, 160, 0.08);
+    -fx-border-width: 1;
+    -fx-border-radius: 18;
+    -fx-background-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 10, 0.1, 0, 2);
 }
 
 .module-nav-item:hover,
 .module-nav-item:focused,
 .module-nav-item:armed,
 .module-nav-item:pressed {
-    -fx-background-color: #1e2020;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-effect: null;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 95, 46, 0.1) 0%, rgba(255, 140, 84, 0.08) 100%);
+    -fx-border-color: rgba(255, 136, 97, 0.42);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.22), 16, 0.16, 0, 4);
 }
 
 .module-nav-item.active-module,
 .module-nav-item.active-module:focused,
 .module-nav-item.active-module:armed,
 .module-nav-item.active-module:pressed {
-    -fx-background-color: rgba(217, 95, 26, 0.14);
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-effect: null;
-}
-
-#categoriesModuleButton {
-    -fx-border-color: rgba(217, 95, 26, 0.3);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 95, 46, 0.16) 0%, rgba(255, 140, 84, 0.11) 100%);
+    -fx-border-color: rgba(255, 146, 112, 0.58);
     -fx-border-width: 1;
-}
-
-#categoriesModuleButton:hover,
-#categoriesModuleButton:focused,
-#categoriesModuleButton:armed,
-#categoriesModuleButton:pressed,
-#categoriesModuleButton.active-module {
-    -fx-background-color: rgba(217, 95, 26, 0.14);
-    -fx-background-insets: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.55);
-    -fx-effect: null;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.28), 18, 0.18, 0, 5);
 }
 
 .module-icon-shape {
     -fx-fill: transparent;
-    -fx-stroke: rgba(224, 192, 178, 0.7);
-    -fx-stroke-width: 1.6;
-    -fx-scale-x: 0.92;
-    -fx-scale-y: 0.92;
+    -fx-stroke: rgba(255, 181, 160, 0.72);
+    -fx-stroke-width: 1.7;
 }
 
-.module-nav-item.active-module .module-icon-shape,
+.module-nav-item.active-module .module-icon-shape {
+    -fx-stroke: #ff8a5d;
+    -fx-stroke-width: 1.9;
+}
+
 .module-nav-item:hover .module-icon-shape,
 .module-nav-item:focused .module-icon-shape,
 .module-nav-item:armed .module-icon-shape,
 .module-nav-item:pressed .module-icon-shape {
-    -fx-stroke: #d95f1a;
+    -fx-stroke: -app-accent-soft;
 }
 
 .module-label {
-    -fx-text-fill: rgba(224, 192, 178, 0.78);
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
+    -fx-text-fill: rgba(255, 181, 160, 0.82);
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
 }
 
-.module-nav-item.active-module .module-label,
+.module-nav-item.active-module .module-label {
+    -fx-text-fill: #ff8a5d;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+}
+
 .module-nav-item:hover .module-label,
 .module-nav-item:focused .module-label,
 .module-nav-item:armed .module-label,
 .module-nav-item:pressed .module-label {
-    -fx-text-fill: #d95f1a;
+    -fx-text-fill: -app-accent-soft;
 }
 
 .module-chevron {
@@ -213,316 +204,313 @@
     -fx-min-width: 0;
 }
 
-.module-panel {
-    -fx-background-color: #121414;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(89, 66, 56, 0.35);
-    -fx-border-radius: 0;
-    -fx-border-width: 1;
-    -fx-padding: 8 7 8 7;
+.module-panel,
+.sidebar-utility-card {
+    -fx-background-color: rgba(13, 11, 11, 0.88);
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(255, 181, 160, 0.13);
+    -fx-border-radius: 20;
+    -fx-padding: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.32), 16, 0.14, 0, 5);
+}
+
+.nav-item,
+.nav-sub-item,
+.secondary-action-btn,
+.logout-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(255, 181, 160, 0.68);
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-alignment: CENTER_LEFT;
 }
 
 .nav-item {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-border-radius: 0;
-    -fx-text-fill: rgba(224, 192, 178, 0.72);
-    -fx-font-size: 10px;
-    -fx-font-weight: 800;
-    -fx-alignment: CENTER_LEFT;
-    -fx-padding: 8 10 8 16;
-    -fx-cursor: hand;
+    -fx-padding: 10 12 10 16;
 }
 
 .nav-item:hover,
 .nav-item:focused,
 .nav-item:armed,
-.nav-item:pressed {
-    -fx-background-color: #1e2020;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-effect: null;
-    -fx-text-fill: #ffb595;
+.nav-item:pressed,
+.nav-sub-item:hover,
+.nav-sub-item:focused,
+.nav-sub-item:armed,
+.nav-sub-item:pressed,
+.secondary-action-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.045);
+    -fx-text-fill: -app-accent-soft;
 }
 
 .nav-item.active-section,
 .nav-item.active-section:focused,
 .nav-item.active-section:armed,
 .nav-item.active-section:pressed {
-    -fx-background-color: #d95f1a;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-text-fill: #4c1a00;
-    -fx-effect: null;
+    -fx-background-color: rgba(255, 95, 46, 0.22);
+    -fx-text-fill: -app-text;
 }
 
 .category-submenu {
-    -fx-background-color: #0d0e0f;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(89, 66, 56, 0.3);
-    -fx-border-radius: 0;
-    -fx-padding: 5;
+    -fx-background-color: rgba(255, 255, 255, 0.02);
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(255, 181, 160, 0.08);
+    -fx-border-radius: 18;
+    -fx-padding: 7;
 }
 
 .nav-sub-item {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 10px;
-    -fx-font-weight: 700;
-    -fx-alignment: CENTER_LEFT;
-    -fx-padding: 7 10 7 12;
-    -fx-cursor: hand;
-}
-
-.nav-sub-item:hover,
-.nav-sub-item:focused,
-.nav-sub-item:armed,
-.nav-sub-item:pressed {
-    -fx-background-color: #1e2020;
-    -fx-background-insets: 0;
-    -fx-effect: null;
-    -fx-text-fill: #ffb595;
+    -fx-padding: 8 12 8 12;
 }
 
 .nav-sub-item.active-sub,
 .nav-sub-item.active-sub:focused,
 .nav-sub-item.active-sub:armed,
 .nav-sub-item.active-sub:pressed {
-    -fx-background-color: rgba(217, 95, 26, 0.1);
-    -fx-background-insets: 0;
-    -fx-border-color: #d95f1a;
-    -fx-border-width: 0 0 0 2;
-    -fx-text-fill: #ffb595;
-    -fx-effect: null;
+    -fx-background-color: rgba(255, 95, 46, 0.16);
+    -fx-text-fill: -app-accent-soft;
+    -fx-border-color: transparent transparent transparent -app-accent-strong;
+    -fx-border-width: 0 0 0 3;
 }
 
 .create-auctions-btn {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.7);
-    -fx-border-radius: 0;
-    -fx-border-width: 1;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 11px;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #0b4c29 0%, #12773e 100%);
+    -fx-border-color: rgba(104, 255, 163, 0.58);
+    -fx-border-width: 1.2;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 14px;
     -fx-font-weight: 900;
-    -fx-padding: 14 14 14 14;
-    -fx-cursor: hand;
+    -fx-padding: 16 18 16 18;
+    -fx-effect: dropshadow(gaussian, rgba(32, 210, 102, 0.36), 24, 0.2, 0, 7);
 }
 
-.create-auctions-btn:hover,
+.create-auctions-btn:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #0d6133 0%, #18934d 100%);
+    -fx-border-color: rgba(139, 255, 184, 0.86);
+    -fx-effect: dropshadow(gaussian, rgba(37, 235, 117, 0.48), 30, 0.24, 0, 8);
+}
+
+.secondary-action-btn {
+    -fx-padding: 10 12 10 12;
+}
+
+.logout-btn {
+    -fx-alignment: CENTER;
+    -fx-padding: 11 14 11 14;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(103, 20, 24, 0.9) 0%, rgba(132, 24, 28, 0.86) 100%);
+    -fx-border-color: rgba(255, 86, 92, 0.62);
+    -fx-border-width: 1.2;
+    -fx-text-fill: #fff7f7;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-effect: dropshadow(gaussian, rgba(214, 40, 50, 0.32), 22, 0.18, 0, 6);
+}
+
 .logout-btn:hover {
-    -fx-background-color: rgba(217, 95, 26, 0.1);
-    -fx-border-color: #d95f1a;
-}
-
-.sidebar-utility-card {
-    -fx-background-color: transparent;
-}
-
-.secondary-action-btn,
-.logout-btn {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: transparent;
-    -fx-border-radius: 0;
-    -fx-text-fill: rgba(224, 192, 178, 0.55);
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
-    -fx-alignment: CENTER_LEFT;
-    -fx-padding: 7 0 7 0;
-    -fx-cursor: hand;
-}
-
-.secondary-action-btn:hover {
-    -fx-text-fill: #d95f1a;
-}
-
-.logout-btn {
-    -fx-border-color: rgba(217, 95, 26, 0.35);
-    -fx-padding: 8 10 8 10;
-    -fx-text-fill: #d95f1a;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(139, 23, 29, 0.98) 0%, rgba(185, 37, 44, 0.94) 100%);
+    -fx-border-color: rgba(255, 132, 136, 0.92);
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(255, 56, 67, 0.5), 28, 0.22, 0, 7);
 }
 
 .main-scroll,
-.main-scroll > .viewport {
-    -fx-background-color: #121414;
-    -fx-background: #121414;
+.main-scroll > .viewport,
+.main-content {
+    -fx-background-color: transparent;
 }
 
 .main-content {
-    -fx-background-color: #121414;
     -fx-min-width: 720;
 }
 
-.catalog-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 18px;
-    -fx-font-weight: 600;
+.catalog-title,
+.home-section-title {
+    -fx-text-fill: -app-text;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
 
-.catalog-subtitle {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 11px;
+.catalog-title {
+    -fx-font-size: 20px;
     -fx-font-weight: 700;
 }
 
-.category-filter-combo {
-    -fx-background-color: #1a1c1c;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.42);
-    -fx-border-radius: 0;
-    -fx-padding: 3 6 3 6;
-    -fx-cursor: hand;
-    -fx-effect: null;
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
+.catalog-subtitle,
+.home-section-subtitle {
+    -fx-text-fill: rgba(255, 181, 160, 0.58);
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
 }
 
+.home-page-heading,
+.catalogContent,
+.homeDashboard {
+    -fx-background-color: transparent;
+}
+
+.live-heading-row,
+.home-section,
+.pagination,
+.portfolio-drawer,
+.listing-card,
+.empty-state {
+    -fx-background-color: rgba(18, 16, 16, 0.9);
+    -fx-background-radius: 28;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.18, 0, 7);
+}
+
+.live-heading-row {
+    -fx-padding: 20 22 20 22;
+}
+
+.home-section {
+    -fx-padding: 20 22 22 22;
+}
+
+.home-section-header {
+    -fx-padding: 0 0 4 0;
+}
+
+.home-section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+}
+
+.section-view-all-btn,
+.portfolio-mini-link,
+.deposit-back-btn {
+    -fx-background-color: rgba(255, 95, 46, 0.12);
+    -fx-border-color: rgba(255, 116, 71, 0.34);
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-padding: 8 14 8 14;
+}
+
+.section-view-all-btn:hover,
+.portfolio-mini-link:hover,
+.deposit-back-btn:hover {
+    -fx-background-color: rgba(255, 95, 46, 0.22);
+    -fx-border-color: -app-accent-strong;
+}
+
+.portfolio-mini-link {
+    -fx-background-color: rgba(255, 167, 116, 0.12);
+    -fx-border-color: rgba(255, 167, 116, 0.4);
+    -fx-text-fill: #fff2de;
+}
+
+.portfolio-mini-link:hover {
+    -fx-background-color: rgba(255, 167, 116, 0.18);
+    -fx-border-color: rgba(255, 167, 116, 0.62);
+    -fx-text-fill: #fff6eb;
+}
+
+.category-filter-combo {
+    -fx-background-color: rgba(255, 95, 46, 0.12);
+    -fx-border-color: rgba(255, 145, 110, 0.46);
+    -fx-border-width: 1;
+    -fx-padding: 5 11 5 11;
+}
+
+.category-filter-combo:hover,
 .category-filter-combo:focused,
 .category-filter-combo:showing {
-    -fx-background-color: #151717;
-    -fx-background-insets: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.68);
-    -fx-effect: null;
+    -fx-background-color: rgba(255, 95, 46, 0.18);
+    -fx-border-color: rgba(255, 134, 91, 0.82);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.32), 24, 0.18, 0, 6);
 }
 
 .category-filter-combo .list-cell {
     -fx-background-color: transparent;
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
+    -fx-text-fill: #fff7f2;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
 }
 
 .category-filter-combo .arrow {
-    -fx-background-color: #d95f1a;
+    -fx-background-color: #ff8e63;
 }
 
 .category-filter-combo .combo-box-popup .list-view {
-    -fx-background-color: #0d0f0f;
-    -fx-background-insets: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.5);
-    -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(217, 95, 26, 0.2), 8, 0.12, 0, 2);
-    -fx-padding: 6 0 6 0;
+    -fx-background-color: rgba(30, 15, 12, 0.98);
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(255, 126, 84, 0.74);
+    -fx-border-radius: 18;
+    -fx-padding: 8 7 8 7;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.32), 22, 0.16, 0, 6);
 }
 
 .category-filter-combo .combo-box-popup .list-cell {
-    -fx-background-color: #0d0f0f;
-    -fx-text-fill: rgba(224, 192, 178, 0.75);
-    -fx-padding: 9 12 9 12;
+    -fx-background-color: rgba(255, 95, 46, 0.025);
+    -fx-background-insets: 3 2 3 2;
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 147, 111, 0.24);
+    -fx-border-insets: 3 2 3 2;
+    -fx-border-width: 1;
+    -fx-border-radius: 14;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-padding: 13 15 13 15;
+    -fx-opacity: 0.78;
 }
 
 .category-filter-combo .combo-box-popup .list-cell:hover {
-    -fx-background-color: rgba(217, 95, 26, 0.16);
-    -fx-text-fill: #ffb595;
+    -fx-background-color: rgba(255, 95, 46, 0.1);
+    -fx-border-color: rgba(255, 126, 84, 0.5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.1), 10, 0.1, 0, 2);
+    -fx-text-fill: #ffffff;
+    -fx-opacity: 0.9;
 }
 
-.combo-box-popup .list-view {
-    -fx-background-color: #0d0f0f;
-    -fx-background-insets: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.5);
-    -fx-effect: dropshadow(gaussian, rgba(217, 95, 26, 0.18), 7, 0.1, 0, 2);
-}
-
-.combo-box-popup .list-view .list-cell {
-    -fx-background-color: #0d0f0f;
-    -fx-text-fill: rgba(224, 192, 178, 0.75);
-}
-
-.combo-box-popup .list-view .list-cell:hover,
-.combo-box-popup .list-view .list-cell:filled:selected {
-    -fx-background-color: rgba(217, 95, 26, 0.16);
-    -fx-text-fill: #ffb595;
-}
-
-.live-heading-row {
-    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.45) transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 0 16 0;
+.category-filter-combo .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: rgba(255, 95, 46, 0.3);
+    -fx-border-color: rgba(255, 126, 84, 0.95);
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.36), 20, 0.18, 0, 4);
+    -fx-text-fill: #ffffff;
+    -fx-opacity: 1;
 }
 
 .auction-grid {
     -fx-background-color: transparent;
 }
 
-.home-section {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.32) transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 0 22 0;
-}
-
-.home-section-header {
-    -fx-padding: 0 0 2 0;
-}
-
-.home-section-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 16px;
-    -fx-font-weight: 700;
-}
-
-.home-section-subtitle {
-    -fx-text-fill: rgba(224, 192, 178, 0.56);
-    -fx-font-size: 11px;
-    -fx-font-weight: 700;
-}
-
-.section-view-all-btn {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.42);
-    -fx-border-radius: 0;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 10px;
-    -fx-font-weight: 900;
-    -fx-padding: 6 12 6 12;
-    -fx-cursor: hand;
-}
-
-.section-view-all-btn:hover {
-    -fx-background-color: rgba(217, 95, 26, 0.1);
-    -fx-border-color: rgba(217, 95, 26, 0.78);
-}
-
 .auction-card {
-    -fx-background-color: #1a1c1c;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(89, 66, 56, 0.45);
-    -fx-border-radius: 0;
-    -fx-padding: 0 0 15 0;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(28, 24, 24, 0.96) 0%, rgba(20, 19, 19, 0.96) 100%);
+    -fx-background-radius: 26;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 26;
+    -fx-padding: 0 0 16 0;
     -fx-cursor: hand;
     -fx-spacing: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 16, 0.16, 0, 7);
 }
 
 .auction-card:hover {
-    -fx-border-color: rgba(217, 95, 26, 0.62);
+    -fx-border-color: rgba(255, 116, 71, 0.34);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.16), 24, 0.16, 0, 8);
 }
 
 .card-image {
-    -fx-background-radius: 0;
+    -fx-background-radius: 26 26 20 20;
+    -fx-border-radius: 26 26 20 20;
 }
 
 .card-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 16px;
-    -fx-font-weight: 600;
+    -fx-text-fill: -app-text;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
     -fx-padding: 0 18 0 18;
 }
 
 .price {
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 14px;
-    -fx-font-weight: 800;
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
     -fx-padding: 0 18 0 18;
 }
 
@@ -530,279 +518,275 @@
     -fx-padding: 0 18 0 18;
 }
 
-.card-meta-label {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-text-fill: rgba(224, 192, 178, 0.55);
-    -fx-font-size: 10px;
+.card-meta-label,
+.time,
+.listing-label,
+.listing-bids,
+.bid-item-meta {
+    -fx-text-fill: rgba(255, 181, 160, 0.58);
+    -fx-font-size: 11px;
     -fx-font-weight: 800;
 }
 
+.listing-label,
+.listing-bids,
+.bid-item-meta {
+    -fx-text-fill: rgba(255, 236, 214, 0.78);
+}
+
 .time {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
     -fx-padding: 0 18 0 18;
 }
 
 .auction-card .progress-bar {
     -fx-padding: 0 18 0 18;
-    -fx-accent: #d95f1a;
+    -fx-accent: -app-accent;
 }
 
 .auction-card .track {
-    -fx-background-color: #343535;
-    -fx-background-radius: 0;
+    -fx-background-color: rgba(255, 255, 255, 0.09);
+    -fx-background-radius: 999;
 }
 
 .auction-card .bar {
-    -fx-background-color: #d95f1a;
-    -fx-background-radius: 0;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff5f2e 0%, #ff8457 100%);
+    -fx-background-radius: 999;
 }
 
 .empty-state {
-    -fx-background-color: #1a1c1c;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(89, 66, 56, 0.45);
-    -fx-border-radius: 0;
-    -fx-padding: 14;
-    -fx-text-fill: rgba(224, 192, 178, 0.75);
-    -fx-font-size: 12px;
+    -fx-padding: 20 22 20 22;
+    -fx-text-fill: rgba(255, 181, 160, 0.84);
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
 }
 
 .pagination {
-    -fx-background-color: #1a1c1c;
-    -fx-border-color: rgba(89, 66, 56, 0.45);
     -fx-padding: 12 16 12 16;
 }
 
 .portfolio-drawer {
-    -fx-background-color: #0d0e0f;
-    -fx-border-color: transparent transparent transparent rgba(89, 66, 56, 0.38);
-    -fx-border-width: 0 0 0 1;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(57, 42, 31, 0.965) 0%, rgba(36, 27, 22, 0.975) 50%, rgba(20, 16, 14, 0.985) 100%);
+    -fx-border-color: rgba(255, 148, 94, 0.28);
+    -fx-border-width: 1.05;
+    -fx-border-radius: 32;
+    -fx-background-radius: 32;
+    -fx-min-width: 336;
+    -fx-pref-width: 336;
+    -fx-max-width: 336;
+    -fx-effect: dropshadow(gaussian, rgba(255, 136, 80, 0.11), 22, 0.14, 0, 4);
+}
+
+.portfolio-module-stack {
+    -fx-padding: 2 0 0 0;
+}
+
+.portfolio-module {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 244, 232, 0.04) 0%, rgba(255, 226, 201, 0.018) 100%);
+    -fx-background-radius: 24;
+    -fx-border-color: rgba(255, 164, 114, 0.18);
+    -fx-border-radius: 24;
+    -fx-padding: 16 15 16 15;
+    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.05), 14, 0.1, 0, 2);
+}
+
+.portfolio-module-recessed {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(20, 15, 13, 0.2) 0%, rgba(255, 225, 198, 0.012) 100%);
+    -fx-border-color: rgba(255, 165, 112, 0.14);
+    -fx-effect: innershadow(gaussian, rgba(0, 0, 0, 0.26), 16, 0.18, 0, 1);
+}
+
+.portfolio-module-header {
+    -fx-padding: 0 0 2 0;
+    -fx-min-height: 34;
+}
+
+.portfolio-module-bar {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 182, 136, 0.76) 0%, rgba(255, 132, 74, 0.68) 52%, rgba(255, 205, 168, 0.12) 100%);
+    -fx-background-radius: 999;
+    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.14), 10, 0.12, 0, 1);
+}
+
+.portfolio-module-bar-recessed {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 222, 196, 0.1) 0%, rgba(255, 159, 104, 0.42) 50%, rgba(255, 222, 196, 0.1) 100%);
+    -fx-effect: innershadow(gaussian, rgba(37, 22, 15, 0.32), 6, 0.18, 0, 1);
+}
+
+.portfolio-section-divider {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(255, 173, 125, 0.16) transparent rgba(0, 0, 0, 0.16) transparent;
+    -fx-border-width: 1 0 1 0;
+    -fx-padding: 6 0 6 0;
 }
 
 .portfolio-section-icon {
     -fx-fill: transparent;
-    -fx-stroke: #d95f1a;
-    -fx-stroke-width: 1.6;
-    -fx-scale-x: 0.92;
-    -fx-scale-y: 0.92;
+    -fx-stroke: #ffb786;
+    -fx-stroke-width: 1.75;
 }
 
-.portfolio-section-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 12px;
-    -fx-font-weight: 900;
-}
-
-.bid-line-item {
-    -fx-border-color: transparent transparent transparent #d95f1a;
-    -fx-border-width: 0 0 0 2;
-    -fx-padding: 5 0 5 14;
-}
-
+.portfolio-section-title,
+.listing-title,
 .bid-item-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 12px;
-}
-
-.bid-item-meta,
-.listing-label,
-.listing-bids {
-    -fx-text-fill: rgba(224, 192, 178, 0.55);
-    -fx-font-size: 10px;
+    -fx-text-fill: #fff2de;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
     -fx-font-weight: 800;
 }
 
+.bid-item-title,
+.listing-title {
+    -fx-wrap-text: true;
+}
+
+.bid-line-item {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 248, 240, 0.045) 0%, rgba(255, 239, 224, 0.025) 100%);
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(255, 168, 118, 0.16);
+    -fx-border-radius: 18;
+    -fx-padding: 12 12 12 12;
+    -fx-effect: dropshadow(gaussian, rgba(255, 147, 93, 0.05), 12, 0.1, 0, 2);
+}
+
 .bid-status-danger {
-    -fx-text-fill: #ffb4ab;
-    -fx-font-size: 10px;
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 11px;
     -fx-font-weight: 900;
 }
 
 .bid-status-accent,
 .listing-active {
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 10px;
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 11px;
     -fx-font-weight: 900;
 }
 
 .listing-card {
-    -fx-background-color: #1a1c1c;
-    -fx-border-color: rgba(89, 66, 56, 0.35);
-    -fx-border-width: 1;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 247, 238, 0.045) 0%, rgba(255, 234, 215, 0.02) 100%);
+    -fx-border-color: rgba(255, 168, 118, 0.18);
+    -fx-background-radius: 22;
+    -fx-border-radius: 22;
     -fx-padding: 16;
-}
-
-.listing-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 147, 93, 0.05), 14, 0.1, 0, 2);
 }
 
 .listing-price {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 15px;
+    -fx-text-fill: #fff2de;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 16px;
+    -fx-font-weight: 700;
 }
 
 .portfolio-footer {
-    -fx-border-color: rgba(89, 66, 56, 0.45) transparent transparent transparent;
+    -fx-border-color: rgba(255, 168, 118, 0.12) transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 24 0 0 0;
 }
 
 .portfolio-link {
     -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-text-fill: rgba(224, 192, 178, 0.6);
-    -fx-font-size: 11px;
+    -fx-text-fill: rgba(255, 242, 222, 0.78);
+    -fx-font-size: 12px;
     -fx-font-weight: 800;
-    -fx-cursor: hand;
 }
 
 .portfolio-link:hover {
-    -fx-text-fill: #d95f1a;
-}
-
-.portfolio-mini-link {
-    -fx-background-color: transparent;
-    -fx-border-color: rgba(217, 95, 26, 0.35);
-    -fx-border-radius: 0;
-    -fx-background-radius: 0;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 9px;
-    -fx-font-weight: 900;
-    -fx-padding: 4 8 4 8;
-    -fx-cursor: hand;
-}
-
-.portfolio-mini-link:hover {
-    -fx-background-color: rgba(217, 95, 26, 0.1);
-    -fx-border-color: #d95f1a;
+    -fx-text-fill: #fff2de;
 }
 
 .deposit-scroll,
-.deposit-scroll > .viewport {
-    -fx-background-color: #121414;
-    -fx-background: #121414;
+.deposit-scroll > .viewport,
+.deposit-page {
+    -fx-background-color: transparent;
 }
 
 .deposit-page {
-    -fx-background-color: #121414;
     -fx-min-width: 720;
 }
 
 .deposit-eyebrow,
 .deposit-field-label {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 11px;
+    -fx-text-fill: rgba(255, 181, 160, 0.62);
+    -fx-font-size: 12px;
     -fx-font-weight: 900;
 }
 
 .deposit-balance-value {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 36px;
+    -fx-text-fill: -app-text;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 41px;
     -fx-font-weight: 800;
 }
 
 .deposit-trend-label {
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 11px;
+    -fx-text-fill: -app-accent-soft;
+    -fx-font-size: 12px;
     -fx-font-weight: 900;
 }
 
 .deposit-trend-icon,
 .deposit-confirm-icon {
     -fx-fill: transparent;
-    -fx-stroke: #e3e2e2;
+    -fx-stroke: -app-text;
     -fx-stroke-width: 1.8;
 }
 
 .deposit-trend-icon {
-    -fx-stroke: #d95f1a;
-}
-
-.deposit-back-btn {
-    -fx-background-color: transparent;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.42);
-    -fx-border-radius: 0;
-    -fx-text-fill: #d95f1a;
-    -fx-font-size: 10px;
-    -fx-font-weight: 900;
-    -fx-padding: 8 14 8 14;
-    -fx-cursor: hand;
-}
-
-.deposit-back-btn:hover {
-    -fx-background-color: rgba(217, 95, 26, 0.1);
-    -fx-border-color: #d95f1a;
+    -fx-stroke: -app-accent-soft;
 }
 
 .deposit-info-card,
 .deposit-form-card {
-    -fx-background-color: #1a1c1c;
-    -fx-background-radius: 0;
-    -fx-border-color: rgba(89, 66, 56, 0.55);
-    -fx-border-radius: 0;
-    -fx-border-width: 1;
-    -fx-padding: 24;
-}
-
-.deposit-info-card {
-    -fx-border-color: transparent rgba(89, 66, 56, 0.55) rgba(89, 66, 56, 0.55) #d95f1a;
-    -fx-border-width: 0 1 1 2;
+    -fx-background-color: rgba(18, 16, 16, 0.9);
+    -fx-background-radius: 26;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 26;
+    -fx-padding: 26;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.18, 0, 7);
 }
 
 .deposit-info-title {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 22px;
+    -fx-text-fill: -app-text;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 24px;
     -fx-font-weight: 700;
 }
 
-.deposit-info-copy {
-    -fx-text-fill: rgba(224, 192, 178, 0.72);
-    -fx-font-size: 13px;
-    -fx-line-spacing: 4;
+.deposit-info-copy,
+.deposit-security-copy {
+    -fx-text-fill: rgba(255, 181, 160, 0.76);
+    -fx-font-size: 14px;
 }
 
 .deposit-security-row {
-    -fx-border-color: rgba(89, 66, 56, 0.55) transparent transparent transparent;
+    -fx-border-color: rgba(255, 181, 160, 0.12) transparent transparent transparent;
     -fx-border-width: 1 0 0 0;
     -fx-padding: 18 0 0 0;
 }
 
 .deposit-security-icon {
     -fx-fill: transparent;
-    -fx-stroke: rgba(224, 192, 178, 0.72);
-    -fx-stroke-width: 1.6;
-}
-
-.deposit-security-copy {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 12px;
-    -fx-font-weight: 700;
+    -fx-stroke: rgba(255, 181, 160, 0.8);
+    -fx-stroke-width: 1.7;
 }
 
 .deposit-amount-shell {
-    -fx-background-color: #1e2020;
-    -fx-border-color: rgba(89, 66, 56, 0.7);
-    -fx-border-width: 1;
-    -fx-padding: 0 0 0 0;
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 22;
+    -fx-border-color: rgba(255, 181, 160, 0.14);
+    -fx-border-radius: 22;
+}
+
+.deposit-amount-shell:hover {
+    -fx-border-color: rgba(255, 116, 71, 0.3);
 }
 
 .deposit-amount-field {
     -fx-background-color: transparent;
-    -fx-background-insets: 0;
     -fx-border-color: transparent;
-    -fx-text-fill: #e3e2e2;
-    -fx-prompt-text-fill: rgba(224, 192, 178, 0.16);
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 34px;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: rgba(255, 181, 160, 0.2);
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 37px;
     -fx-font-weight: 700;
     -fx-padding: 18 16 18 16;
 }
@@ -810,34 +794,30 @@
 .deposit-amount-field:focused {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
-    -fx-effect: null;
 }
 
 .deposit-currency-label {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-family: "Noto Serif", "Georgia", serif;
-    -fx-font-size: 22px;
+    -fx-text-fill: rgba(255, 181, 160, 0.62);
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 24px;
     -fx-padding: 0 18 0 0;
 }
 
 .deposit-confirm-btn {
-    -fx-background-color: #d35400;
-    -fx-background-radius: 0;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff5f2e 0%, #ff7a47 100%);
     -fx-border-color: transparent;
     -fx-padding: 16 22 16 22;
     -fx-content-display: GRAPHIC_ONLY;
-    -fx-cursor: hand;
 }
 
 .deposit-confirm-btn:hover,
 .deposit-confirm-btn:focused,
 .deposit-confirm-btn:armed {
-    -fx-background-color: #a23f00;
-    -fx-effect: null;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff7143 0%, #ff8d63 100%);
 }
 
 .deposit-confirm-label {
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 13px;
+    -fx-text-fill: #451609;
+    -fx-font-size: 14px;
     -fx-font-weight: 900;
 }
