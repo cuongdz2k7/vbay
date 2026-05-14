@@ -12,6 +12,12 @@ import javafx.stage.Stage;
 
 public class SceneManager {
     private static Stage currentStage;
+    private static final String THEME_CSS = Objects.requireNonNull(
+        SceneManager.class.getResource("/jfx/css/Theme.css")
+    ).toExternalForm();
+    private static final String NOTIFICATION_CSS = Objects.requireNonNull(
+        SceneManager.class.getResource("/jfx/css/Notification.css")
+    ).toExternalForm();
 
     public static void setStage(Stage newStage) {
         currentStage = newStage;
@@ -40,8 +46,7 @@ public class SceneManager {
     public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
         LoadedView view = loadView(fxmlPath, sceneData);
         Scene scene = new Scene(view.root);
-        String notificationCss = SceneManager.class.getResource("/jfx/css/Notification.css").toExternalForm();
-        scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
+        scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
         installGlobalShortcuts(scene);
         return scene;
     }
@@ -64,12 +69,11 @@ public class SceneManager {
         }
 
         Scene scene = currentStage.getScene();
-        String notificationCss = SceneManager.class.getResource("/jfx/css/Notification.css").toExternalForm();
         
         if (scene == null) {
             StackPane root = new StackPane(view.root);
             scene = new Scene(root);
-            scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
+            scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
             installGlobalShortcuts(scene);
             currentStage.setScene(scene);
         } else {
@@ -82,8 +86,7 @@ public class SceneManager {
                 scene.setRoot(root);
             }
             
-            // Atomically set exactly the two required stylesheets
-            scene.getStylesheets().setAll(view.stylesheetPath, notificationCss);
+            scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
         }
 
         if (!currentStage.isShowing()) {
