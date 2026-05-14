@@ -7,7 +7,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import com.vbay.server.model.User;
-import com.vbay.server.database.DatabaseConnection;
+import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.shared.status.Position;
 import com.vbay.shared.status.shared_status.UserStatus;
 
