@@ -407,7 +407,7 @@ public class HomeController {
     }
 
     @FXML
-    private void handleCreateAuctions(ActionEvent event) {
+    private void handleYourInventory(ActionEvent event) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(CREATE_AUCTION_VIEW));
             BorderPane createAuctionRoot = loader.load();
