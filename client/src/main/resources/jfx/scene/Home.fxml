@@ -111,7 +111,7 @@
                         <VBox spacing="10" styleClass="sidebar-utility-card">
                             <Button text="SETTINGS" maxWidth="Infinity" styleClass="secondary-action-btn"/>
                             <Button text="SUPPORT" maxWidth="Infinity" styleClass="secondary-action-btn"/>
-                            <Button text=" LOG OUT " maxWidth="Infinity" onAction="#handleLogout" styleClass="logout-btn"/>
+                            <Button text="LOG OUT" maxWidth="Infinity" onAction="#handleLogout" styleClass="logout-btn"/>
                         </VBox>
                     </VBox>
                 </VBox>
@@ -189,91 +189,95 @@
     </center>
 
     <right>
-        <VBox fx:id="portfolioDrawer" minWidth="336" prefWidth="336" maxWidth="336" spacing="30" styleClass="portfolio-drawer">
-            <BorderPane.margin>
-                <Insets top="10" right="14" bottom="10" left="0"/>
-            </BorderPane.margin>
-            <padding>
-                <Insets top="28" right="22" bottom="28" left="22"/>
-            </padding>
+        <ScrollPane fx:id="portfolioScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="portfolio-scroll">
+            <content>
+                <VBox fx:id="portfolioDrawer" minWidth="336" prefWidth="336" maxWidth="336" spacing="30" styleClass="portfolio-drawer">
+                    <BorderPane.margin>
+                        <Insets top="10" right="14" bottom="10" left="0"/>
+                    </BorderPane.margin>
+                    <padding>
+                        <Insets top="28" right="22" bottom="28" left="22"/>
+                    </padding>
 
-            <VBox spacing="5">
-                <Label text="My Portfolio" styleClass="portfolio-title"/>
-                <Label text="active bidding &amp; ownership" styleClass="portfolio-subtitle"/>
-            </VBox>
+                    <VBox spacing="5">
+                        <Label text="My Portfolio" styleClass="portfolio-title"/>
+                        <Label text="active bidding &amp; ownership" styleClass="portfolio-subtitle"/>
+                    </VBox>
 
-            <VBox spacing="18" styleClass="portfolio-module-stack">
-                <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
-                        <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
-                        <Label text="BID HISTORY" styleClass="portfolio-section-title"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
-                    </HBox>
-                    <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar"/>
-                    <VBox spacing="16">
-                        <VBox maxWidth="Infinity" spacing="5" styleClass="bid-line-item">
-                            <Label text="1967 E-Type Jaguar" wrapText="true" styleClass="bid-item-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="CURRENT: \$98,000" styleClass="bid-item-meta"/>
+                    <VBox spacing="18" styleClass="portfolio-module-stack">
+                        <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
+                                <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
+                                <Label text="BID HISTORY" styleClass="portfolio-section-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="OUTBID" styleClass="bid-status-danger"/>
+                                <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
                             </HBox>
+                            <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar"/>
+                            <VBox spacing="16">
+                                <VBox maxWidth="Infinity" spacing="5" styleClass="bid-line-item">
+                                    <Label text="1967 E-Type Jaguar" wrapText="true" styleClass="bid-item-title"/>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="CURRENT: \$98,000" styleClass="bid-item-meta"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="OUTBID" styleClass="bid-status-danger"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox maxWidth="Infinity" spacing="5" styleClass="bid-line-item">
+                                    <Label text="Cartier Tank 1920" wrapText="true" styleClass="bid-item-title"/>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="CURRENT: \$14,200" styleClass="bid-item-meta"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="WINNING" styleClass="bid-status-accent"/>
+                                    </HBox>
+                                </VBox>
+                            </VBox>
                         </VBox>
-                        <VBox maxWidth="Infinity" spacing="5" styleClass="bid-line-item">
-                            <Label text="Cartier Tank 1920" wrapText="true" styleClass="bid-item-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="CURRENT: \$14,200" styleClass="bid-item-meta"/>
+
+                        <Region prefHeight="12" maxHeight="12" styleClass="portfolio-section-divider"/>
+
+                        <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module portfolio-module-recessed">
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
+                                <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="portfolio-section-icon"/>
+                                <Label text="MY AUCTIONS" styleClass="portfolio-section-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="WINNING" styleClass="bid-status-accent"/>
+                                <Button text="View All" onAction="#handleViewAllMyAuction" styleClass="portfolio-mini-link"/>
                             </HBox>
+                            <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar portfolio-module-bar-recessed"/>
+                            <VBox spacing="14">
+                                <VBox maxWidth="Infinity" spacing="14" styleClass="listing-card">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="LISTING STATUS" styleClass="listing-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="ACTIVE" styleClass="listing-active"/>
+                                    </HBox>
+                                    <Label text="Vintage Leica M3 Double Stroke" wrapText="true" styleClass="listing-title"/>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="\$4,250" styleClass="listing-price"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="12 BIDS" styleClass="listing-bids"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox maxWidth="Infinity" spacing="14" styleClass="listing-card">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="LISTING STATUS" styleClass="listing-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="ACTIVE" styleClass="listing-active"/>
+                                    </HBox>
+                                    <Label text="CR7 TOTY +8 Rare Card" wrapText="true" styleClass="listing-title"/>
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="\$4,250" styleClass="listing-price"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <Label text="8 BIDS" styleClass="listing-bids"/>
+                                    </HBox>
+                                </VBox>
+                            </VBox>
                         </VBox>
                     </VBox>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <VBox styleClass="portfolio-footer"/>
                 </VBox>
-
-                <Region prefHeight="12" maxHeight="12" styleClass="portfolio-section-divider"/>
-
-                <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module portfolio-module-recessed">
-                    <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
-                        <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="portfolio-section-icon"/>
-                        <Label text="MY AUCTIONS" styleClass="portfolio-section-title"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="View All" onAction="#handleViewAllMyAuction" styleClass="portfolio-mini-link"/>
-                    </HBox>
-                    <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar portfolio-module-bar-recessed"/>
-                    <VBox spacing="14">
-                        <VBox maxWidth="Infinity" spacing="14" styleClass="listing-card">
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="LISTING STATUS" styleClass="listing-label"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="ACTIVE" styleClass="listing-active"/>
-                            </HBox>
-                            <Label text="Vintage Leica M3 Double Stroke" wrapText="true" styleClass="listing-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="\$4,250" styleClass="listing-price"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="12 BIDS" styleClass="listing-bids"/>
-                            </HBox>
-                        </VBox>
-                        <VBox maxWidth="Infinity" spacing="14" styleClass="listing-card">
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="LISTING STATUS" styleClass="listing-label"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="ACTIVE" styleClass="listing-active"/>
-                            </HBox>
-                            <Label text="CR7 TOTY +8 Rare Card" wrapText="true" styleClass="listing-title"/>
-                            <HBox alignment="CENTER_LEFT">
-                                <Label text="\$4,250" styleClass="listing-price"/>
-                                <Region HBox.hgrow="ALWAYS"/>
-                                <Label text="8 BIDS" styleClass="listing-bids"/>
-                            </HBox>
-                        </VBox>
-                    </VBox>
-                </VBox>
-            </VBox>
-
-            <Region VBox.vgrow="ALWAYS"/>
-            <VBox styleClass="portfolio-footer"/>
-        </VBox>
+            </content>
+        </ScrollPane>
     </right>
 </BorderPane>
