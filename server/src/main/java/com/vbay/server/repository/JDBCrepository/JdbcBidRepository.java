@@ -136,6 +136,33 @@ public class JdbcBidRepository implements BidRepository {
             }
         }    
     }
+
+    @Override
+    public List<Bid> findLatestBidsByBidderId(long bidderId) throws SQLException {
+        String sql = """
+            SELECT b.id, b.auction_id, b.bidder_id, b.bid_amount, b.bid_time, b.bid_source, b.status
+            FROM bids b
+            JOIN (
+                SELECT auction_id, MAX(id) AS latest_bid_id
+                FROM bids
+                WHERE bidder_id = ?
+                GROUP BY auction_id
+            ) latest ON latest.latest_bid_id = b.id
+            ORDER BY b.bid_time DESC, b.id DESC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, bidderId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Bid> bids = new ArrayList<>();
+                while (rs.next()) {
+                    bids.add(BidRowMapper.mapBid(rs));
+                }
+                return bids;
+            }
+        }
+    }
+
     @Override
     public int markAuctionBidsLost(long auctionId) throws SQLException {
         String sql = """

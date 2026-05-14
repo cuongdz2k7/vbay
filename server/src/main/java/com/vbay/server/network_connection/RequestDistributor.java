@@ -20,6 +20,7 @@ import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
@@ -128,6 +129,7 @@ public class RequestDistributor {
                 case REGISTER -> handleRegister(requestId, payload);
                 case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
+                case GET_MY_BID_LIST -> handleGetMyBidList(requestId, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 case BUY_NOW -> handleBuyNow(requestId, payload, session);
                 case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
@@ -265,6 +267,10 @@ public class RequestDistributor {
         }
         auctionService.createAuction(createAuctionRequest, session);
         return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    private Respond<MyBidListResponse> handleGetMyBidList(String requestId, ClientSession session) throws SQLException {
+        return new Respond<>(requestId, true, "My bid list loaded successfully", bidService.getMyBidList(session));
     }
 
     private Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {

@@ -186,6 +186,26 @@ public class ResultMapper {
         );
     }
 
+    public static com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload toMyBidListItemPayload(
+            UserMyBidListItemResult result) {
+        return new com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload(
+            result.getBidId(),
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getAuctionTitle(),
+            result.getThumbnailUrl(),
+            result.getCurrentPrice(),
+            result.getAuctionStatus().name(),
+            result.getMyBidAmount(),
+            result.getBidStatus(),
+            result.getBidSource(),
+            result.getBidTime(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
+        );
+    }
+
 
     public static UserMyBidListItemResult toUserMyBidListItemResult(
             Auction auction,

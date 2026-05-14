@@ -33,6 +33,7 @@ import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
+import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
@@ -189,6 +190,32 @@ public class BidService {
     private void checkBuyNowIfBypassedUI(Auction auction, BigDecimal bidAmount) {
         if (auction.getBuyNowPrice() != null && bidAmount.compareTo(auction.getBuyNowPrice()) >= 0) {
             throw new ValidationException("Bid amount is >= the Buy Now price, UI must check beforehand");
+        }
+    }
+
+    public MyBidListResponse getMyBidList(ClientSession session) throws SQLException {
+        checkSession(session);
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+
+            List<com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload> items = new ArrayList<>();
+            for (Bid bid : bidRepository.findLatestBidsByBidderId(session.getUserId())) {
+                Auction auction = auctionRepository.findById(bid.getAuctionId())
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
+                String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
+                UserMyBidListItemResult result = ResultMapper.toUserMyBidListItemResult(
+                    auction,
+                    thumbnailUrl,
+                    bid,
+                    bid.getStatus(),
+                    bid.getBidTime()
+                );
+                items.add(ResultMapper.toMyBidListItemPayload(result));
+            }
+            return new MyBidListResponse(items);
         }
     }
 

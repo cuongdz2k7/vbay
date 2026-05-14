@@ -44,7 +44,7 @@
 
             <VBox styleClass="my-bid-table">
                 <HBox alignment="CENTER_LEFT" styleClass="my-bid-table-header">
-                    <Label text="PRODUCT" styleClass="my-bid-col-product"/>
+                    <Label text="AUCTION TITLE" styleClass="my-bid-col-product"/>
                     <Label text="CURRENT PRICE" styleClass="my-bid-col-price"/>
                     <Label text="YOUR MAX BID" styleClass="my-bid-col-price"/>
                     <Label text="STATUS" styleClass="my-bid-col-status"/>

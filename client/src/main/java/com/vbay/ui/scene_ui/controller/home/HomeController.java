@@ -18,6 +18,7 @@ import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
+import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
@@ -47,6 +48,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -153,10 +155,38 @@ public class HomeController {
         updateAccountDisplay();
         subscribeRealtimeListener();
         subscribeServerRooms();
+        loadMyBidItems();
 
         paginationBar.setVisible(false);
         paginationBar.setManaged(false);
         selectView(VIEW_HOME);
+    }
+
+    private void loadMyBidItems() {
+        myBidItemsByAuctionId.clear();
+        try {
+            Respond<?> response = SocketClient.getClient().sendMessage(
+                new Request<>(RequestType.GET_MY_BID_LIST, null)
+            );
+            if (response == null || !response.isStatus()) {
+                throw new IOException(response != null ? response.getMessage() : "No response");
+            }
+
+            MyBidListResponse myBidResponse = JsonUtils.fromJson(
+                JsonUtils.toJson(response.getData()),
+                MyBidListResponse.class
+            );
+            if (myBidResponse == null || myBidResponse.getItems() == null) {
+                return;
+            }
+            for (MyBidListItemPayload item : myBidResponse.getItems()) {
+                if (item != null) {
+                    myBidItemsByAuctionId.put(item.getAuctionId(), item);
+                }
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     private void loadHomePreviewAuctions() {
@@ -772,7 +802,10 @@ public class HomeController {
         Label title = new Label(item.getAuctionTitle() == null || item.getAuctionTitle().isBlank()
             ? "Auction #" + item.getAuctionId()
             : item.getAuctionTitle());
-        title.setWrapText(true);
+        title.setWrapText(false);
+        title.setTextOverrun(OverrunStyle.ELLIPSIS);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.maxWidthProperty().bind(row.widthProperty().subtract(4));
         title.getStyleClass().add("bid-item-title");
 
         HBox metaRow = new HBox();

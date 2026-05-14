@@ -14,6 +14,7 @@ public interface BidRepository {
     void updateStatus(long bidId, BidStatus newStatus) throws SQLException;
     void updateStatusesByAuctionIdExceptBid(long auctionId, long excludedBidId, BidStatus newStatus) throws SQLException;
     List<Bid> findLatestBidPerBidderByAuctionId(long auctionId) throws SQLException;
+    List<Bid> findLatestBidsByBidderId(long bidderId) throws SQLException;
     int markAuctionBidsLost(long auctionId) throws SQLException;
 
 }
