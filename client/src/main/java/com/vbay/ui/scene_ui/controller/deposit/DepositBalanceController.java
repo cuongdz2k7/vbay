@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import javax.xml.catalog.CatalogResolver.NotFoundAction;
+
 import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
 import com.vbay.network.dispatcher.RealtimeEventListener;
@@ -15,8 +17,11 @@ import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.scene_ui.NotificationManager;
+import com.vbay.ui.scene_ui.NotificationManager.NotificationType;
 import com.vbay.ui.util.MoneyInput;
 
+import atlantafx.base.controls.Notification;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -60,13 +65,13 @@ public class DepositBalanceController {
         try {
             amount = MoneyInput.parseRequired(amountField, "Deposit amount");
         } catch (IllegalArgumentException exception) {
-            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", exception.getMessage());
             amountField.requestFocus();
             return;
         }
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
             amountField.requestFocus();
             return;
         }
@@ -76,7 +81,7 @@ public class DepositBalanceController {
                 new Request<>(RequestType.DEPOSIT_BALANCE, new DepositBalanceRequest(amount))
             );
             if (response == null || !response.isStatus()) {
-                showMessage(Alert.AlertType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
                 return;
             }
 
@@ -85,10 +90,10 @@ public class DepositBalanceController {
                 UserData.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
                 updateBalanceDisplay(balanceResponse.getAvailableBalance());
             }
-            showMessage(Alert.AlertType.INFORMATION, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
             amountField.clear();
         } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Deposit failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", exception.getMessage());
         }
     }
 
@@ -126,11 +131,4 @@ public class DepositBalanceController {
         balanceLabel.setText(CURRENCY_FORMAT.format(balance));
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
 }
