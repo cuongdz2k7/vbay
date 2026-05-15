@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToggleGroup?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.SVGPath?>
+<?import javafx.collections.FXCollections?>
+<?import java.lang.String?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            prefWidth="1440" prefHeight="900"
+            styleClass="create-auction-root"
+            fx:controller="com.vbay.ui.scene_ui.controller.auction.CreateAuctionController">
+
+    <fx:define>
+        <ToggleGroup fx:id="conditionGroup"/>
+    </fx:define>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true" styleClass="auction-scroll">
+            <content>
+                <VBox alignment="TOP_CENTER" spacing="18" styleClass="auction-page">
+                    <padding>
+                        <Insets top="20" right="28" bottom="30" left="28"/>
+                    </padding>
+
+                    <HBox alignment="CENTER_LEFT" maxWidth="1440">
+                        <Button text="BACK HOME" onAction="#handleBack" styleClass="secondary-top-action"/>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" maxWidth="1440">
+                        <VBox spacing="5">
+                            <Label text="INITIALIZE NEW PROTOCOL" styleClass="page-title"/>
+                            <Label text="Asset Submission &amp; Auction Configuration Terminal" styleClass="page-subtitle"/>
+                        </VBox>
+                    </HBox>
+
+                    <HBox spacing="24" alignment="TOP_CENTER" maxWidth="1420" styleClass="protocol-grid">
+                        <VBox spacing="12" prefWidth="690" maxWidth="690" styleClass="protocol-panel">
+                            <HBox alignment="CENTER_LEFT" styleClass="panel-header">
+                                <Label text="01 / Product Identification" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label text="ASSET MEDIA HUB" styleClass="panel-kicker"/>
+                            </HBox>
+
+                            <VBox spacing="8">
+                                <Label text="Product Images (max 4 images)" styleClass="field-label"/>
+                                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="compact-media-row">
+                                    <Button text="UPLOAD" onAction="#handleUploadAsset" styleClass="upload-action">
+                                        <graphic>
+                                            <SVGPath content="M4 6H7L8 4H12L13 6H16V15H4ZM10 8A3 3 0 1 0 10 14A3 3 0 0 0 10 8ZM15 4V2H17V4H19V6H17V8H15V6H13V4Z" styleClass="camera-icon"/>
+                                        </graphic>
+                                    </Button>
+                                    <Region HBox.hgrow="ALWAYS"/>
+                                    <HBox fx:id="imagePreviewContainer" alignment="CENTER_RIGHT" spacing="10"/>
+                                </HBox>
+                            </VBox>
+
+                            <GridPane hgap="18" vgap="16">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="50"/>
+                                    <ColumnConstraints percentWidth="50"/>
+                                </columnConstraints>
+
+                                <VBox spacing="8" GridPane.columnIndex="0">
+                                    <Label text="Product Name" styleClass="field-label"/>
+                                    <TextField fx:id="productNameField" promptText="e.g., Titanium Core-9 Module" styleClass="line-input"/>
+                                </VBox>
+
+                                <VBox spacing="8" GridPane.columnIndex="1">
+                                    <Label text="Category" styleClass="field-label"/>
+                                    <ComboBox fx:id="categoryComboBox" maxWidth="Infinity" value="Electronics" styleClass="line-combo">
+                                        <items>
+                                            <FXCollections fx:factory="observableArrayList">
+                                                <String fx:value="Electronics"/>
+                                                <String fx:value="Collectibles"/>
+                                                <String fx:value="Arts"/>
+                                                <String fx:value="Jewelry &amp; Watches"/>
+                                            </FXCollections>
+                                        </items>
+                                    </ComboBox>
+                                </VBox>
+
+                                <VBox spacing="10" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="1">
+                                    <Label text="Condition State" styleClass="field-label"/>
+                                    <HBox spacing="18">
+                                        <HBox alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" styleClass="condition-tile">
+                                            <Label text="Mint / New" styleClass="condition-label"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <RadioButton userData="NEW" toggleGroup="$conditionGroup"/>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="10" HBox.hgrow="ALWAYS" styleClass="condition-tile">
+                                            <Label text="Industrial / Used" styleClass="condition-label"/>
+                                            <Region HBox.hgrow="ALWAYS"/>
+                                            <RadioButton userData="USED" toggleGroup="$conditionGroup"/>
+                                        </HBox>
+                                    </HBox>
+                                </VBox>
+
+                                <VBox spacing="8" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="2">
+                                    <Label text="Technical Description" styleClass="field-label"/>
+                                    <TextArea fx:id="technicalDescriptionArea" prefRowCount="7" wrapText="true" promptText="Specify technical dimensions, materials, and certification standards..." styleClass="block-textarea"/>
+                                </VBox>
+
+                                <VBox spacing="8" GridPane.columnIndex="0" GridPane.columnSpan="2" GridPane.rowIndex="3">
+                                    <Label text="Listing Narrative" styleClass="field-label"/>
+                                    <TextArea fx:id="listingNarrativeArea" prefRowCount="4" wrapText="true" promptText="Marketing summary for bidders..." styleClass="block-textarea compact"/>
+                                </VBox>
+                            </GridPane>
+                        </VBox>
+
+                        <VBox spacing="12" prefWidth="690" maxWidth="690" styleClass="protocol-panel">
+                            <HBox alignment="CENTER_LEFT" styleClass="panel-header">
+                                <Label text="02 / Auction Parameters" styleClass="panel-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label text="FINANCIAL LOGIC ENGINE" styleClass="panel-kicker"/>
+                            </HBox>
+
+                            <VBox spacing="9">
+                                <Label text="Auction Title" styleClass="field-label"/>
+                                <TextField fx:id="auctionTitleField" promptText="Official Title for the Auction Listing" styleClass="title-input"/>
+                            </VBox>
+
+                            <GridPane hgap="20" vgap="20" prefWidth="650" styleClass="parameter-grid">
+                                <columnConstraints>
+                                    <ColumnConstraints percentWidth="50"/>
+                                    <ColumnConstraints percentWidth="50"/>
+                                </columnConstraints>
+
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <Label maxWidth="Infinity" text="Starting Price" styleClass="mini-label"/>
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <Label text="\$" styleClass="currency-mark"/>
+                                        <TextField fx:id="startingPriceField" maxWidth="Infinity" promptText="0.00" HBox.hgrow="ALWAYS" styleClass="money-input"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <Label maxWidth="Infinity" text="Bid Step" styleClass="mini-label"/>
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <Label text="\$" styleClass="currency-mark"/>
+                                        <TextField fx:id="minimumBidStepField" maxWidth="Infinity" promptText="10.00" HBox.hgrow="ALWAYS" styleClass="money-input"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Reserve Price" styleClass="mini-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <StackPane fx:id="reservePriceToggle" onMouseClicked="#handleReservePriceToggle" styleClass="switch-track">
+                                            <Circle fx:id="reservePriceToggleDot" radius="4" translateX="-9" styleClass="switch-dot"/>
+                                        </StackPane>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <Label text="\$" styleClass="currency-mark"/>
+                                        <TextField fx:id="reservePriceField" maxWidth="Infinity" promptText="Optional" HBox.hgrow="ALWAYS" styleClass="money-input"/>
+                                    </HBox>
+                                </VBox>
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <HBox alignment="CENTER_LEFT">
+                                        <Label text="Buy Now Price" styleClass="mini-label"/>
+                                        <Region HBox.hgrow="ALWAYS"/>
+                                        <StackPane fx:id="buyNowPriceToggle" onMouseClicked="#handleBuyNowPriceToggle" styleClass="switch-track">
+                                            <Circle fx:id="buyNowPriceToggleDot" radius="4" translateX="-9" styleClass="switch-dot"/>
+                                        </StackPane>
+                                    </HBox>
+                                    <HBox alignment="CENTER_LEFT" spacing="10">
+                                        <Label text="\$" styleClass="currency-mark"/>
+                                        <TextField fx:id="buyNowPriceField" maxWidth="Infinity" promptText="Optional" HBox.hgrow="ALWAYS" styleClass="money-input"/>
+                                    </HBox>
+                                </VBox>
+                            </GridPane>
+
+                            <VBox spacing="16" styleClass="schedule-block">
+                                <Label text="03 / Temporal Scheduling" styleClass="schedule-title"/>
+                                <GridPane hgap="20">
+                                    <columnConstraints>
+                                        <ColumnConstraints percentWidth="50"/>
+                                        <ColumnConstraints percentWidth="50"/>
+                                    </columnConstraints>
+                                    <VBox spacing="8" GridPane.columnIndex="0">
+                                        <Label text="COMMENCEMENT" styleClass="mini-label"/>
+                                        <DatePicker fx:id="startingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
+                                        <TextField fx:id="startingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
+                                    </VBox>
+                                    <VBox spacing="8" GridPane.columnIndex="1">
+                                        <Label text="TERMINATION" styleClass="mini-label"/>
+                                        <DatePicker fx:id="endingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
+                                        <TextField fx:id="endingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
+                                    </VBox>
+                                </GridPane>
+                            </VBox>
+
+                            <Region VBox.vgrow="ALWAYS"/>
+                            <VBox spacing="18">
+                                <Button text="LAUNCH AUCTION" maxWidth="Infinity" onAction="#handleLaunchAuction" styleClass="launch-button">
+                                    <graphic>
+                                        <SVGPath content="M4 14L6 10L3 7L7 6L10 2L13 5L16 4L15 8L18 11L14 12L11 16L8 13ZM10 8L12 10" styleClass="launch-icon"/>
+                                    </graphic>
+                                </Button>
+                                <Label text="SUBMISSION REQUIRES PROTOCOL VALIDATION. FEES APPLY ON FINAL SALE." alignment="CENTER" maxWidth="Infinity" styleClass="submission-note"/>
+                            </VBox>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER_LEFT" minHeight="86" prefHeight="86" styleClass="auction-footer">
+            <padding>
+                <Insets top="18" right="28" bottom="18" left="28"/>
+            </padding>
+            <VBox spacing="10">
+                <Label text="OBSIDIAN EMBER" styleClass="footer-brand"/>
+                <Label text="(C) 2024 OBSIDIAN EMBER. INDUSTRIAL PRECISION." styleClass="footer-copy"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <HBox alignment="CENTER" spacing="34">
+                <Label text="TERMS OF SERVICE" styleClass="footer-link"/>
+                <Label text="PRIVACY POLICY" styleClass="footer-link"/>
+                <Label text="CONTACT" styleClass="footer-link"/>
+                <Label text="HELP CENTER" styleClass="footer-link"/>
+            </HBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <VBox alignment="CENTER_RIGHT" spacing="8">
+                <Label text="NETWORK STATUS: OPERATIONAL" styleClass="system-copy"/>
+                <Label text="ENCRYPTION: AES-256" styleClass="system-copy"/>
+            </VBox>
+        </HBox>
+    </bottom>
+</BorderPane>

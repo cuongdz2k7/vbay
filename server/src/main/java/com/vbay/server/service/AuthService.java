@@ -1,112 +1,120 @@
 package com.vbay.server.service;
 
-
+import java.math.BigDecimal;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.logging.Logger;
 
-import com.vbay.server.model.User;
+import com.google.gson.JsonElement;
+import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
+import com.vbay.server.model.User;
+import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.security.PasswordHasher;
-import com.vbay.shared.dto.LoginRequest;
-import com.vbay.shared.dto.LoginResponse;
-import com.vbay.shared.dto.RegisterRequest;
+import com.vbay.server.service.validation.ValidationUtils;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
+import com.vbay.shared.dto.authDTO.LoginRequest;
+import com.vbay.shared.dto.authDTO.LoginResponse;
+import com.vbay.shared.dto.authDTO.RegisterRequest;
+import com.vbay.shared.protocol.Respond;
 
 public class AuthService {
-    private final UserRepository userRepository;
+    private static final Logger LOGGER = LoggingUtils.getLogger(AuthService.class);
+    private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
-    ///add object to check wheather the passwork is weak/strong : PasswordPolicy
-    
-    public AuthService(UserRepository userRepository, PasswordHasher passwordHasher) {
-        this.userRepository = userRepository;
+
+    public AuthService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, PasswordHasher passwordHasher) {
+        this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
     }
 
-    private static boolean isBlank (String str) {
-        return str == null || str.isBlank();
-    }
-   
-    private void validateLoginRequest (LoginRequest request) {
+    private void validateLoginRequest(LoginRequest request) {
         if (request == null) {
             throw new ValidationException("Login request is required");
         }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
     }
 
-    public LoginResponse login (LoginRequest request) throws SQLException, AuthenticationException {
-        validateLoginRequest(request);
+    private static void logInfo(String action, String detail) {
+        LOGGER.info(() -> "[AUTH][" + action + "] " + detail);
+    }
 
-        try {
-            Optional<User> userOptional = userRepository.findByEmail(request.getEmail().trim());
-            if (userOptional.isEmpty()) { 
-                throw new AuthenticationException("Invalid email or password");
-            }
-            User user = userOptional.get(); 
-            if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+    private static void logError(String action, String detail) {
+        LOGGER.warning(() -> "[AUTH][" + action + "] " + detail);
+    }
+
+    public Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        if (session == null) {
+            throw new ValidationException("Client session is required");
+        }
+        if (session.isAuthenticated()) {
+            throw new AuthenticationException("Client is already logged in");
+        }
+
+        LoginRequest request = JsonUtils.fromJson(payload, LoginRequest.class);
+        if (request == null) {
+            throw new ValidationException("Invalid login payload");
+        }
+
+        LoginResponse response = login(request);
+        session.setSession(response.getUserId(), response.getUsername(), response.getPosition());
+        return new Respond<>(requestId, true, "Login successful", response);
+    }
+
+    public Respond<Void> handleLogout(String requestId, ClientSession session) {
+        if (session == null || !session.isAuthenticated()) {
+            throw new AuthenticationException("User is not logged in");
+        }
+
+        session.clearSession();
+        return new Respond<>(requestId, true, "Logout successful", null);
+    }
+
+    public Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
+        RegisterRequest request = JsonUtils.fromJson(payload, RegisterRequest.class);
+        if (request == null) {
+            throw new ValidationException("Invalid register payload");
+        }
+
+        register(request);
+        return new Respond<>(requestId, true, "Registration successful", null);
+    }
+
+    public LoginResponse login(LoginRequest request) throws SQLException {
+        validateLoginRequest(request);
+        String username = request.getUsername().trim();
+        logInfo("LOGIN_ATTEMPT", "username=" + username);
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            Optional<User> userOptional = userRepository.findByUsername(username);
+            if (userOptional.isEmpty()) {
+                logError("LOGIN_FAILED", "username=" + username + ", reason: user_not_found");
                 throw new AuthenticationException("Invalid username or password");
             }
-            return new LoginResponse(String.valueOf(user.getId()),
-                                    user.getUserName(),
-                                    user.getEmail(),
-                                    user.getPosition());
-        }
-        finally {
-            ///xóa pass trong request để tránh leak, bị attacker dump từ RAM
-            if (request != null && request.getPassword() != null) {
-                Arrays.fill(request.getPassword(), '\0');
+            User user = userOptional.get();
+            if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+                logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
+                throw new AuthenticationException("Invalid username or password");
             }
-        }
-    }
-
-    private void validateRegisterRequest (RegisterRequest request) {
-        if (request == null) {
-            throw new ValidationException("Register request is required");
-        }
-        if (isBlank(request.getUsername())) { 
-            throw new ValidationException("Register request is required"); 
-        }
-        if (isBlank(request.getEmail())) {
-            throw new ValidationException("Email is required");
-        }
-        if (request.getPassword() == null || request.getPassword().length == 0) {
-            throw new ValidationException("Password is required");
-        }
-    }
-
-    ///lỗi trùng username
-    private boolean isUniqueConstraintViolation(SQLException e) {
-        return "23000".equals(e.getSQLState()) && e.getErrorCode() == 1062;
-    }
-
-    public void register(RegisterRequest request) throws SQLException {
-        validateRegisterRequest(request);
-
-        try {
-            if (userRepository.existsByUsername(request.getUsername().trim())) {
-                throw new ValidationException("Username already exists");
-            }
-
-            if (userRepository.existsByEmail(request.getEmail().trim())) {
-                throw new ValidationException("Email already exists");
-            }
-
-            User newUser = new User(
-                request.getUsername().trim(),
-                request.getEmail().trim(),
-                passwordHasher.hash(request.getPassword()),
-                request.getPhoneNumber(),
-                0
+            logInfo("LOGIN_SUCCESS", "userId=" + user.getId() + ", username=" + user.getUserName());
+            return new LoginResponse(
+                user.getId(),
+                user.getUserName(),
+                user.getEmail(),
+                user.getPosition(),
+                user.getAvailableBalance(),
+                user.getHoldBalance()
             );
-            userRepository.save(newUser);
-        } catch (SQLException e) {
-            if (isUniqueConstraintViolation(e)) {
-                throw new ValidationException("Username or email already exists");
-            }   
-            throw e;
         } finally {
             if (request != null && request.getPassword() != null) {
                 Arrays.fill(request.getPassword(), '\0');
@@ -114,8 +122,36 @@ public class AuthService {
         }
     }
 
+    private void validateRegisterRequest(RegisterRequest request) {
+        if (request == null) {
+            throw new ValidationException("Register request is required");
+        }
+        ValidationUtils.requireNotBlank(request.getUsername(), "Username is required");
+        ValidationUtils.requireNotBlank(request.getEmail(), "Email is required");
+        ValidationUtils.requireNotBlank(request.getPassword(), "Password is required");
+    }
 
+    public void register(RegisterRequest request) throws SQLException {
+        validateRegisterRequest(request);
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim();
+        logInfo("REGISTER_ATTEMPT", "username=" + username + ", email=" + email);
 
-
-    
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            User newUser = new User(
+                username,
+                email,
+                passwordHasher.hash(request.getPassword()),
+                request.getPhoneNumber(),
+                BigDecimal.ZERO
+            );
+            userRepository.save(newUser);
+            logInfo("REGISTER_SUCCESS", "username=" + username + ", email=" + email);
+        } finally {
+            if (request != null && request.getPassword() != null) {
+                Arrays.fill(request.getPassword(), '\0');
+            }
+        }
+    }
 }

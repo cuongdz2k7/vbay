@@ -1,63 +1,66 @@
 package com.vbay.server;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.TimeZone;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.vbay.server.network.ClientHandler;
-import com.vbay.server.network.RequestDistributor;
 import com.vbay.server.databaseManager.DatabaseInitializer;
-import com.vbay.server.repository.JdbcUserRepository;
-import com.vbay.server.repository.UserRepository;
-import com.vbay.server.security.Argon2PasswordHasher;
-import com.vbay.server.security.PasswordHasher;
-import com.vbay.server.service.AuthService;
+import com.vbay.server.network_connection.ClientHandler;
+import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.subscription.SubscriptionService;
+import com.vbay.server.scheduler.AuctionTaskScheduler;
+import com.vbay.server.upload.ImageHttpServer;
+import com.vbay.shared.Utils.LoggingUtils;
 
-    public class ServerApplication {
-        private static final int PORT = 3618;
-        public static void main(String[] args) {
-            
-            
-            //Shut down hook ( Truong trinh chuan bi tat)
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                System.out.println("Server is shutting down - Ensuring all data is saved to database");
+public class ServerApplication {
+    private static final int PORT = 3618;
+    private static final Logger LOGGER = LoggingUtils.getLogger(ServerApplication.class);
 
-                try {
-                    // Force any pending database operations to complete
-                    // Close any open database connections gracefully
-                    System.out.println("Database connections closed successfully");
-                    System.out.println("All pending data saved to database");
-                } catch (Exception e) {
-                    System.err.println("Error during database shutdown: " + e.getMessage());
-                }
+    public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        LoggingUtils.configure("server");
 
-                System.out.println("Server shutdown complete - All data persisted");
-            }));
-            
-            try(ServerSocket serverSocket = new ServerSocket(PORT)){ 
-                DatabaseInitializer.init();
+        ImageHttpServer imageHttpServer = new ImageHttpServer();
+        AppConfig appConfig = new AppConfig();
+        AuctionTaskScheduler auctionScheduler = appConfig.getAuctionScheduler();
 
-                ///server là chỗ khởi tạo tất cả các Class cần dùng
-                UserRepository userRepository = new JdbcUserRepository();
-                PasswordHasher passwordHasher = new Argon2PasswordHasher();///sửa static
-                AuthService authService = new AuthService(userRepository, passwordHasher);
-                RequestDistributor distributor = new RequestDistributor(authService);
-                
-                //ServerSocker : dung o phia server -> mo cong + ket noi voi client ( cua chinh cua server)
-                System.out.println("Port: " + PORT);
-                System.out.println("waiting for clients...");
-                while(true) {
-                    Socket socket = serverSocket.accept();
-                    // socket = dai dien ket noi giua client + server
-                    System.out.println("Client connected");
-                    Thread new_Thread = new Thread(new ClientHandler(socket, distributor));
-                    // Tao Thread moi , Thread(<T extend Runnable>) giao cho thread moi phan cong viec la T
-                    new_Thread.start();
-                }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOGGER.info("Server is shutting down. Ensuring all data is saved to database.");
+
+            try {
+                imageHttpServer.stop();
+                auctionScheduler.shutdown();
+
+                LOGGER.info("Database connections closed successfully.");
+                LOGGER.info("All pending data saved to database.");
+            } catch (Exception exception) {
+                LOGGER.log(Level.SEVERE, "Error during database shutdown.", exception);
             }
-            catch (IOException exception) {
-                System.err.println("Server failed to start : " + exception.getMessage());
-                exception.printStackTrace();
+
+            LOGGER.info("Server shutdown complete. All data persisted.");
+        }));
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            DatabaseInitializer.init();
+            imageHttpServer.start();
+            auctionScheduler.start();
+
+            RequestDistributor distributor = appConfig.getRequestDistributor();
+            SubscriptionService subscriptionService = appConfig.getSubscriptionService();
+
+            LOGGER.info(() -> "Server listening on port " + PORT);
+            LOGGER.info("Waiting for clients...");
+            while (true) {
+                Socket socket = serverSocket.accept();
+                LOGGER.info(() -> "Accepted client connection from " + socket.getInetAddress().getHostAddress());
+                Thread newThread = new Thread(new ClientHandler(socket, distributor, subscriptionService));
+                newThread.start();
             }
-            //Bao loi I/O -> hien day du thong tin loi
+        } catch (IOException exception) {
+            LOGGER.log(Level.SEVERE, "Server failed to start.", exception);
         }
     }
+}

@@ -1,32 +1,78 @@
 package com.vbay.server.model;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.vbay.shared.enums.auction.AuctionStatus;
+
 public class Auction {
     // Base
     private long id;
-    private long product_id;
-    private long seller_id;
+    private long productId;
+    private long sellerId;
     // Auction Detail
-    private double start_price;
-    private double current_price;
-    private double minimum_bid_step;
-    // Time + State
-    private String start_time;
-    private String end_time;
-    private boolean is_closed;
+    private String title;
+    private String description;
+    private BigDecimal  startingPrice;
+    private BigDecimal currentPrice;
+    private BigDecimal reservePrice; ///có thể null nếu không có reserve price (nên để nullable)
+    private BigDecimal buyNowPrice; ///có thể null nếu không có buy now price
+    private BigDecimal  minimumBidStep;
+    private LocalDateTime startingTime;
+    private LocalDateTime endingTime;
+    private AuctionStatus status;
+    private Long winnerUserId;
+    private long version;
 
-    //Constructor (Create new auction)
-    public Auction(long product_id, long seller_id, double start_price, double minimum_bid_step, String start_time, String end_time){
+    //Constructor (Create new auction) để lưu vào database
+    public Auction(long productId, long sellerId, BigDecimal startingPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
         //Base:
-        this.product_id = product_id;
-        this.seller_id = seller_id;
+        this.productId = productId;
+        this.sellerId = sellerId;
         //Auction Detail:
-        this.start_price = start_price;
-        this.current_price = start_price;
-        this.minimum_bid_step = minimum_bid_step;
+        this.startingPrice = startingPrice;
+        this.currentPrice = startingPrice;
+        this.minimumBidStep = minimumBidStep;
         //Time + State:
-        this.start_time = start_time;
-        this.end_time = end_time;
-        this.is_closed = false;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
+        this.status = AuctionStatus.SCHEDULED;
+    }
+
+    public Auction(long sellerId, long productId, String title, String description, BigDecimal buyNowPrice, BigDecimal reservePrice, BigDecimal minimumBidStep, BigDecimal startingPrice, LocalDateTime startingTime, LocalDateTime endingTime) {
+        this.productId = productId;
+        this.sellerId = sellerId;
+        this.title = title;
+        this.description = description;
+        this.startingPrice = startingPrice;
+        this.currentPrice = this.startingPrice;
+        this.reservePrice = reservePrice;
+        this.buyNowPrice = buyNowPrice;
+        this.minimumBidStep = minimumBidStep;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
+        this.status = AuctionStatus.SCHEDULED;
+    }
+    ///Constructor đầy đủ để tạo auction từ database, sẽ có tất cả các trường
+    public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state) {
+        this(id, productId, sellerId, title, description, startingPrice, currentPrice, reservePrice, buyNowPrice, minimumBidStep, startingTime, endingTime, state, null);
+    }
+
+    public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state, Long winnerUserId) {
+        this.id = id;
+        this.productId = productId;
+        this.sellerId = sellerId;
+        this.title = title;
+        this.description = description;
+        this.startingPrice = startingPrice;
+        this.currentPrice = currentPrice;
+        this.reservePrice = reservePrice;
+        this.buyNowPrice = buyNowPrice;
+        this.minimumBidStep = minimumBidStep;
+        this.startingTime = startingTime;
+        this.endingTime = endingTime;
+        this.status = state;
+        this.winnerUserId = winnerUserId;
     }
 
     //Getter
@@ -35,61 +81,103 @@ public class Auction {
         return this.id;
     }
     public long getProductId(){
-        return this.product_id;
+        return this.productId;
     }
     public long getSellerId(){
-        return this.seller_id;
+        return this.sellerId;
     }
     //b, Auction Detail:
-    public double getStartPrice(){
-        return this.start_price;
+    public String getTitle(){
+        return this.title;
     }
-    public double getCurrentPrice(){
-        return this.current_price;
+    public String getDescription(){
+        return this.description;
     }
-    public double getMinimumBidStep(){
-        return this.minimum_bid_step;
+    public BigDecimal getStartPrice(){
+        return this.startingPrice;
+    }
+    public BigDecimal getCurrentPrice(){
+        return this.currentPrice;
+    }
+    public BigDecimal getReservePrice(){
+        return this.reservePrice;
+    }
+    public BigDecimal getBuyNowPrice(){
+        return this.buyNowPrice;
+    }
+    public BigDecimal getMinimumBidStep(){
+        return this.minimumBidStep;
     }
     //c, Time + State:
-    public String getStartTime(){
-        return this.start_time;
+    public LocalDateTime getStartingTime(){
+        return this.startingTime;
     }
-    public String getEndTime(){
-        return this.end_time;
+    public LocalDateTime getEndingTime(){
+        return this.endingTime;
     }
-    public boolean isClosed(){
-        return this.is_closed;
+    public AuctionStatus getStatus(){
+        return this.status;
     }
-
+    public Long getWinnerUserId() {
+        return winnerUserId;
+    }
+    public long getVersion() {
+        return version;
+    }
+    public boolean isActive(){
+        return this.status.equals(AuctionStatus.ACTIVE);
+    }
+    public boolean isEnded(){
+        return this.status.equals(AuctionStatus.ENDED);
+    }
     //Setter (Change data)
     //a, Base:
     public void setId(long new_id){
         this.id = new_id;
     }
     public void setProductId(long new_product_id){
-        this.product_id = new_product_id;
+        this.productId = new_product_id;
     }
     public void setSellerId(long new_seller_id){
-        this.seller_id = new_seller_id;
+        this.sellerId = new_seller_id;
     }
     //b, Auction Detail:
-    public void setStartPrice(double new_start_price){
-        this.start_price = new_start_price;
+    public void setTitle(String new_title){
+        this.title = new_title;
     }
-    public void setCurrentPrice(double new_current_price){
-        this.current_price = new_current_price;
+    public void setDescription(String new_description){
+        this.description = new_description;
     }
-    public void setMinimumBidStep(double new_minimum_bid_step){
-        this.minimum_bid_step = new_minimum_bid_step;
+    public void setStartPrice(BigDecimal new_starting_price){
+        this.startingPrice = new_starting_price;
+    }
+    public void setCurrentPrice(BigDecimal new_current_price){
+        this.currentPrice = new_current_price;
+    }
+    public void setReservePrice(BigDecimal new_reserve_price){
+        this.reservePrice = new_reserve_price;
+    }
+    public void setBuyNowPrice(BigDecimal new_buy_now_price){
+        this.buyNowPrice = new_buy_now_price;
+    }
+    public void setMinimumBidStep(BigDecimal new_minimum_bid_step){
+        this.minimumBidStep = new_minimum_bid_step;
     }
     //c, Time + State:
-    public void setStartTime(String new_start_time){
-        this.start_time = new_start_time;
+    public void setStartingTime(LocalDateTime new_starting_time){
+        this.startingTime = new_starting_time;
     }
-    public void setEndTime(String new_end_time){
-        this.end_time = new_end_time;
+    public void setEndingTime(LocalDateTime new_ending_time){
+        this.endingTime = new_ending_time;
     }
-    public void setClosed(boolean new_is_closed){
-        this.is_closed = new_is_closed;
+    public void setStatus(AuctionStatus new_status){
+        this.status = new_status;
     }
+    public void setWinnerUserId(Long winnerUserId) {
+        this.winnerUserId = winnerUserId;
+    }
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
 }
