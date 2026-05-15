@@ -9,6 +9,7 @@ public class AuctionStateUpdatedPayload {
     private String status;
     private BigDecimal currentPrice;
     private BigDecimal nextMinimumBid;
+    private Boolean reserveMet;
     private Long winningUserId;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
@@ -23,6 +24,7 @@ public class AuctionStateUpdatedPayload {
             String status,
             BigDecimal currentPrice,
             BigDecimal nextMinimumBid,
+            Boolean reserveMet,
             Long winningUserId,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
@@ -32,6 +34,7 @@ public class AuctionStateUpdatedPayload {
         this.status = status;
         this.currentPrice = currentPrice;
         this.nextMinimumBid = nextMinimumBid;
+        this.reserveMet = reserveMet;
         this.winningUserId = winningUserId;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
@@ -76,6 +79,14 @@ public class AuctionStateUpdatedPayload {
 
     public void setNextMinimumBid(BigDecimal nextMinimumBid) {
         this.nextMinimumBid = nextMinimumBid;
+    }
+
+    public Boolean getReserveMet() {
+        return reserveMet;
+    }
+
+    public void setReserveMet(Boolean reserveMet) {
+        this.reserveMet = reserveMet;
     }
 
     public Long getWinningUserId() {

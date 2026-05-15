@@ -1,7 +1,10 @@
 {
   "files.exclude": {
     "**/target": true,
-    "**/*.class": true
+    "**/*.class": true,
+    "GEMINI.md": true,
+    ".gemini": true
   },
   "java.configuration.updateBuildConfiguration": "interactive"
+
 }

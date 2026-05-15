@@ -7,9 +7,15 @@ import com.vbay.server.model.Auction;
 import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
+import com.vbay.server.model.User;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.PlaceBidResult;
+import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 
 public class ResultMapper {
     private ResultMapper() {
@@ -49,12 +55,20 @@ public class ResultMapper {
             currentBid.getBidAmount(),
             currentBid.getBidAmount(),
             nextMinimumBid,
+            reserveMet(auction, currentBid.getBidAmount()),
             previousWinningUserId,
             previousWinningBidId,
             currentBid.getStatus(),
             currentBid.getBidSource(),
             currentBid.getBidTime()
         );
+    }
+
+    private static Boolean reserveMet(Auction auction, BigDecimal currentPrice) {
+        if (auction.getReservePrice() == null) {
+            return null;
+        }
+        return currentPrice.compareTo(auction.getReservePrice()) >= 0;
     }
 
     public static BuyNowResult toBuyNowResult(
@@ -76,6 +90,68 @@ public class ResultMapper {
             previousWinningUserId,
             previousWinningBidId,
             boughtAt
+        );
+    }
+
+    public static UserBalanceResult toUserBalanceResult(
+            User user,
+            BigDecimal changedAmount,
+            String reason,
+            LocalDateTime updatedAt) {
+        return new UserBalanceResult(
+            user.getId(),
+            user.getVersion(),
+            user.getAvailableBalance(),
+            user.getHoldBalance(),
+            changedAmount,
+            reason,
+            updatedAt
+        );
+    }
+
+    public static UserBalanceResponse toUserBalanceResponse(UserBalanceResult result) {
+        return new UserBalanceResponse(
+            result.getUserId(),
+            result.getUserVersion(),
+            result.getAvailableBalance(),
+            result.getHoldBalance()
+        );
+    }
+
+    public static UserBalanceUpdatedPayload toUserBalanceUpdatedPayload(UserBalanceResult result) {
+        return new UserBalanceUpdatedPayload(
+            result.getUserId(),
+            result.getUserVersion(),
+            result.getAvailableBalance(),
+            result.getHoldBalance(),
+            result.getChangedAmount(),
+            result.getReason(),
+            result.getUpdatedAt()
+        );
+    }
+
+    public static AuctionListItemPayload toAuctionListItemPayload(AuctionListItemResult result) {
+        return new AuctionListItemPayload(
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getProductId(),
+            result.getSellerId(),
+            result.getTitle(),
+            result.getDescription(),
+            result.getProductName(),
+            result.getCategoryId(),
+            result.getStatus(),
+            result.getStartingPrice(),
+            result.getCurrentPrice(),
+            result.getMinimumBidStep(),
+            result.getBuyNowPrice(),
+            result.getWinnerUserId(),
+            result.getReserveMet(),
+            result.getThumbnailUrl(),
+            result.getImageUrls(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
         );
     }
 }

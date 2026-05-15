@@ -4,6 +4,7 @@ public enum AuctionStatus {
     SCHEDULED(false),
     ACTIVE(false),
     ENDED(true),
+    FAILED(true),
     CANCELLED(true);
 
     private final boolean closedForBidding;

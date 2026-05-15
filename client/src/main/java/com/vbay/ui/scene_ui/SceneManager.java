@@ -7,10 +7,17 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class SceneManager {
     private static Stage currentStage;
+    private static final String THEME_CSS = Objects.requireNonNull(
+        SceneManager.class.getResource("/jfx/css/Theme.css")
+    ).toExternalForm();
+    private static final String NOTIFICATION_CSS = Objects.requireNonNull(
+        SceneManager.class.getResource("/jfx/css/Notification.css")
+    ).toExternalForm();
 
     public static void setStage(Stage newStage) {
         currentStage = newStage;
@@ -39,7 +46,7 @@ public class SceneManager {
     public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
         LoadedView view = loadView(fxmlPath, sceneData);
         Scene scene = new Scene(view.root);
-        scene.getStylesheets().add(view.stylesheetPath);
+        scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
         installGlobalShortcuts(scene);
         return scene;
     }
@@ -62,14 +69,24 @@ public class SceneManager {
         }
 
         Scene scene = currentStage.getScene();
+        
         if (scene == null) {
-            scene = new Scene(view.root);
-            scene.getStylesheets().add(view.stylesheetPath);
+            StackPane root = new StackPane(view.root);
+            scene = new Scene(root);
+            scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
             installGlobalShortcuts(scene);
             currentStage.setScene(scene);
         } else {
-            scene.setRoot(view.root);
-            scene.getStylesheets().setAll(view.stylesheetPath);
+            if (scene.getRoot() instanceof StackPane root) {
+                // The first child is the scene content
+                root.getChildren().set(0, view.root);
+                // Keep other children (like notifications)
+            } else {
+                StackPane root = new StackPane(view.root);
+                scene.setRoot(root);
+            }
+            
+            scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
         }
 
         if (!currentStage.isShowing()) {
