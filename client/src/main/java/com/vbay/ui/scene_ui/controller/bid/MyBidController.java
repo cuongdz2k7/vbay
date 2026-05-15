@@ -38,6 +38,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
@@ -66,9 +67,11 @@ public class MyBidController {
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
     private Timeline timeUpdater;
     private LongConsumer onAuctionSelected;
+    private boolean disposed;
 
     @FXML
     private void initialize() {
+        disposed = false;
         statusFilterComboBox.setValue(FILTER_ALL);
         statusFilterComboBox.setOnAction(event -> renderRows());
         subscribeUserRoom();
@@ -81,6 +84,7 @@ public class MyBidController {
     }
 
     public void dispose() {
+        disposed = true;
         stopTimeUpdater();
         bidItemsByAuctionId.clear();
         timeLabels.clear();
@@ -105,12 +109,9 @@ public class MyBidController {
     }
 
     public void setInitialItems(Collection<MyBidListItemPayload> items) {
-        bidItemsByAuctionId.clear();
         if (items != null) {
             for (MyBidListItemPayload item : items) {
-                if (item != null) {
-                    bidItemsByAuctionId.put(item.getAuctionId(), item);
-                }
+                mergeBidItem(item);
             }
         }
         renderRows();
@@ -147,13 +148,25 @@ public class MyBidController {
             return;
         }
         Platform.runLater(() -> {
-            MyBidListItemPayload existing = bidItemsByAuctionId.get(item.getAuctionId());
-            if (isStaleItem(item, existing)) {
+            if (disposed) {
                 return;
             }
-            bidItemsByAuctionId.put(item.getAuctionId(), item);
-            renderRows();
+            if (mergeBidItem(item)) {
+                renderRows();
+            }
         });
+    }
+
+    private boolean mergeBidItem(MyBidListItemPayload item) {
+        if (item == null) {
+            return false;
+        }
+        MyBidListItemPayload existing = bidItemsByAuctionId.get(item.getAuctionId());
+        if (isStaleItem(item, existing)) {
+            return false;
+        }
+        bidItemsByAuctionId.put(item.getAuctionId(), item);
+        return true;
     }
 
     private boolean isStaleItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
@@ -244,8 +257,11 @@ public class MyBidController {
         imageFrame.getChildren().add(imageView);
 
         VBox textBox = new VBox(3);
+        textBox.setMaxWidth(220);
         Label title = new Label(safeText(item.getAuctionTitle()));
-        title.setWrapText(true);
+        title.setWrapText(false);
+        title.setTextOverrun(OverrunStyle.ELLIPSIS);
+        title.setMaxWidth(220);
         title.getStyleClass().add("my-bid-product-title");
         Label meta = new Label("Lot #" + item.getAuctionId());
         meta.getStyleClass().add("my-bid-product-meta");

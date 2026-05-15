@@ -7,6 +7,7 @@ import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
+import com.vbay.server.realtime.handler.AuctionStartedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
@@ -127,6 +128,7 @@ new AppConfig()
         this.domainEventHandlers = List.of(
             new AuctionClosedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionListItemUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AuctionStartedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionScheduleDomainEventHandler(auctionScheduler),
             new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),

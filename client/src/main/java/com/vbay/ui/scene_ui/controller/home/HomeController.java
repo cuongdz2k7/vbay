@@ -5,10 +5,12 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
@@ -54,6 +56,112 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+
+/*
+Thêm disposed guard ngăn task cũ đã queue chạy sau khi màn đã rời.
+Đây không phải vấn đề map thread-safe, mà là lifecycle của JavaFX controller với event async.
+Ví dụ trong DepositBalanceController:
+
+balanceListener = event -> {
+    UserBalanceUpdatedPayload payload = event.getPayload();
+
+    Platform.runLater(() -> {
+        ClientAuthSession.setBalances(...);
+        updateBalanceDisplay(...);
+    });
+};
+Luồng nguy hiểm:
+
+T1: Server gửi USER_BALANCE_UPDATED
+T2: listener chạy trên socket/background thread
+T3: listener gọi Platform.runLater(...)
+    -> JavaFX queue đã có task "update balance label"
+
+T4: User bấm Back
+T5: dispose() chạy
+    -> unsubscribe listener
+    -> amountField.clear()
+    -> onBack = null
+    -> màn Deposit bị tháo khỏi Home
+
+T6: JavaFX thread chạy task đã queue từ T3
+    -> updateBalanceDisplay(...)
+    -> đụng vào controller/màn hình đã dispose
+
+Với HomeController sau logout thì nguy hiểm thật vì task cũ có thể chạy sau khi:
+
+ClientAuthSession.clear();
+clearRealtimeCaches();
+SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
+Nếu task cũ chạy sau đó, nó có thể:
+
+ghi lại ClientAuthSession.setBalances(...) dù user đã logout
+mutate cache myBidItemsByAuctionId, activeViewAuctions
+render lại node của Home đã không còn là màn hiện tại
+giữ reference controller lâu hơn cần thiết
+Sai session sau logout
+Ví dụ user A logout, nhưng trước đó có event balance của user A đã được queue:
+
+Platform.runLater(() -> {
+    ClientAuthSession.setBalances(...);
+});
+Sau logout bạn đã gọi:
+
+ClientAuthSession.clear();
+Nhưng task cũ chạy sau đó lại set balance vào ClientAuthSession.
+
+Kết quả có thể là:
+
+login screen nhưng session global lại có balance cũ
+user B login sau đó có thể thấy balance/display bị nhiễm từ user A nếu code nào đó đọc session trước khi response login mới set lại
+debug rất khó vì lỗi xảy ra theo timing
+Cache bị mutate sau khi đã clear
+Logout thường làm:
+
+clearRealtimeCaches();
+Nhưng task cũ chạy sau đó:
+
+myBidItemsByAuctionId.put(...);
+activeViewAuctions.put(...);
+Vậy cache tưởng đã sạch nhưng lại có dữ liệu cũ.
+
+Nếu controller chưa bị GC ngay, hoặc vì lý do nào đó reference còn tồn tại, cache cũ vẫn sống. Lần sau nếu code reuse hoặc callback nào đó chạm tới nó, dữ liệu đã không còn đáng tin.
+
+Render vào UI node đã rời scene
+Home đã switch sang login rồi, nhưng task cũ gọi:
+
+renderActiveView();
+renderMyBidPreview();
+balanceLabel.setText(...);
+Node đó không còn hiển thị, nhưng object vẫn tồn tại trong memory. Thường không crash ngay, nhưng có thể:
+
+tạo thêm card/node mới vô ích
+chạy timeline/tạo controller con phụ nếu render load FXML
+làm UI lag do render màn không còn dùng
+gây bug lạ nếu node/scene đã null hoặc stylesheet/scene reference không còn hợp lệ ở code khác
+Memory leak / giữ controller sống lâu hơn
+Lambda trong Platform.runLater giữ reference tới this:
+
+Platform.runLater(() -> {
+    renderActiveView(); // this HomeController
+});
+Chừng nào task đó chưa chạy, JavaFX queue giữ controller lại. Nếu event nhiều, controller cũ bị giữ lâu hơn, kèm theo:
+
+cache maps
+nodes
+child controllers
+image references
+listeners/timelines nếu dispose chưa sạch
+
+
+structure tốt hơn cho frontend:
+Mỗi màn mở lên:
+1. fetch snapshot mới nhất từ server
+2. render snapshot đó
+3. subscribe đúng room/event màn đó cần
+4. merge realtime event lên snapshot bằng version/updatedAt
+5. dispose thì unsubscribe + stop timer + bỏ state màn đó
+*/
 public class HomeController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
@@ -140,10 +248,12 @@ public class HomeController {
     private BidController activeBidController;
     private MyBidController activeMyBidController;
     private Long currentUserId;
+    private boolean disposed;
 
 
     @FXML
     private void initialize() {
+        disposed = false;
         homeCenter = homeRoot.getCenter();
         homeLeft = homeRoot.getLeft();
         homeRight = homeRoot.getRight();
@@ -163,7 +273,6 @@ public class HomeController {
     }
 
     private void loadMyBidItems() {
-        myBidItemsByAuctionId.clear();
         try {
             Respond<?> response = SocketClient.getClient().sendMessage(
                 new Request<>(RequestType.GET_MY_BID_LIST, null)
@@ -180,9 +289,7 @@ public class HomeController {
                 return;
             }
             for (MyBidListItemPayload item : myBidResponse.getItems()) {
-                if (item != null) {
-                    myBidItemsByAuctionId.put(item.getAuctionId(), item);
-                }
+                mergeMyBidItem(item);
             }
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -190,14 +297,11 @@ public class HomeController {
     }
 
     private void loadHomePreviewAuctions() {
-        livePreviewAuctions.clear();
-        comingSoonPreviewAuctions.clear();
+        mergeAuctionSnapshot(livePreviewAuctions, fetchAuctionList("ACTIVE", null, null, 3));
+        trimCache(livePreviewAuctions, 3);
 
-        fetchAuctionList("ACTIVE", null, null, 3)
-            .forEach(item -> livePreviewAuctions.put(item.getAuctionId(), item));
-
-        fetchAuctionList("SCHEDULED", null, null, 3)
-            .forEach(item -> comingSoonPreviewAuctions.put(item.getAuctionId(), item));
+        mergeAuctionSnapshot(comingSoonPreviewAuctions, fetchAuctionList("SCHEDULED", null, null, 3));
+        trimCache(comingSoonPreviewAuctions, 3);
     }
 
     private List<AuctionListItemPayload> auctionsForActiveView() {
@@ -208,9 +312,8 @@ public class HomeController {
 
 
     private void loadActiveViewAuctions() {
-        activeViewAuctions.clear();
-
         if (VIEW_MY_AUCTION.equals(activeView) && currentUserId == null) {
+            activeViewAuctions.entrySet().removeIf(entry -> !matchesActiveViewQuery(entry.getValue()));
             return;
         }
 
@@ -223,8 +326,8 @@ public class HomeController {
         Long categoryId = categoryIdForActiveFilter();
         Long sellerId = VIEW_MY_AUCTION.equals(activeView) ? currentUserId : null;
 
-        fetchAuctionList(status, categoryId, sellerId, null)
-            .forEach(item -> activeViewAuctions.put(item.getAuctionId(), item));
+        activeViewAuctions.entrySet().removeIf(entry -> !matchesActiveViewQuery(entry.getValue()));
+        mergeAuctionSnapshot(activeViewAuctions, fetchAuctionList(status, categoryId, sellerId, null));
     }
 
     private List<AuctionListItemPayload> fetchAuctionList(
@@ -322,13 +425,18 @@ public class HomeController {
         }
 
         Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
             if (VIEW_HOME.equals(activeView)) {
                 updateHomePreviewCaches(item);
             } else {
                 updateActiveViewCache(item);
             }
 
-            renderActiveView();
+            if (isHomeShellVisible()) {
+                renderActiveView();
+            }
         });
     }
     
@@ -392,6 +500,20 @@ public class HomeController {
         return existing != null && incoming.getAuctionVersion() <= existing.getAuctionVersion();
     }
 
+    private void mergeAuctionSnapshot(
+            Map<Long, AuctionListItemPayload> cache,
+            List<AuctionListItemPayload> snapshot) {
+        for (AuctionListItemPayload item : snapshot) {
+            if (item == null) {
+                continue;
+            }
+            AuctionListItemPayload existing = cache.get(item.getAuctionId());
+            if (!isStaleAuctionListItem(item, existing)) {
+                cache.put(item.getAuctionId(), item);
+            }
+        }
+    }
+
     private void removeIfNewerOrSameVersion(Map<Long, AuctionListItemPayload> cache, AuctionListItemPayload incoming) {
         AuctionListItemPayload existing = cache.get(incoming.getAuctionId());
         if (existing == null || incoming.getAuctionVersion() >= existing.getAuctionVersion()) {
@@ -405,10 +527,9 @@ public class HomeController {
             .limit(limit)
             .toList();
 
-        cache.clear();
-        for (AuctionListItemPayload item : sorted) {
-            cache.put(item.getAuctionId(), item);
-        }
+        Set<Long> keptAuctionIds = new HashSet<>();
+        sorted.forEach(item -> keptAuctionIds.add(item.getAuctionId()));
+        cache.entrySet().removeIf(entry -> !keptAuctionIds.contains(entry.getKey()));
     }
 
     @FXML
@@ -468,6 +589,7 @@ public class HomeController {
             return;
         }
         try {
+            disposed = true;
             disposeActiveChildControllers();
             clearRealtimeCaches();
             unsubscribeRealtimeListener();
@@ -519,6 +641,9 @@ public class HomeController {
             return;
         }
         Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
             ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
         });
@@ -530,18 +655,31 @@ public class HomeController {
             return;
         }
         Platform.runLater(() -> {
-            MyBidListItemPayload existing = myBidItemsByAuctionId.get(item.getAuctionId());
-            if (isStaleMyBidItem(item, existing)) {
+            if (disposed) {
                 return;
             }
-            myBidItemsByAuctionId.put(item.getAuctionId(), item);
+            if (!mergeMyBidItem(item)) {
+                return;
+            }
             if (activeMyBidController != null) {
                 activeMyBidController.setInitialItems(myBidItemsByAuctionId.values());
             }
-            if (VIEW_HOME.equals(activeView)) {
+            if (VIEW_HOME.equals(activeView) && isHomeShellVisible()) {
                 renderMyBidPreview();
             }
         });
+    }
+
+    private boolean mergeMyBidItem(MyBidListItemPayload item) {
+        if (item == null) {
+            return false;
+        }
+        MyBidListItemPayload existing = myBidItemsByAuctionId.get(item.getAuctionId());
+        if (isStaleMyBidItem(item, existing)) {
+            return false;
+        }
+        myBidItemsByAuctionId.put(item.getAuctionId(), item);
+        return true;
     }
 
     private boolean isStaleMyBidItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
@@ -911,11 +1049,16 @@ public class HomeController {
     }
 
     private int compareAuction(AuctionListItemPayload left, AuctionListItemPayload right) {
-        int byStartingTime = right.getStartingTime().compareTo(left.getStartingTime());
+        boolean upcoming = "SCHEDULED".equals(left.getStatus()) && "SCHEDULED".equals(right.getStatus());
+        int byStartingTime = upcoming
+            ? left.getStartingTime().compareTo(right.getStartingTime())
+            : right.getStartingTime().compareTo(left.getStartingTime());
         if (byStartingTime != 0) {
             return byStartingTime;
         }
-        return Long.compare(right.getAuctionId(), left.getAuctionId());
+        return upcoming
+            ? Long.compare(left.getAuctionId(), right.getAuctionId())
+            : Long.compare(right.getAuctionId(), left.getAuctionId());
     }
 
     private Long categoryIdForActiveFilter() {
@@ -974,12 +1117,16 @@ public class HomeController {
 
     private void restoreShellIfInSubView() {
         disposeActiveChildControllers();
-        if (homeRoot.getCenter() != homeCenter) {
+        if (!isHomeShellVisible()) {
             homeRoot.setLeft(homeLeft);
             homeRoot.setRight(homeRight);
             homeRoot.setCenter(homeCenter);
             homeRoot.setBottom(homeBottom);
         }
+    }
+
+    private boolean isHomeShellVisible() {
+        return homeRoot.getCenter() == homeCenter;
     }
 
     private void attachCreateAuctionStylesheet() {

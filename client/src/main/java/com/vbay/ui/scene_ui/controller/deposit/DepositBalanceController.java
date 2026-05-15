@@ -34,9 +34,11 @@ public class DepositBalanceController {
 
     private Runnable onBack;
     private RealtimeEventListener<UserBalanceUpdatedPayload> balanceListener;
+    private boolean disposed;
 
     @FXML
     private void initialize() {
+        disposed = false;
         MoneyInput.install(amountField);
         updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
         subscribeBalanceUpdates();
@@ -94,6 +96,7 @@ public class DepositBalanceController {
     }
 
     public void dispose() {
+        disposed = true;
         if (balanceListener != null) {
             SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
                 RealtimeEventType.USER_BALANCE_UPDATED,
@@ -115,6 +118,9 @@ public class DepositBalanceController {
                 return;
             }
             Platform.runLater(() -> {
+                if (disposed || balanceLabel == null) {
+                    return;
+                }
                 ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
                 updateBalanceDisplay(payload.getAvailableBalance());
             });

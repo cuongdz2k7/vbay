@@ -16,8 +16,10 @@ import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.User;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
+import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
@@ -28,6 +30,7 @@ import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
@@ -39,6 +42,45 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
+
+/*
+BUG:
+Trong BidService.java, hàm placeBid(...) hiện chỉ tạo affectedMyBidItems cho:
+java
+
+
+
+affectedMyBidItems.add(new bidder WINNING item)
+
+và nếu có người đang thắng cũ:
+java
+
+
+
+affectedMyBidItems.add(old winning bidder OUTBID item)
+
+Tức là mỗi lần bid, server chỉ gửi MY_BID_LIST_ITEM_UPDATED cho:
+thằng vừa bid mới
+thằng vừa bị mất WINNING
+Nó không gửi cho những thằng đã OUTBID từ trước.
+Case của bạn:
+text
+
+
+
+tamdz bid $10
+user A bid $123
+=> tamdz nhận OUTBID, currentPrice = $123
+
+user B bid $251
+=> server gửi event cho user B và user A
+=> tamdz không nằm trong affectedMyBidItems
+=> tamdz không nhận event
+=> UI tamdz vẫn currentPrice = $123
+
+*/
+
+
 /*
 các bước để place bid:
 1. Insert bid mới
@@ -264,27 +306,12 @@ public class BidService {
         auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
         Auction refreshedAuction = auctionRepository.findById(auctionId).orElseThrow(() -> new ValidationException("Auction not found"));
         String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
-        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
-        affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+        List<UserMyBidListItemResult> affectedMyBidItems = buildAffectedMyBidItems(
             refreshedAuction,
             thumbnailUrl,
-            currentBid,
-            BidStatus.WINNING,
+            bidRepository,
             dbNow
-        ));
-
-        if (!oldWinningBid.isEmpty()) {
-            Bid oldBid = oldWinningBid.get();
-            if (oldBid.getBidderId() != bidderId) {
-                affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
-                    refreshedAuction,
-                    thumbnailUrl,
-                    oldBid,
-                    BidStatus.OUTBID,
-                    dbNow
-                ));
-            }
-        }
+        );
 
         return ResultMapper.toPlaceBidResult(
             refreshedAuction,
@@ -335,6 +362,8 @@ public class BidService {
                 ///sau khi validate xong xuôi -> currentwinningbid sẽ thành oldwinningbid
                 Optional<Bid> oldWinningBid = currentWinningBid;
                 PlaceBidResult result = placeBid(auction.getId(), session.getUserId(), request.getBidAmount(), oldWinningBid, dbNow, connection);
+                AuctionListItemResult listItem = auctionRepository.findAuctionListItemById(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction list item not found"));
                 
                 List<UserBalanceResult> balanceResults = new ArrayList<>();
                 LocalDateTime balanceUpdatedAt = LocalDateTime.now();
@@ -357,6 +386,11 @@ public class BidService {
                 }
                 
                 connection.commit();
+                domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                    listItem,
+                    AuctionListItemUpdateReason.BID_UPDATED,
+                    LocalDateTime.now()
+                ));
                 domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
                 for (UserBalanceResult balanceResult : balanceResults) {
                     domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
@@ -406,27 +440,12 @@ public class BidService {
             .orElseThrow(() -> new ValidationException("Auction not found"));
 
         String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
-        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
-        affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+        List<UserMyBidListItemResult> affectedMyBidItems = buildAffectedMyBidItems(
             refreshedAuction,
             thumbnailUrl,
-            currentBid,
-            BidStatus.WON,
+            bidRepository,
             dbNow
-        ));
-
-        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auctionId)) {
-            if (bid.getBidderId() == buyerId) {
-                continue;
-            }
-            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
-                refreshedAuction,
-                thumbnailUrl,
-                bid,
-                BidStatus.LOST,
-                dbNow
-            ));
-        }
+        );
         
         // 5. Create held payment (sau tách ra thành payment repository)
         Payment payment = new Payment(
@@ -486,6 +505,8 @@ public class BidService {
                 ///sau khi validate xong xuôi -> currentwinningbid sẽ thành oldwinningbid
                 Optional<Bid> oldWinningBid = currentWinningBid;
                 BuyNowResult buyNowResult = buyNow(auction, session.getUserId(), auction.getBuyNowPrice(), oldWinningBid, dbNow, connection);
+                AuctionListItemResult listItem = auctionRepository.findAuctionListItemById(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction list item not found"));
                 List<UserBalanceResult> balanceResults = new ArrayList<>();
                 LocalDateTime balanceUpdatedAt = LocalDateTime.now();
 
@@ -508,6 +529,11 @@ public class BidService {
                 }
 
                 connection.commit();
+                domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                    listItem,
+                    AuctionListItemUpdateReason.STATUS_CHANGED,
+                    LocalDateTime.now()
+                ));
                 domainEventPublisher.publish(new BuyNowDomainEvent(buyNowResult));
                 for (UserBalanceResult balanceResult : balanceResults) {
                     domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
@@ -518,6 +544,24 @@ public class BidService {
                 throw e;
             }
         }
+    }
+
+    private List<UserMyBidListItemResult> buildAffectedMyBidItems(
+            Auction refreshedAuction,
+            String thumbnailUrl,
+            BidRepository bidRepository,
+            LocalDateTime updatedAt) throws SQLException {
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId())) {
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                refreshedAuction,
+                thumbnailUrl,
+                bid,
+                bid.getStatus(),
+                updatedAt
+            ));
+        }
+        return affectedMyBidItems;
     }
 
 }

@@ -18,6 +18,7 @@ import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
@@ -208,6 +209,7 @@ public class AuctionService {
             connection.setAutoCommit(false);
 
             AuctionClosedDomainEvent auctionClosedEvent = null;
+            AuctionStartedDomainEvent auctionStartedEvent = null;
             boolean statusChanged = false;
 
             try {
@@ -240,11 +242,17 @@ public class AuctionService {
                 connection.commit();
                 if (statusChanged) {
                     AuctionListItemResult item = auctionRepository.findAuctionListItemById(auctionId).orElseThrow();
+                    if (transition == AuctionTransition.STARTED) {
+                        auctionStartedEvent = new AuctionStartedDomainEvent(item, java.time.LocalDateTime.now());
+                    }
                     domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
                         item,
                         AuctionListItemUpdateReason.STATUS_CHANGED,
                         java.time.LocalDateTime.now()
                     ));
+                }
+                if (auctionStartedEvent != null) {
+                    domainEventPublisher.publish(auctionStartedEvent);
                 }
                 if (auctionClosedEvent != null) {
                     domainEventPublisher.publish(auctionClosedEvent);

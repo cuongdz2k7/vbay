@@ -11,7 +11,15 @@ public class RealtimeBroadcaster {
     }
 
     public void broadcast(RealtimeEvent<?> event) {
-        for (ClientConnection connection : registry.findSubscribers(event.getRoom())) {
+        var subscribers = registry.findSubscribers(event.getRoom());
+        System.out.println("[RT_BROADCAST] type=" + event.getType()
+            + " room=" + event.getRoom().key()
+            + " subscribers=" + subscribers.size());
+        for (ClientConnection connection : subscribers) {
+            System.out.println("[RT_SEND_TO] type=" + event.getType()
+                + " room=" + event.getRoom().key()
+                + " userId=" + connection.getSession().getUserId()
+                + " username=" + connection.getSession().getUsername());
             connection.send(event);
         }
     }

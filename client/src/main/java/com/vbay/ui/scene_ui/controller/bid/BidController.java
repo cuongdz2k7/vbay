@@ -43,6 +43,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
@@ -121,6 +122,14 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Button buyNowButton;
     @FXML
+    private VBox bidInfoPanel;
+    @FXML
+    private Label bidInfoStatusLabel;
+    @FXML
+    private Label bidInfoLockedLabel;
+    @FXML
+    private Label bidInfoBuyNowDeltaLabel;
+    @FXML
     private Label productNameLabel;
     @FXML
     private Label auctionIdLabel;
@@ -173,7 +182,9 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void initialize() {
         MoneyInput.install(bidAmountField);
+        titleLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
         selectTab(productInfoTabButton, true);
+        setNodeVisibility(bidInfoPanel, false);
     }
 
     @Override
@@ -207,6 +218,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         nextBidLabel.setText(formatCurrency(nextMinimumBid));
         updateBidPrompt();
         updateReserveStatus(data);
+        updateBidInfo(data);
         startTimeUpdater();
         bidAmountField.clear();
         productNameLabel.setText(product.getTitle());
@@ -259,7 +271,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
         if (buyNowPrice != null && enteredBid.compareTo(buyNowPrice) >= 0) {
-            if (enteredBid.compareTo(availableBalance()) > 0) {
+            if (enteredBid.compareTo(buyingPowerForCurrentAuction()) > 0) {
                 showInsufficientBalance(enteredBid);
                 return;
             }
@@ -279,7 +291,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
 
-        if (enteredBid.compareTo(availableBalance()) > 0) {
+        if (enteredBid.compareTo(buyingPowerForCurrentAuction()) > 0) {
             showInsufficientBalance(enteredBid);
             return;
         }
@@ -371,6 +383,9 @@ public class BidController implements SceneDataReceiver<Auction> {
     }
 
     private void applyAuctionStateUpdate(AuctionStatePayload payload) {
+        if (currentAuction == null || payload.getAuctionVersion() <= currentAuction.getVersion()) {
+            return;
+        }
         BigDecimal currentPrice = valueOrZero(payload.getCurrentPrice());
         boolean ended = isAuctionEnded(payload);
         nextMinimumBid = ended
@@ -379,13 +394,13 @@ public class BidController implements SceneDataReceiver<Auction> {
                 currentPrice,
                 valueOrZero(currentAuction.getMinimumBidStep()),
                 currentAuction.getBuyNowPrice(),
-                payload.getWinnerUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinnerUserId()
+                payload.getWinnerUserId()
             );
         currentAuction = copyAuction(
             payload.getAuctionVersion(),
             payload.getStatus() == null ? currentAuction.getStatus() : payload.getStatus(),
             currentPrice,
-            payload.getWinnerUserId() == null ? currentAuction.getWinnerUserId() : payload.getWinnerUserId(),
+            payload.getWinnerUserId(),
             payload.getReserveMet() == null ? currentAuction.getReserveMet() : payload.getReserveMet(),
             payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
             payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
@@ -395,6 +410,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         nextBidLabel.setText(ended ? "-" : formatCurrency(nextMinimumBid));
         updateBidPrompt();
         updateReserveStatus(currentAuction);
+        updateBidInfo(currentAuction);
         statusLabel.setText(currentAuction.getStatus());
         setBidControlsEnabled(!ended && canCurrentUserBid(currentAuction));
         updateTimeState();
@@ -417,7 +433,9 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private boolean isAuctionEnded(AuctionStatePayload payload) {
         return payload.getStateChangeReason() == AuctionStateChangeReason.BUY_NOW
-            || "ENDED".equalsIgnoreCase(payload.getStatus());
+            || payload.getStateChangeReason() == AuctionStateChangeReason.TIME_EXPIRED_ENDED
+            || payload.getStateChangeReason() == AuctionStateChangeReason.TIME_EXPIRED_FAILED
+            || isClosedStatus(payload.getStatus());
     }
 
     private void handleAuctionStateEvent(RealtimeEvent<AuctionStatePayload> event) {
@@ -432,8 +450,11 @@ public class BidController implements SceneDataReceiver<Auction> {
     }
 
     private void applyBidHistoryItem(BidHistoryItemPayload payload) {
+        if (currentAuction == null || payload.getAuctionVersion() < currentAuction.getVersion()) {
+            return;
+        }
         recentBidHistory.add(0, payload);
-        while (recentBidHistory.size() > 3) {
+        while (recentBidHistory.size() > 10) {
             recentBidHistory.remove(recentBidHistory.size() - 1);
         }
         renderRecentBidHistory();
@@ -540,6 +561,49 @@ public class BidController implements SceneDataReceiver<Auction> {
         currentBidLabel.setText(winnerUserId == null ? "-" : formatCurrency(currentPrice));
     }
 
+    private void updateBidInfo(Auction auction) {
+        if (auction == null || bidInfoPanel == null) {
+            return;
+        }
+        Long currentUserId = ClientAuthSession.getUserId();
+        Long winnerUserId = auction.getWinnerUserId();
+        if (currentUserId == null
+                || winnerUserId == null
+                || currentUserId.longValue() == auction.getSellerId()
+                || isAuctionUnavailableForBidInfo(auction)) {
+            setNodeVisibility(bidInfoPanel, false);
+            return;
+        }
+
+        boolean leading = currentUserId.longValue() == winnerUserId.longValue();
+        setNodeVisibility(bidInfoPanel, true);
+        bidInfoStatusLabel.getStyleClass().removeAll("bid-info-leading", "bid-info-outbid");
+        if (leading) {
+            bidInfoStatusLabel.setText("YOU ARE LEADING");
+            bidInfoStatusLabel.getStyleClass().add("bid-info-leading");
+            BigDecimal currentCommitment = valueOrZero(auction.getCurrentPrice());
+            bidInfoLockedLabel.setText("Current commitment: " + formatCurrency(currentCommitment));
+            setNodeVisibility(bidInfoLockedLabel, true);
+            BigDecimal buyNowDelta = valueOrZero(auction.getBuyNowPrice()).subtract(currentCommitment).max(BigDecimal.ZERO);
+            bidInfoBuyNowDeltaLabel.setText("Buy now requires: +" + formatCurrency(buyNowDelta));
+            setNodeVisibility(bidInfoBuyNowDeltaLabel, auction.getBuyNowPrice() != null);
+        } else {
+            bidInfoStatusLabel.setText("You have been outbid");
+            bidInfoStatusLabel.getStyleClass().add("bid-info-outbid");
+            bidInfoLockedLabel.setText("Bid " + formatCurrency(nextMinimumBid) + " or more");
+            setNodeVisibility(bidInfoLockedLabel, true);
+            setNodeVisibility(bidInfoBuyNowDeltaLabel, false);
+        }
+    }
+
+    private boolean isAuctionUnavailableForBidInfo(Auction auction) {
+        if (auction == null || isClosedStatus(auction.getStatus())) {
+            return true;
+        }
+        LocalDateTime endingTime = auction.getEndingTime();
+        return endingTime != null && !utcNow().isBefore(endingTime);
+    }
+
     private void updateReserveStatus(Auction auction) {
         reserveStatusLabel.getStyleClass().removeAll(
             "reserve-status-met",
@@ -574,8 +638,9 @@ public class BidController implements SceneDataReceiver<Auction> {
     private boolean canCurrentUserBid(Auction auction) {
         Long currentUserId = ClientAuthSession.getUserId();
         return auction != null
+            && currentUserId != null
             && "ACTIVE".equals(auction.getStatus())
-            && (currentUserId == null || currentUserId.longValue() != auction.getSellerId());
+            && currentUserId.longValue() != auction.getSellerId();
     }
 
     private void startTimeUpdater() {
@@ -868,7 +933,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             showMessage(Alert.AlertType.WARNING, "Buy Now unavailable", "This auction does not have a Buy Now price.");
             return;
         }
-        if (buyNowPrice.compareTo(availableBalance()) > 0) {
+        if (buyNowPrice.compareTo(buyingPowerForCurrentAuction()) > 0) {
             showInsufficientBalance(buyNowPrice);
             return;
         }
@@ -891,12 +956,26 @@ public class BidController implements SceneDataReceiver<Auction> {
         showMessage(
             Alert.AlertType.WARNING,
             "Insufficient balance",
-            "Available balance is " + formatCurrency(availableBalance()) + ", but this action requires " + formatCurrency(amount) + "."
+            "Buying power for this auction is " + formatCurrency(buyingPowerForCurrentAuction())
+                + ", but this action requires " + formatCurrency(amount) + "."
         );
     }
 
     private BigDecimal availableBalance() {
         return valueOrZero(ClientAuthSession.getAvailableBalance());
+    }
+
+    private BigDecimal buyingPowerForCurrentAuction() {
+        BigDecimal buyingPower = availableBalance();
+        if (currentAuction == null) {
+            return buyingPower;
+        }
+        Long currentUserId = ClientAuthSession.getUserId();
+        Long winnerUserId = currentAuction.getWinnerUserId();
+        if (currentUserId != null && winnerUserId != null && currentUserId.longValue() == winnerUserId.longValue()) {
+            buyingPower = buyingPower.add(valueOrZero(currentAuction.getCurrentPrice()));
+        }
+        return buyingPower;
     }
 
     private void showMessage(Alert.AlertType type, String title, String content) {

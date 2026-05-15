@@ -438,7 +438,11 @@ public class JdbcAuctionRepository implements AuctionRepository {
             parameters.add(request.getSellerId());
         }
 
-        sql.append(" ORDER BY a.starting_time DESC, a.id DESC");
+        if ("SCHEDULED".equals(request.getStatus())) {
+            sql.append(" ORDER BY a.starting_time ASC, a.id ASC");
+        } else {
+            sql.append(" ORDER BY a.starting_time DESC, a.id DESC");
+        }
 
         if (request.getLimit() != null) {
             sql.append(" LIMIT ?");

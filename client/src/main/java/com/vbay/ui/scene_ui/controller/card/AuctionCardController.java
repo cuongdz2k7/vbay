@@ -67,8 +67,8 @@ public class AuctionCardController {
         this.listAuction = listAuction;
         Product product = listAuction.getProduct();
         titleLabel.setText(listAuction.getTitle());
-        priceLabel.setText("Current Bid  " + (listAuction.getWinnerUserId() == null ? "-" : formatCurrency(listAuction.getCurrentPrice())));
-        startingPriceLabel.setText("Starting Price  " + formatCurrency(listAuction.getStartingPrice()));
+        priceLabel.setText("Current Bid  " + formatCurrentPrice(listAuction));
+        startingPriceLabel.setText("Current Price  " + formatCurrentPrice(listAuction));
         bidStepLabel.setText("Step  " + formatCurrency(listAuction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
         startTimeUpdater();
@@ -123,6 +123,13 @@ public class AuctionCardController {
         return value == null ? "-" : CURRENCY_FORMAT.format(value);
     }
 
+    private static String formatCurrentPrice(Auction auction) {
+        BigDecimal currentPrice = auction.getCurrentPrice() == null
+            ? auction.getStartingPrice()
+            : auction.getCurrentPrice();
+        return formatCurrency(currentPrice);
+    }
+
     private static String formatAuctionTime(Auction auction) {
         String status = auction.getStatus();
         if ("CANCELLED".equals(status)) {
@@ -144,6 +151,9 @@ public class AuctionCardController {
         if ("SCHEDULED".equals(status)) {
             if (startingTime == null) {
                 return "Starts: -";
+            }
+            if (!now.isBefore(startingTime)) {
+                return "Starting...";
             }
             Duration remainingUntilStart = Duration.between(now, startingTime);
             if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {

@@ -161,8 +161,12 @@ public class CreateAuctionController {
                 new Request<>(RequestType.CREATE_AUCTION, createAuctionRequest)
             );
 
-            if (!response.isStatus()) {
-                showMessage(Alert.AlertType.ERROR, "Create auction failed", response.getMessage());
+            if (response == null || !response.isStatus()) {
+                showMessage(
+                    Alert.AlertType.ERROR,
+                    "Create auction failed",
+                    response != null ? response.getMessage() : "No response from server."
+                );
                 return;
             }
 

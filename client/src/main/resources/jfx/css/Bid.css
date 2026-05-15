@@ -203,6 +203,7 @@
     -fx-text-fill: #ece0dd;
     -fx-font-size: 24px;
     -fx-font-weight: 900;
+    -fx-max-height: 34;
 }
 
 .summary-copy,
@@ -319,6 +320,31 @@
 .primary-action-btn:pressed {
     -fx-background-color: #df3f17;
     -fx-border-color: #ff7a55;
+}
+
+.bid-info-panel {
+    -fx-background-color: transparent;
+    -fx-padding: 2 0 0 0;
+}
+
+.bid-info-status {
+    -fx-text-fill: #d7c2bd;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+}
+
+.bid-info-copy {
+    -fx-text-fill: rgba(215, 194, 189, 0.72);
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.bid-info-leading {
+    -fx-text-fill: #2fd47c;
+}
+
+.bid-info-outbid {
+    -fx-text-fill: #ff5454;
 }
 
 .secondary-action-btn {

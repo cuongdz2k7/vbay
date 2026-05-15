@@ -2,11 +2,13 @@ package com.vbay.server.realtime.mapper;
 
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.service.result.AuctionClosedResult;
+import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
@@ -100,6 +102,29 @@ public class RealtimeEventMapper {
             RealtimeEventType.AUCTION_LIST_ITEM_UPDATED,
             auctionListRoom(),
             ResultMapper.toAuctionListItemPayload(event.getAuctionListItem())
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(AuctionStartedDomainEvent event) {
+        AuctionListItemResult result = event.getAuction();
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getStatus());
+        payload.setCurrentPrice(result.getCurrentPrice());
+        payload.setReserveMet(result.getReserveMet());
+        payload.setWinnerUserId(result.getWinnerUserId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
+        payload.setUpdatedAt(result.getUpdatedAt());
+        payload.setStateChangeReason(AuctionStateChangeReason.STARTED);
+
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
+            auctionRoom(result.getAuctionId()),
+            payload
         );
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;

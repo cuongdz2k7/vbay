@@ -75,7 +75,7 @@
                         <VBox spacing="15" prefWidth="442" minWidth="442" maxWidth="442" styleClass="auction-panel">
                             <VBox spacing="8">
                                 <Label text="LIVE AUCTION" styleClass="eyebrow-label"/>
-                                <Label fx:id="titleLabel" text="Auction title" wrapText="true" styleClass="auction-title"/>
+                                <Label fx:id="titleLabel" text="Auction title" wrapText="false" maxWidth="Infinity" styleClass="auction-title"/>
                                 <Label fx:id="descriptionLabel" text="Product description" wrapText="true" styleClass="summary-copy"/>
                             </VBox>
 
@@ -108,9 +108,15 @@
                                 <TextField fx:id="bidAmountField" onAction="#handlePlaceBid" promptText="4300" styleClass="bid-input"/>
                             </VBox>
 
-                            <VBox spacing="10">
-                                <Button fx:id="placeBidButton" text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn"/>
-                                <Button fx:id="buyNowButton" text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn"/>
+                            <HBox spacing="12">
+                                <Button fx:id="placeBidButton" text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="buyNowButton" text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn" HBox.hgrow="ALWAYS"/>
+                            </HBox>
+
+                            <VBox fx:id="bidInfoPanel" spacing="4" styleClass="bid-info-panel">
+                                <Label fx:id="bidInfoStatusLabel" text="YOU ARE LEADING" styleClass="bid-info-status"/>
+                                <Label fx:id="bidInfoLockedLabel" text="Current commitment: $0.00" styleClass="bid-info-copy"/>
+                                <Label fx:id="bidInfoBuyNowDeltaLabel" text="Buy now requires: +$0.00" styleClass="bid-info-copy"/>
                             </VBox>
 
                             <HBox spacing="10" alignment="CENTER_LEFT" styleClass="time-row">
