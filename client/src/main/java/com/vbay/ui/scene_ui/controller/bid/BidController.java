@@ -41,6 +41,7 @@ import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
@@ -49,7 +50,9 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 
 /*
@@ -149,13 +152,13 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Label historyAmountThreeLabel;
     @FXML
-    private VBox thumbnailOneFrame;
+    private StackPane thumbnailOneFrame;
     @FXML
-    private VBox thumbnailTwoFrame;
+    private StackPane thumbnailTwoFrame;
     @FXML
-    private VBox thumbnailThreeFrame;
+    private StackPane thumbnailThreeFrame;
     @FXML
-    private VBox thumbnailFourFrame;
+    private StackPane thumbnailFourFrame;
     @FXML
     private Button productInfoTabButton;
     @FXML
@@ -184,8 +187,20 @@ public class BidController implements SceneDataReceiver<Auction> {
     private void initialize() {
         MoneyInput.install(bidAmountField);
         titleLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+        applyRoundedClip(productImageView, 560, 352, 14);
+        applyRoundedClip(thumbnailOneImageView, 128, 82, 10);
+        applyRoundedClip(thumbnailTwoImageView, 128, 82, 10);
+        applyRoundedClip(thumbnailThreeImageView, 128, 82, 10);
+        applyRoundedClip(thumbnailFourImageView, 128, 82, 10);
         selectTab(productInfoTabButton, true);
         setNodeVisibility(bidInfoPanel, false);
+    }
+
+    private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
+        Rectangle clip = new Rectangle(width, height);
+        clip.setArcWidth(arc);
+        clip.setArcHeight(arc);
+        imageView.setClip(clip);
     }
 
     @Override
@@ -284,7 +299,7 @@ public class BidController implements SceneDataReceiver<Auction> {
                 return;
             }
             if (confirmBuyNowFromBid(buyNowPrice)) {
-                performBuyNow();
+                performBuyNow(false);
             }
             return;
         }
@@ -309,7 +324,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     @FXML
     private void handleBuyNow(ActionEvent event) {
-        performBuyNow();
+        performBuyNow(true);
     }
 
     @FXML
@@ -850,7 +865,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         configureThumbnail(thumbnailFourFrame, thumbnailFourImageView, 3);
     }
 
-    private void configureThumbnail(VBox frame, ImageView imageView, int imageIndex) {
+    private void configureThumbnail(StackPane frame, ImageView imageView, int imageIndex) {
         boolean hasImage = imageIndex < currentImageUrls.size();
         setNodeVisibility(frame, hasImage);
         if (hasImage) {
@@ -869,7 +884,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         setActiveThumbnail(thumbnailFourFrame, imageIndex == 3);
     }
 
-    private void setActiveThumbnail(VBox frame, boolean active) {
+    private void setActiveThumbnail(StackPane frame, boolean active) {
         if (frame == null) {
             return;
         }
@@ -931,7 +946,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
     }
 
-    private void performBuyNow() {
+    private void performBuyNow(boolean requireConfirmation) {
         if (currentAuction == null) {
             NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded.");
             return;
@@ -943,6 +958,9 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
         if (buyNowPrice.compareTo(buyingPowerForCurrentAuction()) > 0) {
             showInsufficientBalance(buyNowPrice);
+            return;
+        }
+        if (requireConfirmation && !confirmBuyNowAction(buyNowPrice)) {
             return;
         }
 
@@ -957,6 +975,49 @@ public class BidController implements SceneDataReceiver<Auction> {
             NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Buy Now complete", "You bought " + currentAuction.getTitle() + ".");
         } catch (IOException exception) {
             NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now failed", exception.getMessage());
+        }
+    }
+
+    private boolean confirmBuyNowAction(BigDecimal buyNowPrice) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Confirm Buy Now");
+        alert.setHeaderText(null);
+        alert.setGraphic(null);
+
+        Label title = new Label("Are you sure?");
+        title.getStyleClass().add("buy-now-title");
+
+        Label message = new Label(
+            "Do you want to buy \"" + currentAuction.getTitle() + "\" now for "
+                + formatCurrency(buyNowPrice)
+                + "? This will complete the auction immediately."
+        );
+        message.setWrapText(true);
+        message.setMaxWidth(420);
+        message.getStyleClass().add("buy-now-copy");
+
+        Label price = new Label("Buy now price: " + formatCurrency(buyNowPrice));
+        price.getStyleClass().add("buy-now-price");
+
+        VBox content = new VBox(10, title, message, price);
+        content.getStyleClass().add("buy-now-content");
+
+        ButtonType buyNowButtonType = new ButtonType("Buy Now", ButtonBar.ButtonData.OK_DONE);
+        alert.getButtonTypes().setAll(buyNowButtonType, ButtonType.CANCEL);
+        alert.getDialogPane().setContent(content);
+        styleBuyNowDialog(alert);
+        Optional<ButtonType> result = alert.showAndWait();
+        return result.isPresent() && result.get() == buyNowButtonType;
+    }
+
+    private void styleBuyNowDialog(Alert alert) {
+        var dialogPane = alert.getDialogPane();
+        dialogPane.getStyleClass().add("buy-now-confirm-dialog");
+        dialogPane.setPrefWidth(480);
+        dialogPane.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        var stylesheet = getClass().getResource("/jfx/css/Bid.css");
+        if (stylesheet != null) {
+            dialogPane.getStylesheets().add(stylesheet.toExternalForm());
         }
     }
 

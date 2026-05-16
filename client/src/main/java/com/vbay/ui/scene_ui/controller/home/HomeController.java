@@ -179,7 +179,7 @@ public class HomeController {
     private static final String VIEW_HOME = "Home";
     private static final String VIEW_COMING_SOON = "Coming Soon";
     private static final String VIEW_LIVE_AUCTION = "Live Auction";
-    private static final String VIEW_BID_HISTORY = "Bid History";
+    private static final String VIEW_BID_HISTORY = "Personal Bid";
     private static final String VIEW_MY_AUCTION = "My Auction";
 
     private static final String CATEGORY_ALL = "All";
@@ -863,7 +863,7 @@ public class HomeController {
         return switch (activeView) {
             case VIEW_COMING_SOON -> auctionCount + " upcoming auctions in " + categoryLabel + ".";
             case VIEW_LIVE_AUCTION -> auctionCount + " active auctions in " + categoryLabel + ".";
-            case VIEW_BID_HISTORY -> "Your bid records filtered by " + categoryLabel + ".";
+            case VIEW_BID_HISTORY -> "Your personal bids filtered by " + categoryLabel + ".";
             case VIEW_MY_AUCTION -> "Auctions you created, filtered by " + categoryLabel + ".";
             default -> "Auction list in " + categoryLabel + ".";
         };
@@ -946,6 +946,8 @@ public class HomeController {
             : item.getAuctionTitle());
         title.setWrapText(false);
         title.setTextOverrun(OverrunStyle.ELLIPSIS);
+        title.setMinWidth(0);
+        title.setPrefWidth(0);
         title.setMaxWidth(Double.MAX_VALUE);
         title.maxWidthProperty().bind(row.widthProperty().subtract(4));
         title.getStyleClass().add("bid-item-title");
@@ -955,7 +957,7 @@ public class HomeController {
         Label price = new Label("CURRENT: " + CURRENCY_FORMAT.format(item.getCurrentPrice() == null ? BigDecimal.ZERO : item.getCurrentPrice()));
         price.getStyleClass().add("bid-item-meta");
         Label status = new Label(item.getBidStatus() == null ? "-" : item.getBidStatus().name());
-        status.getStyleClass().add(isPositiveMyBidStatus(status.getText()) ? "bid-status-accent" : "bid-status-danger");
+        status.getStyleClass().add(previewBidStatusStyle(status.getText()));
 
         metaRow.getChildren().add(price);
         metaRow.getChildren().add(new javafx.scene.layout.Region());
@@ -966,8 +968,12 @@ public class HomeController {
         return row;
     }
 
-    private boolean isPositiveMyBidStatus(String status) {
-        return "WINNING".equals(status) || "WON".equals(status);
+    private String previewBidStatusStyle(String status) {
+        return switch (status) {
+            case "WINNING", "WON" -> "bid-status-accent";
+            case "OUTBID" -> "bid-status-danger";
+            default -> "bid-status-muted";
+        };
     }
 
     private void renderPreviewFlow(FlowPane flowPane, List<Auction> auctions) {
@@ -1083,7 +1089,7 @@ public class HomeController {
             return "No upcoming auctions found for this category.";
         }
         if (VIEW_BID_HISTORY.equals(activeView)) {
-            return "No bid history found for this category.";
+            return "No personal bids found for this category.";
         }
         if (VIEW_MY_AUCTION.equals(activeView)) {
             return "No created auctions found for this category.";
@@ -1204,9 +1210,9 @@ public class HomeController {
             NotificationManager.show(
             NotificationManager.NotificationType.ERROR,
             "Navigation failed",
-            "Could not open the my bid history screen."
+            "Could not open the personal bid screen."
         );
-        }
+    }
     }
 
     private Node createAuctionCard(Auction listAuction) {

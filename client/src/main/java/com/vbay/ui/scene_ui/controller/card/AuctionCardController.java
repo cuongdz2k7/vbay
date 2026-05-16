@@ -23,6 +23,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 public class AuctionCardController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -55,6 +56,7 @@ public class AuctionCardController {
     @FXML
     private void initialize() {
         cardRoot.setFocusTraversable(true);
+        applyRoundedClip(productImageView, 220, 136, 12);
         cardRoot.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (newScene == null) {
                 stopTimeUpdater();
@@ -95,6 +97,13 @@ public class AuctionCardController {
         if (listAuction != null && onSelected != null) {
             onSelected.accept(listAuction.getId());
         }
+    }
+
+    private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
+        Rectangle clip = new Rectangle(width, height);
+        clip.setArcWidth(arc);
+        clip.setArcHeight(arc);
+        imageView.setClip(clip);
     }
 
     private void startTimeUpdater() {

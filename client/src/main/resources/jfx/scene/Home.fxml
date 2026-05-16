@@ -88,7 +88,7 @@
                                         <graphic>
                                             <HBox alignment="CENTER_LEFT" spacing="12">
                                                 <SVGPath content="M4 3H15V16H4ZM7 7H13M7 10H13M7 13H10" styleClass="module-icon-shape"/>
-                                                <Label text="BID HISTORY" styleClass="module-label"/>
+                                                <Label text="PERSONAL BID" styleClass="module-label"/>
                                             </HBox>
                                         </graphic>
                                     </Button>
@@ -208,7 +208,7 @@
                         <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
                             <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
                                 <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
-                                <Label text="BID HISTORY" styleClass="portfolio-section-title"/>
+                                <Label text="PERSONAL BID" styleClass="portfolio-section-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
                                 <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
                             </HBox>

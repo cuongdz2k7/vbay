@@ -79,19 +79,19 @@
 
 .sidebar-frame {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(17, 15, 15, 0.98) 0%, rgba(10, 10, 10, 0.995) 100%);
-    -fx-background-radius: 34;
+    -fx-background-radius: 24;
     -fx-border-color: rgba(255, 152, 97, 0.2);
-    -fx-border-radius: 34;
-    -fx-min-height: 760;
-    -fx-padding: 22 16 20 16;
-    -fx-effect: dropshadow(gaussian, rgba(255, 132, 76, 0.12), 22, 0.14, 0, 6);
+    -fx-border-radius: 24;
+    -fx-min-height: 720;
+    -fx-padding: 18 14 18 14;
+    -fx-effect: dropshadow(gaussian, rgba(255, 132, 76, 0.08), 16, 0.12, 0, 4);
 }
 
 .navigation-frame {
     -fx-background-color: rgba(255, 255, 255, 0.01);
-    -fx-background-radius: 26;
-    -fx-border-color: rgba(255, 158, 105, 0.12);
-    -fx-border-radius: 26;
+    -fx-background-radius: 20;
+    -fx-border-color: transparent;
+    -fx-border-radius: 20;
     -fx-padding: 10 0 0 0;
     -fx-effect: null;
 }
@@ -121,7 +121,7 @@
 
 .portfolio-title {
     -fx-text-fill: #fff2de;
-    -fx-font-size: 19px;
+    -fx-font-size: 18px;
     -fx-font-weight: 800;
 }
 
@@ -133,12 +133,12 @@
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.02) 0%, rgba(255, 160, 106, 0.03) 100%);
     -fx-content-display: GRAPHIC_ONLY;
     -fx-alignment: CENTER_LEFT;
-    -fx-padding: 15 18 15 18;
+    -fx-padding: 13 16 13 16;
     -fx-border-color: rgba(255, 181, 160, 0.08);
     -fx-border-width: 1;
-    -fx-border-radius: 18;
-    -fx-background-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 10, 0.1, 0, 2);
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 8, 0.08, 0, 2);
 }
 
 .module-nav-item:hover,
@@ -147,7 +147,7 @@
 .module-nav-item:pressed {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 95, 46, 0.1) 0%, rgba(255, 140, 84, 0.08) 100%);
     -fx-border-color: rgba(255, 136, 97, 0.42);
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.22), 16, 0.16, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.14), 12, 0.12, 0, 3);
 }
 
 .module-nav-item.active-module,
@@ -157,7 +157,7 @@
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 95, 46, 0.16) 0%, rgba(255, 140, 84, 0.11) 100%);
     -fx-border-color: rgba(255, 146, 112, 0.58);
     -fx-border-width: 1;
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.28), 18, 0.18, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.16), 14, 0.14, 0, 4);
 }
 
 .module-icon-shape {
@@ -180,13 +180,13 @@
 
 .module-label {
     -fx-text-fill: rgba(255, 181, 160, 0.82);
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
     -fx-font-weight: 900;
 }
 
 .module-nav-item.active-module .module-label {
     -fx-text-fill: #ff8a5d;
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: 900;
 }
 
@@ -207,9 +207,9 @@
 .module-panel,
 .sidebar-utility-card {
     -fx-background-color: rgba(13, 11, 11, 0.88);
-    -fx-background-radius: 20;
+    -fx-background-radius: 16;
     -fx-border-color: rgba(255, 181, 160, 0.13);
-    -fx-border-radius: 20;
+    -fx-border-radius: 16;
     -fx-padding: 12;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.32), 16, 0.14, 0, 5);
 }
@@ -277,16 +277,16 @@
     -fx-border-color: rgba(104, 255, 163, 0.58);
     -fx-border-width: 1.2;
     -fx-text-fill: #ffffff;
-    -fx-font-size: 14px;
+    -fx-font-size: 13px;
     -fx-font-weight: 900;
-    -fx-padding: 16 18 16 18;
-    -fx-effect: dropshadow(gaussian, rgba(32, 210, 102, 0.36), 24, 0.2, 0, 7);
+    -fx-padding: 14 16 14 16;
+    -fx-effect: dropshadow(gaussian, rgba(32, 210, 102, 0.22), 18, 0.16, 0, 5);
 }
 
 .create-auctions-btn:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #0d6133 0%, #18934d 100%);
     -fx-border-color: rgba(139, 255, 184, 0.86);
-    -fx-effect: dropshadow(gaussian, rgba(37, 235, 117, 0.48), 30, 0.24, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(37, 235, 117, 0.28), 22, 0.18, 0, 6);
 }
 
 .secondary-action-btn {
@@ -302,14 +302,14 @@
     -fx-text-fill: #fff7f7;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(214, 40, 50, 0.32), 22, 0.18, 0, 6);
+    -fx-effect: dropshadow(gaussian, rgba(214, 40, 50, 0.2), 16, 0.14, 0, 4);
 }
 
 .logout-btn:hover {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(139, 23, 29, 0.98) 0%, rgba(185, 37, 44, 0.94) 100%);
     -fx-border-color: rgba(255, 132, 136, 0.92);
     -fx-text-fill: #ffffff;
-    -fx-effect: dropshadow(gaussian, rgba(255, 56, 67, 0.5), 28, 0.22, 0, 7);
+    -fx-effect: dropshadow(gaussian, rgba(255, 56, 67, 0.3), 20, 0.16, 0, 5);
 }
 
 .main-scroll,
@@ -353,10 +353,10 @@
 .listing-card,
 .empty-state {
     -fx-background-color: rgba(18, 16, 16, 0.9);
-    -fx-background-radius: 28;
+    -fx-background-radius: 20;
     -fx-border-color: rgba(255, 181, 160, 0.12);
-    -fx-border-radius: 28;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.18, 0, 7);
+    -fx-border-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 14, 0.14, 0, 5);
 }
 
 .live-heading-row {
@@ -364,7 +364,7 @@
 }
 
 .home-section {
-    -fx-padding: 20 22 22 22;
+    -fx-padding: 18 20 20 20;
 }
 
 .home-section-header {
@@ -372,7 +372,7 @@
 }
 
 .home-section-title {
-    -fx-font-size: 18px;
+    -fx-font-size: 17px;
     -fx-font-weight: 700;
 }
 
@@ -480,42 +480,51 @@
 
 .auction-card {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(28, 24, 24, 0.96) 0%, rgba(20, 19, 19, 0.96) 100%);
-    -fx-background-radius: 26;
+    -fx-background-radius: 16;
     -fx-border-color: rgba(255, 181, 160, 0.12);
-    -fx-border-radius: 26;
-    -fx-padding: 0 0 16 0;
+    -fx-border-radius: 16;
+    -fx-padding: 0 0 14 0;
     -fx-cursor: hand;
-    -fx-spacing: 10;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 16, 0.16, 0, 7);
+    -fx-spacing: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 12, 0.12, 0, 5);
 }
 
 .auction-card:hover {
     -fx-border-color: rgba(255, 116, 71, 0.34);
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.16), 24, 0.16, 0, 8);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.1), 18, 0.12, 0, 6);
+}
+
+.card-image-frame {
+    -fx-background-color: rgba(255, 255, 255, 0.025);
+    -fx-background-radius: 16 16 10 10;
+    -fx-border-color: transparent;
+    -fx-border-radius: 16 16 10 10;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-padding: 0;
 }
 
 .card-image {
-    -fx-background-radius: 26 26 20 20;
-    -fx-border-radius: 26 26 20 20;
+    -fx-background-radius: 16 16 10 10;
 }
 
 .card-title {
     -fx-text-fill: -app-text;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-font-size: 18px;
+    -fx-font-size: 16px;
     -fx-font-weight: 700;
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 16 0 16;
 }
 
 .price {
     -fx-text-fill: -app-accent-soft;
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
     -fx-font-weight: 900;
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 16 0 16;
 }
 
 .card-meta-row {
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 16 0 16;
 }
 
 .card-meta-label,
@@ -535,16 +544,14 @@
 }
 
 .time {
-    -fx-padding: 0 18 0 18;
+    -fx-padding: 0 16 0 16;
 }
 
 .card-progress {
-    -fx-min-height: 8;
-    -fx-pref-height: 8;
-    -fx-max-height: 8;
-    -fx-padding: 0 18 0 18;
+    -fx-min-height: 6;
+    -fx-pref-height: 6;
+    -fx-max-height: 6;
     -fx-accent: -app-accent;
-    -fx-accent: #d95f1a;
 }
 
 .card-progress .track {
@@ -571,15 +578,15 @@
 }
 
 .portfolio-drawer {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(57, 42, 31, 0.965) 0%, rgba(36, 27, 22, 0.975) 50%, rgba(20, 16, 14, 0.985) 100%);
-    -fx-border-color: rgba(255, 148, 94, 0.28);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 17, 16, 0.985) 0%, rgba(15, 14, 14, 0.99) 58%, rgba(36, 13, 6, 0.96) 100%);
+    -fx-border-color: rgba(255, 116, 71, 0.28);
     -fx-border-width: 1.05;
-    -fx-border-radius: 32;
-    -fx-background-radius: 32;
-    -fx-min-width: 336;
-    -fx-pref-width: 336;
-    -fx-max-width: 336;
-    -fx-effect: dropshadow(gaussian, rgba(255, 136, 80, 0.11), 22, 0.14, 0, 4);
+    -fx-border-radius: 22;
+    -fx-background-radius: 22;
+    -fx-min-width: 304;
+    -fx-pref-width: 304;
+    -fx-max-width: 304;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.08), 16, 0.1, 0, 3);
 }
 
 .portfolio-module-stack {
@@ -587,12 +594,12 @@
 }
 
 .portfolio-module {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 244, 232, 0.04) 0%, rgba(255, 226, 201, 0.018) 100%);
-    -fx-background-radius: 24;
-    -fx-border-color: rgba(255, 164, 114, 0.18);
-    -fx-border-radius: 24;
-    -fx-padding: 16 15 16 15;
-    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.05), 14, 0.1, 0, 2);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(20, 18, 17, 0.92) 0%, rgba(18, 15, 14, 0.96) 72%, rgba(44, 17, 8, 0.56) 100%);
+    -fx-background-radius: 16;
+    -fx-border-color: rgba(255, 116, 71, 0.22);
+    -fx-border-radius: 16;
+    -fx-padding: 13 13 13 13;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.045), 10, 0.08, 0, 1);
 }
 
 .portfolio-module-recessed {
@@ -603,13 +610,13 @@
 
 .portfolio-module-header {
     -fx-padding: 0 0 2 0;
-    -fx-min-height: 34;
+    -fx-min-height: 30;
 }
 
 .portfolio-module-bar {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 182, 136, 0.76) 0%, rgba(255, 132, 74, 0.68) 52%, rgba(255, 205, 168, 0.12) 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 116, 71, 0.78) 0%, rgba(217, 95, 26, 0.58) 52%, rgba(255, 116, 71, 0.12) 100%);
     -fx-background-radius: 999;
-    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.14), 10, 0.12, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.08), 8, 0.08, 0, 1);
 }
 
 .portfolio-module-bar-recessed {
@@ -626,16 +633,16 @@
 
 .portfolio-section-icon {
     -fx-fill: transparent;
-    -fx-stroke: #ffb786;
+    -fx-stroke: #ff8a5d;
     -fx-stroke-width: 1.75;
 }
 
 .portfolio-section-title,
 .listing-title,
 .bid-item-title {
-    -fx-text-fill: #fff2de;
+    -fx-text-fill: #fff4ea;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-font-size: 13px;
+    -fx-font-size: 12px;
     -fx-font-weight: 800;
 }
 
@@ -645,23 +652,31 @@
 }
 
 .bid-line-item {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 248, 240, 0.045) 0%, rgba(255, 239, 224, 0.025) 100%);
-    -fx-background-radius: 18;
-    -fx-border-color: rgba(255, 168, 118, 0.16);
-    -fx-border-radius: 18;
-    -fx-padding: 12 12 12 12;
-    -fx-effect: dropshadow(gaussian, rgba(255, 147, 93, 0.05), 12, 0.1, 0, 2);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(21, 19, 18, 0.96) 0%, rgba(25, 19, 16, 0.92) 64%, rgba(61, 23, 11, 0.46) 100%);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 116, 71, 0.22);
+    -fx-border-radius: 14;
+    -fx-padding: 10 10 10 10;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.045), 8, 0.08, 0, 1);
 }
 
 .bid-status-danger {
-    -fx-text-fill: #fff2de;
+    -fx-text-fill: #ff5454;
     -fx-font-size: 11px;
     -fx-font-weight: 900;
+    -fx-effect: dropshadow(gaussian, rgba(255, 84, 84, 0.32), 12, 0.2, 0, 0);
 }
 
 .bid-status-accent,
 .listing-active {
-    -fx-text-fill: #fff2de;
+    -fx-text-fill: #32d978;
+    -fx-font-size: 11px;
+    -fx-font-weight: 900;
+    -fx-effect: dropshadow(gaussian, rgba(50, 217, 120, 0.3), 12, 0.2, 0, 0);
+}
+
+.bid-status-muted {
+    -fx-text-fill: #a0a0a0;
     -fx-font-size: 11px;
     -fx-font-weight: 900;
 }
@@ -669,16 +684,16 @@
 .listing-card {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 247, 238, 0.045) 0%, rgba(255, 234, 215, 0.02) 100%);
     -fx-border-color: rgba(255, 168, 118, 0.18);
-    -fx-background-radius: 22;
-    -fx-border-radius: 22;
-    -fx-padding: 16;
-    -fx-effect: dropshadow(gaussian, rgba(255, 147, 93, 0.05), 14, 0.1, 0, 2);
+    -fx-background-radius: 16;
+    -fx-border-radius: 16;
+    -fx-padding: 13;
+    -fx-effect: dropshadow(gaussian, rgba(255, 147, 93, 0.035), 10, 0.08, 0, 1);
 }
 
 .listing-price {
     -fx-text-fill: #fff2de;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
 }
 

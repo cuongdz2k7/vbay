@@ -24,7 +24,7 @@
 
             <HBox alignment="CENTER_LEFT" styleClass="my-bid-heading-row">
                 <VBox spacing="4">
-                    <Label text="Bid History" styleClass="my-bid-title"/>
+                    <Label text="Personal Bid" styleClass="my-bid-title"/>
                     <Label text="Real-time overview of your active and historical commitments." styleClass="my-bid-subtitle"/>
                 </VBox>
                 <Region HBox.hgrow="ALWAYS"/>

@@ -88,8 +88,8 @@
 }
 
 .gallery-column {
-    -fx-min-width: 620;
-    -fx-max-width: 620;
+    -fx-min-width: 560;
+    -fx-max-width: 560;
 }
 
 .hero-frame,
@@ -98,18 +98,18 @@
 .history-section,
 .trust-panel {
     -fx-background-color: rgba(18, 16, 16, 0.92);
-    -fx-background-radius: 28;
+    -fx-background-radius: 18;
     -fx-border-color: rgba(255, 181, 160, 0.12);
-    -fx-border-radius: 28;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.18, 0, 7);
+    -fx-border-radius: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 14, 0.14, 0, 5);
 }
 
 .hero-frame {
     -fx-padding: 0;
-    -fx-min-width: 620;
-    -fx-min-height: 390;
-    -fx-max-width: 620;
-    -fx-max-height: 390;
+    -fx-min-width: 560;
+    -fx-min-height: 352;
+    -fx-max-width: 560;
+    -fx-max-height: 352;
 }
 
 .hero-image {
@@ -128,36 +128,38 @@
 }
 
 .thumbnail-row {
-    -fx-min-height: 96;
-    -fx-max-height: 96;
+    -fx-min-height: 86;
+    -fx-max-height: 86;
 }
 
 .thumb-frame {
     -fx-background-color: rgba(255, 255, 255, 0.03);
-    -fx-background-radius: 20;
+    -fx-background-radius: 12;
     -fx-border-color: rgba(255, 181, 160, 0.12);
-    -fx-border-radius: 20;
-    -fx-border-width: 2;
-    -fx-padding: 4;
-    -fx-min-width: 147;
-    -fx-min-height: 96;
-    -fx-max-width: 147;
-    -fx-max-height: 96;
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 2;
+    -fx-alignment: center;
+    -fx-min-width: 132;
+    -fx-min-height: 86;
+    -fx-max-width: 132;
+    -fx-max-height: 86;
 }
 
 .thumb-frame:hover {
     -fx-border-color: rgba(255, 116, 71, 0.3);
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.2), 22, 0.16, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.12), 16, 0.12, 0, 4);
 }
 
 .active-thumb {
     -fx-border-color: -app-accent-strong;
+    -fx-border-width: 1;
 }
 
 .auction-panel {
-    -fx-padding: 24;
-    -fx-min-width: 442;
-    -fx-max-width: 442;
+    -fx-padding: 22;
+    -fx-min-width: 408;
+    -fx-max-width: 408;
 }
 
 .eyebrow-label,
@@ -171,7 +173,7 @@
 .auction-title {
     -fx-text-fill: -app-text;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-font-size: 27px;
+    -fx-font-size: 24px;
     -fx-font-weight: 800;
 }
 
@@ -215,7 +217,7 @@
 .meta-value,
 .time-value {
     -fx-text-fill: -app-text;
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-font-weight: 800;
 }
 
@@ -234,13 +236,13 @@
     -fx-text-fill: -app-text;
     -fx-prompt-text-fill: rgba(255, 181, 160, 0.4);
     -fx-padding: 11 14 11 14;
-    -fx-font-size: 16px;
+    -fx-font-size: 15px;
     -fx-font-weight: 800;
 }
 
 .bid-input:focused {
     -fx-border-color: rgba(255, 116, 71, 0.44);
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.2), 22, 0.16, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.12), 16, 0.12, 0, 4);
 }
 
 .outline-action-btn,
@@ -345,6 +347,7 @@
 .auction-progress .bar {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff5f2e 0%, #ff8457 100%);
     -fx-background-radius: 999;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.12), 8, 0.1, 0, 1);
 }
 
 .trust-panel {
@@ -361,8 +364,8 @@
 
 .info-section,
 .history-section {
-    -fx-padding: 22;
-    -fx-max-width: 1080;
+    -fx-padding: 20;
+    -fx-max-width: 1000;
 }
 
 .tabs-row {
@@ -396,10 +399,10 @@
 
 .history-row {
     -fx-background-color: rgba(255, 255, 255, 0.035);
-    -fx-background-radius: 18;
+    -fx-background-radius: 12;
     -fx-border-color: rgba(255, 181, 160, 0.1);
-    -fx-border-radius: 18;
-    -fx-padding: 14 16 14 16;
+    -fx-border-radius: 12;
+    -fx-padding: 12 14 12 14;
 }
 
 .history-bidder {
@@ -412,4 +415,51 @@
     -fx-text-fill: -app-accent-soft;
     -fx-font-size: 14px;
     -fx-font-weight: 900;
+}
+
+.buy-now-confirm-dialog {
+    -fx-background-color: #121010;
+    -fx-border-color: rgba(255, 116, 71, 0.34);
+    -fx-border-width: 1;
+    -fx-border-radius: 14;
+    -fx-background-radius: 14;
+}
+
+.buy-now-content {
+    -fx-padding: 8 6 4 6;
+}
+
+.buy-now-title {
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 18px;
+    -fx-font-weight: 900;
+}
+
+.buy-now-copy {
+    -fx-text-fill: rgba(255, 226, 210, 0.82);
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.buy-now-price {
+    -fx-text-fill: #ffb18f;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.22), 10, 0.16, 0, 0);
+}
+
+.buy-now-confirm-dialog .button-bar .button {
+    -fx-background-color: rgba(255, 95, 46, 0.12);
+    -fx-border-color: rgba(255, 116, 71, 0.34);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-text-fill: #ffcfbd;
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+    -fx-padding: 8 16 8 16;
+}
+
+.buy-now-confirm-dialog .button-bar .button:hover {
+    -fx-background-color: rgba(255, 95, 46, 0.2);
+    -fx-border-color: rgba(255, 116, 71, 0.56);
 }

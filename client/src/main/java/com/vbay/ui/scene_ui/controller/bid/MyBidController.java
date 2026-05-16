@@ -42,7 +42,9 @@ import javafx.scene.control.OverrunStyle;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 
 public class MyBidController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -248,11 +250,15 @@ public class MyBidController {
         cell.setAlignment(Pos.CENTER_LEFT);
         cell.getStyleClass().add("my-bid-col-product");
 
-        VBox imageFrame = new VBox();
+        StackPane imageFrame = new StackPane();
         imageFrame.getStyleClass().add("my-bid-product-image-frame");
         ImageView imageView = new ImageView();
         imageView.setFitWidth(42);
         imageView.setFitHeight(42);
+        Rectangle clip = new Rectangle(42, 42);
+        clip.setArcWidth(8);
+        clip.setArcHeight(8);
+        imageView.setClip(clip);
         ProductImageLoader.loadCover(imageView, imagePath(item));
         imageFrame.getChildren().add(imageView);
 

@@ -5,20 +5,23 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:id="cardRoot"
-      prefWidth="240"
-      maxWidth="240"
-      spacing="10"
+      prefWidth="220"
+      maxWidth="220"
+      spacing="8"
       styleClass="auction-card"
       fx:controller="com.vbay.ui.scene_ui.controller.card.AuctionCardController"
       onMouseClicked="#handleCardClicked"
       onKeyPressed="#handleCardKeyPressed">
     <children>
-        <ImageView fx:id="productImageView" fitWidth="240" fitHeight="148" pickOnBounds="true" preserveRatio="false" styleClass="card-image" onMouseClicked="#handleCardClicked"/>
+        <StackPane prefWidth="220" prefHeight="136" maxWidth="220" maxHeight="136" styleClass="card-image-frame">
+            <ImageView fx:id="productImageView" fitWidth="220" fitHeight="136" pickOnBounds="true" preserveRatio="false" styleClass="card-image"/>
+        </StackPane>
         <Label fx:id="titleLabel" styleClass="card-title" wrapText="true"/>
         <Label fx:id="priceLabel" styleClass="price"/>
         <HBox spacing="10" styleClass="card-meta-row">
@@ -28,7 +31,7 @@
             </children>
         </HBox>
         <Label fx:id="timeLabel" styleClass="time"/>
-        <ProgressBar fx:id="progressBar" prefWidth="204" maxWidth="204" prefHeight="8" progress="0.0" styleClass="card-progress">
+        <ProgressBar fx:id="progressBar" prefWidth="188" maxWidth="188" prefHeight="6" progress="0.0" styleClass="card-progress">
             <VBox.margin>
                 <Insets left="18" right="18"/>
             </VBox.margin>

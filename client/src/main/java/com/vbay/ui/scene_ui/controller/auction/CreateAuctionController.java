@@ -252,6 +252,8 @@ public class CreateAuctionController {
         applyCoverViewport(imageView, image, PREVIEW_SIZE, PREVIEW_SIZE);
 
         Rectangle clip = new Rectangle(PREVIEW_SIZE, PREVIEW_SIZE);
+        clip.setArcWidth(18);
+        clip.setArcHeight(18);
         imageView.setClip(clip);
 
         Button removeButton = new Button("x");
