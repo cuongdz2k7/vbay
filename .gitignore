@@ -16,6 +16,8 @@ server/target/
 
 # Log files
 *.log
+*.lck
+logs/
 
 # BlueJ files
 *.ctxt
@@ -39,3 +41,8 @@ replay_pid*
 
 # Uploaded product images
 server/uploads/
+#Markdown files
+*.md
+!README.md
+# Gemini Agents
+.gemini/agents/

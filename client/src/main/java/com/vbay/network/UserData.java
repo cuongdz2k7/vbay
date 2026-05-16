@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.enums.auth.Position;
 
-public final class ClientAuthSession {
+public final class UserData {
     private static Long userId;
     private static String username;
     private static String email;
@@ -13,7 +13,7 @@ public final class ClientAuthSession {
     private static BigDecimal availableBalance;
     private static BigDecimal holdBalance;
 
-    private ClientAuthSession() {
+    private UserData() {
     }
 
     public static void setLoginResponse(LoginResponse response) {

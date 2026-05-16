@@ -15,8 +15,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.LongConsumer;
 
-import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.dto.realtimeDTO.Room;
@@ -127,7 +127,7 @@ public class MyBidController {
     }
 
     private void subscribeUserRoom() {
-        Long currentUserId = ClientAuthSession.getUserId();
+        Long currentUserId = UserData.getUserId();
         if (currentUserId == null) {
             return;
         }

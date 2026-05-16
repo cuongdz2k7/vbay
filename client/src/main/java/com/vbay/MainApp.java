@@ -1,7 +1,11 @@
 package com.vbay;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.vbay.network.SocketClient;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -11,6 +15,7 @@ import atlantafx.base.theme.PrimerLight;
 import javafx.application.Application;
 import javafx.stage.Stage;
 public class MainApp extends Application {
+    private static final Logger LOGGER = LoggingUtils.getLogger(MainApp.class);
     private static final String DEFAULT_SERVER_HOST = "localhost";
     private static final int SOCKET_PORT = 3618;
 
@@ -19,22 +24,21 @@ public class MainApp extends Application {
 
         try {
             String serverHost = System.getProperty("vbay.server.host", DEFAULT_SERVER_HOST);
-            System.out.println("Connecting to VBay server...");
+            LOGGER.info("Connecting to VBay server at " + serverHost + ":" + SOCKET_PORT);
             client.connect(serverHost, SOCKET_PORT);
 
             Request<String> request = new Request<>(RequestType.VERIFY, "Hello, server!");
             Respond<?> response = client.sendMessage(request);
 
             if (response != null && response.isStatus()) {
-                System.out.println("Connected to VBay server.");
+                LOGGER.info("Connected to VBay server.");
             } else if (response != null) {
-                System.err.println("Server verification failed: " + response.getMessage());
+                LOGGER.warning(() -> "Server verification failed: " + response.getMessage());
             } else {
-                System.err.println("Server verification failed: empty response");
+                LOGGER.warning("Server verification failed: empty response");
             }
         } catch (IOException exception) {
-            System.err.println("Could not connect to server");
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Could not connect to server.", exception);
         }
     }
 
@@ -54,27 +58,28 @@ public class MainApp extends Application {
 
     @Override
     public void stop() throws Exception {
-        System.out.println("VBAY shut down ");
+        LOGGER.info("VBay client shutting down.");
         try {
             SocketClient.getClient().disconnect();
         } catch (IOException exception) {
-            System.err.println("Error while disconnecting: " + exception.getMessage());
+            LOGGER.log(Level.WARNING, "Error while disconnecting.", exception);
         }
         super.stop();
     }
 
 
     public static void main(String[] args) {
+        LoggingUtils.configure("client");
         //ShutDownHook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("App Shutting Down - Emergency shutdown detected");
+            LOGGER.warning("App shutting down. Emergency shutdown detected.");
             try {
                 SocketClient client = SocketClient.getClient();
                 if (client.isConnected()) {
                     client.disconnect();
                 }
-            } catch (Exception e) {
-                System.err.println("Error during emergency shutdown: " + e.getMessage());
+            } catch (Exception exception) {
+                LOGGER.log(Level.WARNING, "Error during emergency shutdown.", exception);
             }
         }));
         //Start FXApplication-->start()
@@ -82,5 +87,3 @@ public class MainApp extends Application {
         
     }
 }
-
-

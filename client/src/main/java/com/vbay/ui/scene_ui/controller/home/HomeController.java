@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
@@ -34,6 +37,7 @@ import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
 import com.vbay.ui.scene_ui.controller.bid.BidController;
@@ -46,7 +50,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -163,6 +166,7 @@ Mỗi màn mở lên:
 5. dispose thì unsubscribe + stop timer + bỏ state màn đó
 */
 public class HomeController {
+    private static final Logger LOGGER = LoggingUtils.getLogger(HomeController.class);
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
     private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
@@ -258,10 +262,10 @@ public class HomeController {
         homeLeft = homeRoot.getLeft();
         homeRight = homeRoot.getRight();
         homeBottom = homeRoot.getBottom();
-        currentUserId = ClientAuthSession.getUserId();
+        currentUserId = UserData.getUserId();
 
         initializeNavigationMaps();
-        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateBalanceDisplay(UserData.getAvailableBalance());
         updateAccountDisplay();
         subscribeRealtimeListener();
         subscribeServerRooms();
@@ -347,8 +351,8 @@ public class HomeController {
 
             return listResponse.getItems() != null ? listResponse.getItems() : List.of();            
         } catch (IOException exception) {
-            exception.printStackTrace();
-            showMessage(Alert.AlertType.ERROR, "Load auctions failed", exception.getMessage());
+            LOGGER.log(Level.SEVERE, "Load auctions failed", exception);
+            showMessage(NotificationManager.NotificationType.ERROR, "Load auctions failed", exception.getMessage());
             return List.of();
         }
     }
@@ -370,7 +374,7 @@ public class HomeController {
                 );
             }
         } catch (IOException exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.WARNING, "Subscribe server rooms failed", exception);
         }
     }
 
@@ -580,10 +584,10 @@ public class HomeController {
         try {
             logoutUser();
         } catch (IOException exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Logout failed", exception);
             showMessage(
-                Alert.AlertType.ERROR,
-                "Logout failed(Server Side)",
+                NotificationManager.NotificationType.ERROR,
+                "Logout failed",
                 exception.getMessage() != null ? exception.getMessage() : "Could not log out from the current session."
             );
             return;
@@ -595,9 +599,9 @@ public class HomeController {
             unsubscribeRealtimeListener();
             SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Navigation to login failed", exception);
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 exception.getMessage() != null ? exception.getMessage() : "Could not return to the login screen."
             );
@@ -626,9 +630,9 @@ public class HomeController {
             homeRoot.setCenter(createAuctionCenter);
             homeRoot.setBottom(createAuctionBottom);
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Navigation to create auction failed", exception);
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the create auction scene."
             );
@@ -644,7 +648,7 @@ public class HomeController {
             if (disposed) {
                 return;
             }
-            ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+            UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
         });
     }
@@ -701,7 +705,7 @@ public class HomeController {
     }
 
     private void updateAccountDisplay() {
-        String username = ClientAuthSession.getUsername();
+        String username = UserData.getUsername();
         accountNameLabel.setText(username == null || username.isBlank() ? "Account" : username);
     }
 
@@ -720,9 +724,9 @@ public class HomeController {
             homeRoot.setCenter(depositCenter);
             homeRoot.setBottom(null);
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Navigation to deposit balance failed", exception);
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the deposit balance screen."
             );
@@ -756,9 +760,9 @@ public class HomeController {
             homeRoot.setCenter(bidCenter);
             homeRoot.setBottom(bidBottom);
         } catch (Exception exception) {
-            exception.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Navigation to bid detail failed", exception);
             showMessage(
-                Alert.AlertType.ERROR,
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the placebid detail scene for the selected product."
             );
@@ -796,8 +800,8 @@ public class HomeController {
         if (!response.isStatus()) {
             throw new IOException(response.getMessage() != null ? response.getMessage() : "Logout failed.");
         }
-        System.out.println("Logout successfully.");
-        ClientAuthSession.clear();
+        LOGGER.info("Logout successfully.");
+        UserData.clear();
     }
 
     private void initializeNavigationMaps() {
@@ -1197,11 +1201,11 @@ public class HomeController {
             setActiveNavigationState();
         } catch (Exception exception) {
             exception.printStackTrace();
-            showMessage(
-                Alert.AlertType.ERROR,
-                "Navigation failed",
-                "Could not open the bid history screen."
-            );
+            NotificationManager.show(
+            NotificationManager.NotificationType.ERROR,
+            "Navigation failed",
+            "Could not open the my bid history screen."
+        );
         }
     }
 
@@ -1230,11 +1234,7 @@ public class HomeController {
         }
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
+    private void showMessage(NotificationManager.NotificationType type, String title, String content) {
+        NotificationManager.show(type, title, content);
     }
 }

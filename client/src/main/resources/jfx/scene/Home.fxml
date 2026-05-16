@@ -41,73 +41,77 @@
     </top>
 
     <left>
-        <ScrollPane fx:id="sidebarScroll" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" prefWidth="224" styleClass="sidebar-scroll">
+        <ScrollPane fx:id="sidebarScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" prefWidth="246" styleClass="sidebar-scroll">
             <content>
-                <VBox prefWidth="224" spacing="24" styleClass="sidebar">
+                <VBox prefWidth="246" styleClass="sidebar-shell">
                     <padding>
-                        <Insets top="28" right="20" bottom="24" left="20"/>
+                        <Insets top="18" right="16" bottom="18" left="16"/>
                     </padding>
 
-                    <VBox spacing="5">
-                        <Label text="Navigation" styleClass="sidebar-title"/>
-                        <Label fx:id="sidebarSubtitle" text="home overview" styleClass="sidebar-subtitle"/>
-                    </VBox>
+                    <VBox prefWidth="214" spacing="28" styleClass="sidebar-frame" VBox.vgrow="ALWAYS">
+                        <VBox spacing="22">
+                            <VBox spacing="18" styleClass="navigation-frame">
+                                <VBox spacing="5" styleClass="navigation-frame-header">
+                                    <Label text="Navigation" styleClass="sidebar-title"/>
+                                    <Label fx:id="sidebarSubtitle" text="home overview" styleClass="sidebar-subtitle"/>
+                                </VBox>
 
-                    <VBox spacing="6" VBox.vgrow="ALWAYS">
-                        <Button fx:id="homeModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M3 9L10 3L17 9V17H12V12H8V17H3Z" styleClass="module-icon-shape"/>
-                                    <Label text="HOME" styleClass="module-label"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
+                                <VBox spacing="8" VBox.vgrow="ALWAYS">
+                                    <Button fx:id="homeModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
+                                        <graphic>
+                                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                                <SVGPath content="M3 9L10 3L17 9V17H12V12H8V17H3Z" styleClass="module-icon-shape"/>
+                                                <Label text="HOME" styleClass="module-label"/>
+                                            </HBox>
+                                        </graphic>
+                                    </Button>
 
-                        <Button fx:id="comingSoonModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M9 2A7 7 0 1 1 8.99 2ZM9 5V9L12 11" styleClass="module-icon-shape"/>
-                                    <Label text="COMING SOON" styleClass="module-label"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
+                                    <Button fx:id="comingSoonModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
+                                        <graphic>
+                                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                                <SVGPath content="M9 2A7 7 0 1 1 8.99 2ZM9 5V9L12 11" styleClass="module-icon-shape"/>
+                                                <Label text="COMING SOON" styleClass="module-label"/>
+                                            </HBox>
+                                        </graphic>
+                                    </Button>
 
-                        <Button fx:id="liveAuctionModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M2 4H14L16 7V15H2ZM4 7H14M5 10H9" styleClass="module-icon-shape"/>
-                                    <Label text="LIVE AUCTION" styleClass="module-label"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
+                                    <Button fx:id="liveAuctionModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
+                                        <graphic>
+                                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                                <SVGPath content="M2 4H14L16 7V15H2ZM4 7H14M5 10H9" styleClass="module-icon-shape"/>
+                                                <Label text="LIVE AUCTION" styleClass="module-label"/>
+                                            </HBox>
+                                        </graphic>
+                                    </Button>
 
-                        <Button fx:id="bidHistoryModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M4 3H15V16H4ZM7 7H13M7 10H13M7 13H10" styleClass="module-icon-shape"/>
-                                    <Label text="BID HISTORY" styleClass="module-label"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
+                                    <Button fx:id="bidHistoryModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
+                                        <graphic>
+                                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                                <SVGPath content="M4 3H15V16H4ZM7 7H13M7 10H13M7 13H10" styleClass="module-icon-shape"/>
+                                                <Label text="BID HISTORY" styleClass="module-label"/>
+                                            </HBox>
+                                        </graphic>
+                                    </Button>
 
-                        <Button fx:id="myAuctionModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
-                            <graphic>
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="module-icon-shape"/>
-                                    <Label text="MY AUCTION" styleClass="module-label"/>
-                                </HBox>
-                            </graphic>
-                        </Button>
+                                    <Button fx:id="myAuctionModuleButton" maxWidth="Infinity" onAction="#handleModuleSelection" styleClass="module-nav-item">
+                                        <graphic>
+                                            <HBox alignment="CENTER_LEFT" spacing="12">
+                                                <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="module-icon-shape"/>
+                                                <Label text="MY AUCTION" styleClass="module-label"/>
+                                            </HBox>
+                                        </graphic>
+                                    </Button>
+                                </VBox>
+                            </VBox>
 
-                    </VBox>
+                            <Button text="Launch Auction" maxWidth="Infinity" onAction="#handleCreateAuctions" styleClass="create-auctions-btn"/>
+                        </VBox>
 
-                    <Region VBox.vgrow="ALWAYS"/>
-                    <VBox spacing="24">
-                        <Button text="Launch Auction" maxWidth="Infinity" onAction="#handleCreateAuctions" styleClass="create-auctions-btn"/>
+                        <Region VBox.vgrow="ALWAYS"/>
                         <VBox spacing="10" styleClass="sidebar-utility-card">
                             <Button text="SETTINGS" maxWidth="Infinity" styleClass="secondary-action-btn"/>
                             <Button text="SUPPORT" maxWidth="Infinity" styleClass="secondary-action-btn"/>
-                            <Button text="LOGOUT" maxWidth="Infinity" onAction="#handleLogout" styleClass="logout-btn"/>
+                            <Button text="LOG OUT" maxWidth="Infinity" onAction="#handleLogout" styleClass="logout-btn"/>
                         </VBox>
                     </VBox>
                 </VBox>
@@ -124,13 +128,13 @@
                     </padding>
 
                     <VBox spacing="20">
-                        <VBox fx:id="homeDashboard" spacing="28">
+                        <VBox fx:id="homeDashboard" maxWidth="1210" spacing="28">
                             <VBox spacing="4" styleClass="home-page-heading">
                                 <Label text="Home" styleClass="catalog-title"/>
                                 <Label text="Previewing upcoming and live auctions." styleClass="catalog-subtitle"/>
                             </VBox>
 
-                            <VBox spacing="14" styleClass="home-section">
+                            <VBox maxWidth="1210" spacing="14" styleClass="home-section">
                                 <HBox alignment="CENTER_LEFT" styleClass="home-section-header">
                                     <VBox spacing="3">
                                         <Label text="Coming Soon" styleClass="home-section-title"/>
@@ -139,10 +143,10 @@
                                     <Region HBox.hgrow="ALWAYS"/>
                                     <Button text="View All" onAction="#handleViewAllComingSoon" styleClass="section-view-all-btn"/>
                                 </HBox>
-                                <FlowPane fx:id="comingSoonPreviewFlow" hgap="22" vgap="22" prefWrapLength="760" styleClass="auction-grid"/>
+                                <FlowPane fx:id="comingSoonPreviewFlow" hgap="22" vgap="22" prefWrapLength="680" styleClass="auction-grid"/>
                             </VBox>
 
-                            <VBox spacing="14" styleClass="home-section">
+                            <VBox maxWidth="1210" spacing="14" styleClass="home-section">
                                 <HBox alignment="CENTER_LEFT" styleClass="home-section-header">
                                     <VBox spacing="3">
                                         <Label text="Live Auction" styleClass="home-section-title"/>
@@ -151,7 +155,7 @@
                                     <Region HBox.hgrow="ALWAYS"/>
                                     <Button text="View All" onAction="#handleViewAllLiveAuction" styleClass="section-view-all-btn"/>
                                 </HBox>
-                                <FlowPane fx:id="liveAuctionPreviewFlow" hgap="22" vgap="22" prefWrapLength="760" styleClass="auction-grid"/>
+                                <FlowPane fx:id="liveAuctionPreviewFlow" hgap="22" vgap="22" prefWrapLength="680" styleClass="auction-grid"/>
                             </VBox>
                         </VBox>
 
@@ -185,65 +189,38 @@
     </center>
 
     <right>
-        <VBox fx:id="portfolioDrawer" prefWidth="292" spacing="30" styleClass="portfolio-drawer">
-            <padding>
-                <Insets top="28" right="22" bottom="28" left="22"/>
-            </padding>
+        <ScrollPane fx:id="portfolioScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="portfolio-scroll">
+            <content>
+                <VBox fx:id="portfolioDrawer" minWidth="336" prefWidth="336" maxWidth="336" spacing="30" styleClass="portfolio-drawer">
+                    <BorderPane.margin>
+                        <Insets top="10" right="14" bottom="10" left="0"/>
+                    </BorderPane.margin>
+                    <padding>
+                        <Insets top="28" right="22" bottom="28" left="22"/>
+                    </padding>
 
-            <VBox spacing="5">
-                <Label text="My Portfolio" styleClass="portfolio-title"/>
-                <Label text="active bidding &amp; ownership" styleClass="portfolio-subtitle"/>
-            </VBox>
-
-            <VBox spacing="22">
-                <VBox spacing="16">
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
-                        <Label text="BID HISTORY" styleClass="portfolio-section-title"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
-                    </HBox>
-                    <VBox fx:id="myBidPreviewBox" spacing="16"/>
-                </VBox>
-
-                <VBox spacing="16">
-                    <HBox alignment="CENTER_LEFT" spacing="10">
-                        <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="portfolio-section-icon"/>
-                        <Label text="MY AUCTIONS" styleClass="portfolio-section-title"/>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="View All" onAction="#handleViewAllMyAuction" styleClass="portfolio-mini-link"/>
-                    </HBox>
-                    <VBox spacing="14" styleClass="listing-card">
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="LISTING STATUS" styleClass="listing-label"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="ACTIVE" styleClass="listing-active"/>
-                        </HBox>
-                        <Label text="Vintage Leica M3 Double Stroke" wrapText="true" styleClass="listing-title"/>
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="\$4,250" styleClass="listing-price"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="12 BIDS" styleClass="listing-bids"/>
-                        </HBox>
+                    <VBox spacing="5">
+                        <Label text="My Portfolio" styleClass="portfolio-title"/>
+                        <Label text="active bidding &amp; ownership" styleClass="portfolio-subtitle"/>
                     </VBox>
-                    <VBox spacing="14" styleClass="listing-card">
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="LISTING STATUS" styleClass="listing-label"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="ACTIVE" styleClass="listing-active"/>
-                        </HBox>
-                        <Label text="CR7 TOTY +8 Rare Card" wrapText="true" styleClass="listing-title"/>
-                        <HBox alignment="CENTER_LEFT">
-                            <Label text="\$4,250" styleClass="listing-price"/>
-                            <Region HBox.hgrow="ALWAYS"/>
-                            <Label text="8 BIDS" styleClass="listing-bids"/>
-                        </HBox>
-                    </VBox>
-                </VBox>
-            </VBox>
 
-            <Region VBox.vgrow="ALWAYS"/>
-            <VBox styleClass="portfolio-footer"/>
-        </VBox>
+                    <VBox spacing="18" styleClass="portfolio-module-stack">
+                        <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
+                                <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
+                                <Label text="BID HISTORY" styleClass="portfolio-section-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="View All" onAction="#handleViewAllBidHistory" styleClass="portfolio-mini-link"/>
+                            </HBox>
+                            <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar"/>
+                            <VBox fx:id="myBidPreviewBox" spacing="16"/>
+                        </VBox>
+                    </VBox>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+                    <VBox styleClass="portfolio-footer"/>
+                </VBox>
+            </content>
+        </ScrollPane>
     </right>
 </BorderPane>

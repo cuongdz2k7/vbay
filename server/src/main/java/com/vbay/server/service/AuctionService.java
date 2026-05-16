@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
@@ -34,6 +35,7 @@ import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
@@ -78,8 +80,8 @@ Rule sửa starting time, ending time : comming soon... (bài tập lớn sẽ k
 
 public class AuctionService {
     private static final int MAX_AUCTION_LIST_LIMIT = 500;
-
-    ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
+    private static final Logger LOGGER = LoggingUtils.getLogger(AuctionService.class);
+    
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final DomainEventPublisher domainEventPublisher;
@@ -106,8 +108,8 @@ public class AuctionService {
         );
         product.setSellerId(session.getUserId());
         productRepository.save(product);
-        ///getid đúng vì productRepository.save đã đồng thời set id cho product rồi
         productImageRepository.saveAll(product.getId(), Images);
+        LOGGER.info(() -> "Product created: " + product.getId());
         return product;
     }
 
@@ -129,7 +131,6 @@ public class AuctionService {
                 }
                 // 1. tạo Product object
                 Product product = createProduct(request.getProduct(), session, productRepository, productImageRepository);
-                // 4. auctionRepository.save(auction)
                 Auction auction = new Auction(
                     session.getUserId(),
                     product.getId(),
@@ -144,6 +145,8 @@ public class AuctionService {
                 );
                 auctionRepository.save(auction);
                 connection.commit();
+                LOGGER.info(() -> "Auction created: " + auction.getId());
+
                 CreateAuctionResult result = ResultMapper.toCreateAuctionResult(auction, product);
                 AuctionListItemResult item = auctionRepository.findAuctionListItemById(auction.getId()).orElseThrow();
                 domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
@@ -203,7 +206,6 @@ public class AuctionService {
             && auction.getCurrentPrice().compareTo(auction.getReservePrice()) < 0;
     }
 
-    ///method này cực kì cẩn thận là phải implement sao cho nó IDEMPOTENT
     public void syncAuctionStatus(long auctionId) throws SQLException {
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
@@ -401,6 +403,4 @@ public class AuctionService {
             request.setLimit(MAX_AUCTION_LIST_LIMIT);
         }
     }
-
-
 }

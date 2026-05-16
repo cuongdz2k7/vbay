@@ -2,6 +2,8 @@ package com.vbay.server.network_connection;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,6 +18,7 @@ import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
@@ -32,30 +35,8 @@ import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
 
-/*
-Auth flow detail: 
-1. Handler/service làm việc bình thường
-    validate
-    gọi repository
-xử lý business
-2. Nếu có lỗi:
-    throw ValidationException
-    throw AuthenticationException
-    throw SQLException
-hoặc exception khác
-3. Exception sẽ bubble lên dispatch()
-4. dispatch() catch theo từng loại và convert thành Respond<>(..., false, ...)
-5. Nếu không có exception nào bị throw:
-    code chạy hết xuống cuối method
-    return Respond<>(..., true, ...)
-
-Tại sao distributor lại thread-safe ? 
-- vì các local variable trong method dispatch là bản riêng của từng thread, ở trong các call stack khác nhau, nên không có sự chia sẻ dữ liệu nào giữa các thread.
-- AuthService được thiết kế để thread-safe.
-
-*/
-
 public class RequestDistributor {
+    private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
     private final AuctionService auctionService;
     private final BidService bidService;
@@ -77,16 +58,8 @@ public class RequestDistributor {
         this.subscriptionService = subscriptionService;
         this.imageStorageService = imageStorageService;
     }
-    /*
-    switch-case theo type để gọi handler tương ứng
-    parse json
-    đóng gói response vào Respond<> và trả về
-    */
 
-    ///dispatch
     public Respond<?> dispatch (String rawRequest, ClientSession session, ClientConnection connection) {
-        ///refactoring lại cái chỗ này, tách riêng phần parse requestId và type ra, sau đó mới switch-case theo type để gọi handler tương ứng
-        ///code smell ở chỗ này.
         JsonObject root;
         try {
             root = JsonUtils.fromJson(rawRequest, JsonObject.class);
@@ -140,13 +113,13 @@ public class RequestDistributor {
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "Request processing error: " + e.getMessage());
             return new Respond<>(requestId, false, e.getMessage(), null);
         } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Database error", e);
             return new Respond<>(requestId, false, "DataBase error", null);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Unexpected error", e);
             return new Respond<>(requestId, false, "Unexpected error", null);
         }
     }
@@ -222,7 +195,7 @@ public class RequestDistributor {
         if (loginRequest == null) {
             return new Respond<>(requestId, false, "Invalid login request", null);
         }
-        LoginResponse loginResponse = authService.login(loginRequest); ///nếu catch được exception thì dừng luôn ở đây
+        LoginResponse loginResponse = authService.login(loginRequest);
         session.setSession(loginResponse.getUserId(), 
                             loginResponse.getUsername(), 
                             loginResponse.getPosition());

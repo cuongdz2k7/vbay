@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
-import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
@@ -30,6 +30,7 @@ import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneDataReceiver;
 import com.vbay.ui.util.MoneyInput;
 import com.vbay.ui.util.ProductImageLoader;
@@ -237,6 +238,13 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (backAction != null) {
             backAction.run();
         }
+        else {
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
+                "Navigation failed",
+                "Back action is not configured."
+            );
+        }
     }
 
     public void setOnBack(Runnable onBack) {
@@ -256,7 +264,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void handlePlaceBid(ActionEvent event) {
         if (currentAuction == null) {
-            showMessage(Alert.AlertType.WARNING, "Missing auction", "No auction is loaded for bidding.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded for bidding.");
             return;
         }
 
@@ -264,7 +272,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         try {
             enteredBid = MoneyInput.parseRequired(bidAmountField, "Bid amount");
         } catch (IllegalArgumentException exception) {
-            showMessage(Alert.AlertType.WARNING, "Invalid amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", exception.getMessage());
             bidAmountField.requestFocus();
             return;
         }
@@ -282,8 +290,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
 
         if (enteredBid.compareTo(nextMinimumBid) < 0) {
-            showMessage(
-                Alert.AlertType.WARNING,
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
                 "Bid too low",
                 "Minimum valid bid for this auction is " + formatCurrency(nextMinimumBid) + "."
             );
@@ -306,12 +314,12 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     @FXML
     private void handleProxyBid(ActionEvent event) {
-        showMessage(Alert.AlertType.INFORMATION, "Proxy bid", "Proxy bidding flow is not connected yet.");
+        NotificationManager.show(NotificationManager.NotificationType.INFO, "Proxy bid", "Proxy bidding flow is not connected yet.");
     }
 
     @FXML
     private void handleWatchAsset(ActionEvent event) {
-        showMessage(Alert.AlertType.INFORMATION, "Watch asset", "Watchlist flow is not connected yet.");
+        NotificationManager.show(NotificationManager.NotificationType.INFO, "Watch asset", "Watchlist flow is not connected yet.");
     }
 
     @FXML
@@ -565,7 +573,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (auction == null || bidInfoPanel == null) {
             return;
         }
-        Long currentUserId = ClientAuthSession.getUserId();
+        Long currentUserId = UserData.getUserId();
         Long winnerUserId = auction.getWinnerUserId();
         if (currentUserId == null
                 || winnerUserId == null
@@ -636,7 +644,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     }
 
     private boolean canCurrentUserBid(Auction auction) {
-        Long currentUserId = ClientAuthSession.getUserId();
+        Long currentUserId = UserData.getUserId();
         return auction != null
             && currentUserId != null
             && "ACTIVE".equals(auction.getStatus())
@@ -914,23 +922,23 @@ public class BidController implements SceneDataReceiver<Auction> {
                 new Request<>(RequestType.PLACE_BID, new PlaceBidRequest(currentAuction.getId(), bidAmount))
             );
             if (response == null || !response.isStatus()) {
-                showMessage(Alert.AlertType.ERROR, "Bid failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid failed", response != null ? response.getMessage() : "No response from server.");
                 return;
             }
-            showMessage(Alert.AlertType.INFORMATION, "Bid placed", "Your bid was placed successfully.");
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Bid placed", "Your bid was placed successfully.");
         } catch (IOException exception) {
-            showMessage(Alert.AlertType.ERROR, "Bid failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid failed", exception.getMessage());
         }
     }
 
     private void performBuyNow() {
         if (currentAuction == null) {
-            showMessage(Alert.AlertType.WARNING, "Missing auction", "No auction is loaded.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded.");
             return;
         }
         BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
         if (buyNowPrice == null) {
-            showMessage(Alert.AlertType.WARNING, "Buy Now unavailable", "This auction does not have a Buy Now price.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Buy Now unavailable", "This auction does not have a Buy Now price.");
             return;
         }
         if (buyNowPrice.compareTo(buyingPowerForCurrentAuction()) > 0) {
@@ -943,18 +951,18 @@ public class BidController implements SceneDataReceiver<Auction> {
                 new Request<>(RequestType.BUY_NOW, new BuyNowRequest(currentAuction.getId()))
             );
             if (response == null || !response.isStatus()) {
-                showMessage(Alert.AlertType.ERROR, "Buy Now failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now failed", response != null ? response.getMessage() : "No response from server.");
                 return;
             }
-            showMessage(Alert.AlertType.INFORMATION, "Buy Now complete", "You bought " + currentAuction.getTitle() + ".");
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Buy Now complete", "You bought " + currentAuction.getTitle() + ".");
         } catch (IOException exception) {
-            showMessage(Alert.AlertType.ERROR, "Buy Now failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now failed", exception.getMessage());
         }
     }
 
     private void showInsufficientBalance(BigDecimal amount) {
-        showMessage(
-            Alert.AlertType.WARNING,
+        NotificationManager.show(
+            NotificationManager.NotificationType.WARNING,
             "Insufficient balance",
             "Buying power for this auction is " + formatCurrency(buyingPowerForCurrentAuction())
                 + ", but this action requires " + formatCurrency(amount) + "."
@@ -962,7 +970,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     }
 
     private BigDecimal availableBalance() {
-        return valueOrZero(ClientAuthSession.getAvailableBalance());
+        return valueOrZero(UserData.getAvailableBalance());
     }
 
     private BigDecimal buyingPowerForCurrentAuction() {
@@ -970,20 +978,12 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (currentAuction == null) {
             return buyingPower;
         }
-        Long currentUserId = ClientAuthSession.getUserId();
+        Long currentUserId = UserData.getUserId();
         Long winnerUserId = currentAuction.getWinnerUserId();
         if (currentUserId != null && winnerUserId != null && currentUserId.longValue() == winnerUserId.longValue()) {
             buyingPower = buyingPower.add(valueOrZero(currentAuction.getCurrentPrice()));
         }
         return buyingPower;
-    }
-
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }
     

@@ -43,16 +43,18 @@
                     </padding>
 
                     <HBox alignment="CENTER_LEFT" maxWidth="1440">
+                        <Button text="BACK HOME" onAction="#handleBack" styleClass="secondary-top-action"/>
+                    </HBox>
+
+                    <HBox alignment="CENTER_LEFT" maxWidth="1440">
                         <VBox spacing="5">
                             <Label text="INITIALIZE NEW PROTOCOL" styleClass="page-title"/>
                             <Label text="Asset Submission &amp; Auction Configuration Terminal" styleClass="page-subtitle"/>
                         </VBox>
-                        <Region HBox.hgrow="ALWAYS"/>
-                        <Button text="BACK HOME" onAction="#handleBack" styleClass="secondary-top-action"/>
                     </HBox>
 
-                    <HBox spacing="24" alignment="TOP_CENTER" maxWidth="1360" styleClass="protocol-grid">
-                        <VBox spacing="12" prefWidth="660" maxWidth="660" styleClass="protocol-panel">
+                    <HBox spacing="24" alignment="TOP_CENTER" maxWidth="1420" styleClass="protocol-grid">
+                        <VBox spacing="12" prefWidth="690" maxWidth="690" styleClass="protocol-panel">
                             <HBox alignment="CENTER_LEFT" styleClass="panel-header">
                                 <Label text="01 / Product Identification" styleClass="panel-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
@@ -125,7 +127,7 @@
                             </GridPane>
                         </VBox>
 
-                        <VBox spacing="12" prefWidth="660" maxWidth="660" styleClass="protocol-panel">
+                        <VBox spacing="12" prefWidth="690" maxWidth="690" styleClass="protocol-panel">
                             <HBox alignment="CENTER_LEFT" styleClass="panel-header">
                                 <Label text="02 / Auction Parameters" styleClass="panel-title"/>
                                 <Region HBox.hgrow="ALWAYS"/>
@@ -137,27 +139,27 @@
                                 <TextField fx:id="auctionTitleField" promptText="Official Title for the Auction Listing" styleClass="title-input"/>
                             </VBox>
 
-                            <GridPane hgap="20" vgap="20" styleClass="parameter-grid">
+                            <GridPane hgap="20" vgap="20" prefWidth="650" styleClass="parameter-grid">
                                 <columnConstraints>
                                     <ColumnConstraints percentWidth="50"/>
                                     <ColumnConstraints percentWidth="50"/>
                                 </columnConstraints>
 
-                                <VBox spacing="8" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
-                                    <Label text="Starting Price" styleClass="mini-label"/>
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <Label maxWidth="Infinity" text="Starting Price" styleClass="mini-label"/>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label text="\$" styleClass="currency-mark"/>
-                                        <TextField fx:id="startingPriceField" promptText="0.00" styleClass="money-input"/>
+                                        <TextField fx:id="startingPriceField" maxWidth="Infinity" promptText="0.00" HBox.hgrow="ALWAYS" styleClass="money-input"/>
                                     </HBox>
                                 </VBox>
-                                <VBox spacing="8" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
-                                    <Label text="Bid Step" styleClass="mini-label"/>
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                    <Label maxWidth="Infinity" text="Bid Step" styleClass="mini-label"/>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label text="\$" styleClass="currency-mark"/>
-                                        <TextField fx:id="minimumBidStepField" promptText="10.00" styleClass="money-input"/>
+                                        <TextField fx:id="minimumBidStepField" maxWidth="Infinity" promptText="10.00" HBox.hgrow="ALWAYS" styleClass="money-input"/>
                                     </HBox>
                                 </VBox>
-                                <VBox spacing="8" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS" styleClass="price-cell">
                                     <HBox alignment="CENTER_LEFT">
                                         <Label text="Reserve Price" styleClass="mini-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
@@ -167,10 +169,10 @@
                                     </HBox>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label text="\$" styleClass="currency-mark"/>
-                                        <TextField fx:id="reservePriceField" promptText="Optional" styleClass="money-input"/>
+                                        <TextField fx:id="reservePriceField" maxWidth="Infinity" promptText="Optional" HBox.hgrow="ALWAYS" styleClass="money-input"/>
                                     </HBox>
                                 </VBox>
-                                <VBox spacing="8" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
+                                <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.rowIndex="1" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" styleClass="price-cell">
                                     <HBox alignment="CENTER_LEFT">
                                         <Label text="Buy Now Price" styleClass="mini-label"/>
                                         <Region HBox.hgrow="ALWAYS"/>
@@ -180,7 +182,7 @@
                                     </HBox>
                                     <HBox alignment="CENTER_LEFT" spacing="10">
                                         <Label text="\$" styleClass="currency-mark"/>
-                                        <TextField fx:id="buyNowPriceField" promptText="Optional" styleClass="money-input"/>
+                                        <TextField fx:id="buyNowPriceField" maxWidth="Infinity" promptText="Optional" HBox.hgrow="ALWAYS" styleClass="money-input"/>
                                     </HBox>
                                 </VBox>
                             </GridPane>

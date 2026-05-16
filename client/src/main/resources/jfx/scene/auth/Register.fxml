@@ -20,15 +20,15 @@
     <children>
         <BorderPane prefHeight="760.0" prefWidth="430.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <top>
-                <HBox alignment="CENTER_LEFT" styleClass="register-topbar" BorderPane.alignment="CENTER">
+                <HBox alignment="CENTER_LEFT" spacing="18.0" styleClass="register-topbar" BorderPane.alignment="CENTER">
                     <padding>
                         <Insets bottom="24.0" left="24.0" right="24.0" top="28.0" />
                     </padding>
 
                     <children>
+                        <Hyperlink focusTraversable="false" onAction="#handleBackToHome" styleClass="header-link" text="BACK TO HOME" />
                         <Label styleClass="register-brand" text="VBAY" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Hyperlink focusTraversable="false" onAction="#handleBackToHome" styleClass="header-link" text="BACK TO HOME" />
                     </children>
                 </HBox>
             </top>
@@ -59,7 +59,7 @@
                             </padding>
 
                             <children>
-                                <VBox maxWidth="430.0" prefWidth="430.0" spacing="0.0" styleClass="register-card">
+                                <VBox maxWidth="456.0" prefWidth="456.0" spacing="0.0" styleClass="register-card">
                                     <padding>
                                         <Insets bottom="36.0" left="36.0" right="36.0" top="36.0" />
                                     </padding>

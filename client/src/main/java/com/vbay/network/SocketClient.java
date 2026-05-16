@@ -11,15 +11,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.message.ServerMessage;
 import com.vbay.network.message.ServerMessageParser;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 
 public class SocketClient {
+    private static final Logger LOGGER = LoggingUtils.getLogger(SocketClient.class);
     private static SocketClient Client;
 
     private Socket socket;
@@ -56,7 +60,7 @@ public class SocketClient {
 
     public synchronized void connect(String host, int port) throws IOException {
         if (isConnected()) {
-            System.out.println("Already connected");
+            LOGGER.info("Socket client is already connected.");
             return;
         }
 
@@ -65,7 +69,7 @@ public class SocketClient {
             connectedHost = host;
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
-            System.out.println("Connected to server at " + host + ": " + port);
+            LOGGER.info(() -> "Connected to server at " + host + ":" + port);
             startListening();
         } catch (ConnectException exception) {
             socket = null;
@@ -134,7 +138,7 @@ public class SocketClient {
         socket = null;
         threadlistener = null;
         connectedHost = "localhost";
-        System.out.println("Disconnected from the server");
+        LOGGER.info("Disconnected from the server.");
     }
 
     private void completePendingResponse(Respond<?> respond) {
@@ -142,7 +146,7 @@ public class SocketClient {
         if (queue != null) {
             queue.offer(respond);
         } else {
-            System.out.println("No pending request for requestId: " + respond.getRequestId());
+            LOGGER.warning(() -> "No pending request for requestId: " + respond.getRequestId());
         }
     }
 
@@ -151,12 +155,20 @@ public class SocketClient {
         try {
             ServerMessage message = messageParser.parse(line);
             switch (message.getMessageType()) {
-                case RESPONSE -> completePendingResponse(message.getResponse());
+                case RESPONSE -> {
+                    Respond<?> respond = message.getResponse();
+                    LOGGER.info(
+                        "Received response: requestId=" + respond.getRequestId()
+                            + ", status=" + respond.isStatus()
+                            + ", message=" + respond.getMessage()
+                    );
+                    completePendingResponse(respond);
+                }
                 case EVENT -> realtimeEventDispatcher.dispatch(message.getEvent());
                 default -> throw new IllegalArgumentException("Unsupported message type: " + message.getMessageType());
             } 
         } catch (Exception exception) {
-            System.err.println("Error handling server message: " + exception.getMessage());     
+            LOGGER.log(Level.SEVERE, "Error handling server message: " + exception.getMessage(), exception);
         }
     }
 
@@ -176,7 +188,7 @@ public class SocketClient {
                 }
             } catch (IOException exception) {
                 if (socket != null && !socket.isClosed()) {
-                    System.out.println("Listener has stopped: " + exception.getMessage());
+                    LOGGER.log(Level.WARNING, "Socket listener has stopped.", exception);
                 }
             }
         }, "socket-client-listener");

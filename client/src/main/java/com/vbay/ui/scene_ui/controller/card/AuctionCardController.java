@@ -77,7 +77,7 @@ public class AuctionCardController {
     public void setOnSelected(LongConsumer onSelected) {
         this.onSelected = onSelected;
     }
-
+    
     @FXML
     private void handleCardClicked(MouseEvent event) {
         notifySelection();

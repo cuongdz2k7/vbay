@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import com.vbay.network.ClientAuthSession;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
@@ -15,12 +15,12 @@ import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.util.MoneyInput;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
@@ -40,7 +40,7 @@ public class DepositBalanceController {
     private void initialize() {
         disposed = false;
         MoneyInput.install(amountField);
-        updateBalanceDisplay(ClientAuthSession.getAvailableBalance());
+        updateBalanceDisplay(UserData.getAvailableBalance());
         subscribeBalanceUpdates();
     }
 
@@ -63,13 +63,13 @@ public class DepositBalanceController {
         try {
             amount = MoneyInput.parseRequired(amountField, "Deposit amount");
         } catch (IllegalArgumentException exception) {
-            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", exception.getMessage());
             amountField.requestFocus();
             return;
         }
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            showMessage(Alert.AlertType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
             amountField.requestFocus();
             return;
         }
@@ -79,19 +79,19 @@ public class DepositBalanceController {
                 new Request<>(RequestType.DEPOSIT_BALANCE, new DepositBalanceRequest(amount))
             );
             if (response == null || !response.isStatus()) {
-                showMessage(Alert.AlertType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
                 return;
             }
 
             UserBalanceResponse balanceResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), UserBalanceResponse.class);
             if (balanceResponse != null) {
-                ClientAuthSession.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
+                UserData.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
                 updateBalanceDisplay(balanceResponse.getAvailableBalance());
             }
-            showMessage(Alert.AlertType.INFORMATION, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
             amountField.clear();
         } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Deposit failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", exception.getMessage());
         }
     }
 
@@ -113,7 +113,7 @@ public class DepositBalanceController {
     private void subscribeBalanceUpdates() {
         balanceListener = event -> {
             UserBalanceUpdatedPayload payload = event.getPayload();
-            Long userId = ClientAuthSession.getUserId();
+            Long userId = UserData.getUserId();
             if (payload == null || userId == null || payload.getUserId() != userId) {
                 return;
             }
@@ -121,7 +121,7 @@ public class DepositBalanceController {
                 if (disposed || balanceLabel == null) {
                     return;
                 }
-                ClientAuthSession.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
+                UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
                 updateBalanceDisplay(payload.getAvailableBalance());
             });
         };
@@ -136,11 +136,4 @@ public class DepositBalanceController {
         balanceLabel.setText(CURRENCY_FORMAT.format(balance));
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
 }

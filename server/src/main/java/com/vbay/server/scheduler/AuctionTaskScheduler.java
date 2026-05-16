@@ -9,10 +9,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.vbay.server.model.Auction;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.service.AuctionService;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
 
@@ -36,6 +39,7 @@ syncAuctionStatus: PHẢI IDEMPOTENT
 
 */
 public class AuctionTaskScheduler {
+    private static final Logger LOGGER = LoggingUtils.getLogger(AuctionTaskScheduler.class);
     private final AuctionService auctionService;
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(4);
     
@@ -57,8 +61,7 @@ public class AuctionTaskScheduler {
                 scheduleAuction(auction);
             }
         } catch (Exception e) {
-            System.err.println("Failed to register pending auction schedules");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to register pending auction schedules", e);
         }
 
         recoveryFuture = executor.scheduleAtFixedRate(
@@ -73,7 +76,7 @@ public class AuctionTaskScheduler {
         try {
             auctionService.syncAuctionStatus(auctionId);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Error running end task for auction: " + auctionId, e);
         } finally {
             endTasks.remove(auctionId);
             startTasks.remove(auctionId);
@@ -103,8 +106,7 @@ public class AuctionTaskScheduler {
                 scheduleEnd(refreshed, auctionService.getDatabaseTime());
             }
         } catch (Exception e) {
-            System.err.println("Failed to run start task for auction " + auctionId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to run start task for auction " + auctionId, e);
         } finally {
             startTasks.remove(auctionId);
         }
@@ -165,8 +167,7 @@ public class AuctionTaskScheduler {
                 scheduleEnd(auction, now);
             }
         } catch (Exception e) {
-            System.err.println("Failed to schedule auction " + auction.getId());
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to schedule auction " + auction.getId(), e);
         }
     }
 
@@ -198,8 +199,7 @@ public class AuctionTaskScheduler {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to refresh schedule for auction " + auctionId);
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Failed to refresh schedule for auction " + auctionId, e);
         }
     }
 
@@ -218,8 +218,7 @@ public class AuctionTaskScheduler {
                 }
             }
         } catch (Exception e) {
-            System.err.println("Unexpected error while recovering missed auctions");
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Unexpected error while recovering missed auctions", e);
         }
     }
 

@@ -21,13 +21,13 @@ import com.vbay.shared.dto.productDTO.ProductImageDTO;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.util.MoneyInput;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -61,6 +61,7 @@ Bấm LAUNCH AUCTION
 public class CreateAuctionController {
     private static final int MAX_IMAGES = 4;
     private static final double PREVIEW_SIZE = 72;
+    private static final String OPTIONAL_PRICE_ENABLED_CLASS = "optional-price-enabled";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/uuuu")
         .withResolverStyle(ResolverStyle.STRICT);
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
@@ -126,6 +127,16 @@ public class CreateAuctionController {
         setBuyNowPriceEnabled(false);
     }
 
+    @FXML
+    private void handleCancel() {
+        try {
+            com.vbay.ui.scene_ui.SceneManager.switchScene("/jfx/scene/Home.fxml");
+            NotificationManager.show(NotificationManager.NotificationType.INFO,"Cancelation", "Cancelled auction creation");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void setOnBack(Runnable onBack) {
         this.onBack = onBack;
     }
@@ -146,7 +157,7 @@ public class CreateAuctionController {
         try {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
         } catch (Exception exception) {
-            showMessage(Alert.AlertType.ERROR, "Navigation failed", "Could not return to the home scene.");
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation failed", "Could not return to the home scene.");
         }
     }
 
@@ -161,17 +172,14 @@ public class CreateAuctionController {
                 new Request<>(RequestType.CREATE_AUCTION, createAuctionRequest)
             );
 
+
             if (response == null || !response.isStatus()) {
-                showMessage(
-                    Alert.AlertType.ERROR,
-                    "Create auction failed",
-                    response != null ? response.getMessage() : "No response from server."
-                );
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create auction failed", response.getMessage());
                 return;
             }
 
-            showMessage(
-                Alert.AlertType.INFORMATION,
+            NotificationManager.show(
+                NotificationManager.NotificationType.INFO,
                 "Auction created",
                 "Auction created successfully."
             );
@@ -181,16 +189,16 @@ public class CreateAuctionController {
                 auctionCreatedAction.run();
             }
         } catch (IllegalArgumentException exception) {
-            showMessage(Alert.AlertType.WARNING, "Invalid auction data", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid auction data", exception.getMessage());
         } catch (IOException exception) {
-            showMessage(Alert.AlertType.ERROR, "Create auction failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create auction failed", exception.getMessage());
         }
     }
 
     @FXML
     private void handleUploadAsset() {
         if (selectedImageFiles.size() >= MAX_IMAGES) {
-            showMessage(Alert.AlertType.INFORMATION, "Image limit reached", "You can select up to 4 images.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image limit reached", "You can select up to 4 images.");
             return;
         }
 
@@ -208,7 +216,7 @@ public class CreateAuctionController {
 
         int remainingSlots = MAX_IMAGES - selectedImageFiles.size();
         if (files.size() > remainingSlots) {
-            showMessage(Alert.AlertType.INFORMATION, "Image limit", "Only the first " + remainingSlots + " image(s) were added.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image limit", "Only the first " + remainingSlots + " image(s) were added.");
         }
 
         files.stream()
@@ -404,6 +412,7 @@ public class CreateAuctionController {
         reservePriceEnabled = enabled;
         reservePriceField.setDisable(!enabled);
         reservePriceField.setEditable(enabled);
+        setStyleClassActive(reservePriceField, OPTIONAL_PRICE_ENABLED_CLASS, enabled);
         if (!enabled) {
             reservePriceField.clear();
         }
@@ -424,6 +433,7 @@ public class CreateAuctionController {
         buyNowPriceEnabled = enabled;
         buyNowPriceField.setDisable(!enabled);
         buyNowPriceField.setEditable(enabled);
+        setStyleClassActive(buyNowPriceField, OPTIONAL_PRICE_ENABLED_CLASS, enabled);
         if (!enabled) {
             buyNowPriceField.clear();
         }
@@ -437,6 +447,13 @@ public class CreateAuctionController {
 
         if (buyNowPriceToggleDot != null) {
             buyNowPriceToggleDot.setTranslateX(enabled ? 9 : -9);
+        }
+    }
+
+    private void setStyleClassActive(TextField field, String styleClass, boolean active) {
+        field.getStyleClass().remove(styleClass);
+        if (active) {
+            field.getStyleClass().add(styleClass);
         }
     }
 
@@ -566,13 +583,6 @@ public class CreateAuctionController {
         });
     }
 
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
-    }
 
     private record AuctionFormInput(
         String productName,

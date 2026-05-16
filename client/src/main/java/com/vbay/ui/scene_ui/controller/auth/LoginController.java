@@ -1,26 +1,31 @@
 package com.vbay.ui.scene_ui.controller.auth;
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.awt.Desktop;
 
-import com.vbay.network.ClientAuthSession;
+import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
 import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
-import javafx.scene.control.Alert.AlertType;
 import javafx.scene.shape.SVGPath;
 
 public class LoginController {
+    private static final Logger LOGGER = LoggingUtils.getLogger(LoginController.class);
 
     private static final String EYE_OPEN_ICON =
         "M1.5 0C0.6716 0 0 0.6716 0 1.5v9.002C0.6314 11.4642 1.6154 12.2766 2.8147 12.8393C4.1372 13.4602 5.9548 13.998 8 13.998s3.8628-0.5378 5.1853-1.1587C14.3846 12.2766 15.3686 11.4642 16 10.502V1.5C16 0.6716 15.3284 0 14.5 0H1.5ZM8 3.5a3.5 3.5 0 1 1 0 7.001A3.5 3.5 0 0 1 8 3.5Zm0 1.5a2 2 0 1 0 0 4.001A2 2 0 0 0 8 5Z";
@@ -54,22 +59,23 @@ public class LoginController {
         String password = passwordField.getText();
 
         if (username.isBlank()) {
-            showMessage(Alert.AlertType.WARNING, "Missing username", "Please enter your username.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing username", "Please enter your username.");
             usernameField.requestFocus();
             return;
         }
 
         if (password.isBlank()) {
-            showMessage(Alert.AlertType.WARNING, "Missing password", "Please enter your password.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing password", "Please enter your password.");
             passwordField.requestFocus();
             return;
         }
         //Sever Side
         try {
             loginUser(username, password);
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
         } catch (Exception exception) {
-            showMessage(
-                Alert.AlertType.ERROR,
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
                 "Login failed",
                 exception.getMessage()
             );
@@ -80,7 +86,7 @@ public class LoginController {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
             SceneManager.enterImmersiveMode();
         }catch ( Exception exception){
-                showMessage(Alert.AlertType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
         }
     }
     //Method Login
@@ -100,18 +106,19 @@ public class LoginController {
         }
         LoginResponse loginResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), LoginResponse.class);
         if (loginResponse != null) {
-            ClientAuthSession.setLoginResponse(loginResponse);
+            UserData.setLoginResponse(loginResponse);
         }
-        System.out.println("Client login successful: " + username);
+        LOGGER.info(() -> "Client login successful: " + username);
     }
 
     @FXML
     private void handleForgotPassword(ActionEvent event) {
-        showMessage(
-            Alert.AlertType.INFORMATION,
-            "Forgot password",
-            "Password reset flow is not connected yet."
-        );
+        try{
+            String youtubeUrl = "https://youtu.be/dQw4w9WgXcQ?si=KnJkzoJwTT9Y6Qgy";
+            Desktop.getDesktop().browse(new URI(youtubeUrl));
+        }catch(Exception exception){
+            LOGGER.log(Level.WARNING, "Could not open forgot-password link.", exception);
+        }
     }
 
     @FXML
@@ -119,8 +126,8 @@ public class LoginController {
         try {
             SceneManager.switchScene("/jfx/scene/auth/Register.fxml");
         } catch (Exception exception) {
-            showMessage(
-                Alert.AlertType.ERROR,
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
                 "Navigation failed",
                 "Could not open the register screen."
             );
@@ -144,13 +151,5 @@ public class LoginController {
             passwordField.requestFocus();
             passwordField.positionCaret(passwordField.getText().length());
         }
-    }
-
-    private void showMessage(Alert.AlertType type, String title, String content) {
-        Alert alert = new Alert(type);
-        alert.setTitle("VBay");
-        alert.setHeaderText(title);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }
