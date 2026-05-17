@@ -3,6 +3,7 @@ package com.vbay.server.service;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -12,27 +13,70 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
+import com.vbay.server.model.Bid;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
+import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
+import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.CreateAuctionResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
 import com.vbay.shared.Utils.LoggingUtils;
+import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
+import com.vbay.shared.enums.bid.BidStatus;
+
+ /*
+* Business rules:
+* 1. Giá tiền phải là số dương
+* 1.5. Nếu chưa có bid nào thì người dùng có thể bid bằng với starting price
+* 2. Nếu có reserve price thì reserve price phải lớn hơn starting price
+* 3. Nếu có buy now price thì buy now price phải lớn hơn reserve price (nếu không thì đặt reserve price làm gì ?)
+* 4. Thời gian bắt đầu phải trước thời gian kết thúc
+* 5. Khi tạo auction, product sẽ được tạo với status là AVAILABLE, sau đó khi auction bắt đầu thì product sẽ được update thành ACTIVE, khi auction kết thúc hoặc bị hủy thì product sẽ được update thành INACTIVE
+* 6. Mỗi ảnh chỉ có 1 thumbnail, nếu có nhiều hơn 1 ảnh được đánh dấu là thumbnail thì sẽ throw validation exception
+* 7. Khi tạo auction, phải có ít nhất 1 ảnh của product, nếu không có ảnh nào là thumbnail thì sẽ tự động đánh dấu ảnh đầu tiên là thumbnail
+* 8. CooldownTime giữa mỗi lần bid là 10s
+* 9. Reserve Price: Thường là Ẩn (Chỉ hiện thông báo "Reserve not met").
+* 10. CHO PHÉP thằng đang thắng được bid thêm
+* 11. KHÔNG CHO PHÉP AutoBid tự động bid thêm (chỉ thêm khi user bị OUTBID)
+
+Rule buy now price + reserve price: (bài tập lớn sẽ không implement)
+Auction status: 
+    DRAFT:
+    seller sửa thoải mái
+
+    ACTIVE + no bids:
+        seller sửa reservePrice, buyNowPrice được
+
+    ACTIVE + has bids:
+        seller không được sửa reservePrice
+        seller không được sửa buyNowPrice
+        optional: disable Buy Now sau bid đầu tiên
+
+    ENDED / SOLD / CANCELLED:
+        không sửa pricing terms
+Rule sửa starting time, ending time : comming soon... (bài tập lớn sẽ không implement)
+*/
 
 public class AuctionService {
     private static final int MAX_AUCTION_LIST_LIMIT = 500;
@@ -80,7 +124,12 @@ public class AuctionService {
                 ProductRepository productRepository = repositoryFactory.createProductRepository(connection);
                 ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-
+                
+                LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
+                if (!request.getStartingTime().isAfter(dbNow)) {
+                    throw new ValidationException("Starting time must be in the future");
+                }
+                // 1. tạo Product object
                 Product product = createProduct(request.getProduct(), session, productRepository, productImageRepository);
                 Auction auction = new Auction(
                     session.getUserId(),
@@ -127,6 +176,20 @@ public class AuctionService {
         }
     }
 
+    public AuctionItemPayload getAuctionDetail(AuctionDetailRequest request, ClientSession session) throws SQLException {
+        checkSession(session);
+        if (request == null || request.getAuctionId() <= 0) {
+            throw new ValidationException("Auction detail request is invalid");
+        }
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            return auctionRepository.findAuctionItemById(request.getAuctionId())
+                .map(ResultMapper::toAuctionItemPayload)
+                .orElseThrow(() -> new ValidationException("Auction not found"));
+        }
+    }
+
     public LocalDateTime getDatabaseTime() throws SQLException {
         try (Connection connection = connectionProvider.getConnection()) {
             AuctionRepository auctionRepository =
@@ -147,36 +210,141 @@ public class AuctionService {
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
 
+            AuctionClosedDomainEvent auctionClosedEvent = null;
+            AuctionStartedDomainEvent auctionStartedEvent = null;
+            boolean statusChanged = false;
+
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-                auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow();
+                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);    
+                ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+                auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow(); //////lock auction first
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
-                AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow); 
+                AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow);
                 Auction auction = auctionRepository.findById(auctionId).orElseThrow();
+
                 switch (transition) {
-                    case NO_CHANGE, STARTED -> {}
-                    case ENDED -> {
-                        if (checkIfAuctionFailed(auction)) {
-                            auctionRepository.terminateAuction(auctionId);
-                        } else if (auctionRepository.finalizeAuction(auctionId) == 0L) {
-                            auctionRepository.terminateAuction(auctionId);
+                    case NO_CHANGE -> {}
+                    case STARTED -> statusChanged = true;
+                    case TIME_EXPIRED -> { ///ended chỉ check xem auction có transition không, còn cập nhật trạng thái auction thì làm ở đây
+                        ///không thỏa mãn reserve price
+                        AuctionClosedResult closeResult = closeExpiredAuction(
+                            auction,
+                            dbNow,
+                            auctionRepository,
+                            bidRepository,
+                            productImageRepository
+                        );
+                        if (closeResult != null) {
+                            auctionClosedEvent = new AuctionClosedDomainEvent(closeResult);
+                            statusChanged = true;
                         }
                     }
                 }
                 connection.commit();
-                if (transition != AuctionTransition.NO_CHANGE) {
+                if (statusChanged) {
                     AuctionListItemResult item = auctionRepository.findAuctionListItemById(auctionId).orElseThrow();
+                    if (transition == AuctionTransition.STARTED) {
+                        auctionStartedEvent = new AuctionStartedDomainEvent(item, java.time.LocalDateTime.now());
+                    }
                     domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
                         item,
                         AuctionListItemUpdateReason.STATUS_CHANGED,
                         java.time.LocalDateTime.now()
                     ));
                 }
+                if (auctionStartedEvent != null) {
+                    domainEventPublisher.publish(auctionStartedEvent);
+                }
+                if (auctionClosedEvent != null) {
+                    domainEventPublisher.publish(auctionClosedEvent);
+                }
             } catch (SQLException | RuntimeException exception) {
                 connection.rollback();
                 throw exception;
             }
         }
+    }
+
+    private AuctionClosedResult closeExpiredAuction(
+            Auction auction,
+            LocalDateTime closedAt,
+            AuctionRepository auctionRepository,
+            BidRepository bidRepository,
+            ProductImageRepository productImageRepository) throws SQLException {
+        if (checkIfAuctionFailed(auction)) {
+            long version = auctionRepository.terminateAuction(auction.getId());
+            if (version == 0L) {
+                return null;
+            }
+            bidRepository.markAuctionBidsLost(auction.getId());
+            Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+            return buildAuctionClosedResult(
+                refreshedAuction,
+                AuctionCloseReason.TIME_EXPIRED_FAILED,
+                closedAt,
+                bidRepository,
+                productImageRepository
+            );
+        }
+
+        Bid winningBid = bidRepository.findWinningBidByAuctionId(auction.getId())
+            .orElseThrow(() -> new ValidationException("Winning bid not found"));
+        long version = auctionRepository.finalizeAuction(auction.getId());
+        if (version == 0L) {
+            return null;
+        }
+
+        bidRepository.updateStatusesByAuctionIdExceptBid(auction.getId(), winningBid.getId(), BidStatus.LOST);
+        bidRepository.updateStatus(winningBid.getId(), BidStatus.WON);
+        Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+        return buildAuctionClosedResult(
+            refreshedAuction,
+            AuctionCloseReason.TIME_EXPIRED_ENDED,
+            closedAt,
+            bidRepository,
+            productImageRepository
+        );
+    }
+
+    private AuctionClosedResult buildAuctionClosedResult(
+            Auction auction,
+            AuctionCloseReason reason,
+            LocalDateTime closedAt,
+            BidRepository bidRepository,
+            ProductImageRepository productImageRepository) throws SQLException {
+        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auction.getId())) {
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                auction,
+                thumbnailUrl,
+                bid,
+                bid.getStatus(),
+                closedAt
+            ));
+        }
+
+        return new AuctionClosedResult(
+            auction.getId(),
+            auction.getVersion(),
+            auction.getStatus(),
+            auction.getCurrentPrice(),
+            reserveMet(auction),
+            auction.getWinnerUserId(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            reason,
+            closedAt,
+            affectedMyBidItems
+        );
+    }
+
+    private Boolean reserveMet(Auction auction) {
+        if (auction.getReservePrice() == null) {
+            return null;
+        }
+        return auction.getCurrentPrice().compareTo(auction.getReservePrice()) >= 0;
     }
 
     public List<Auction> findPendingSchedules() throws SQLException {

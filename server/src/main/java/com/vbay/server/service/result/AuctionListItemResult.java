@@ -2,7 +2,6 @@ package com.vbay.server.service.result;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class AuctionListItemResult {
     private final long auctionId;
@@ -21,7 +20,6 @@ public class AuctionListItemResult {
     private final Long winnerUserId;
     private final Boolean reserveMet;
     private final String thumbnailUrl;
-    private final List<String> imageUrls;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
     private final LocalDateTime updatedAt;
@@ -43,7 +41,6 @@ public class AuctionListItemResult {
             Long winnerUserId,
             Boolean reserveMet,
             String thumbnailUrl,
-            List<String> imageUrls,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             LocalDateTime updatedAt) {
@@ -63,7 +60,6 @@ public class AuctionListItemResult {
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
         this.thumbnailUrl = thumbnailUrl;
-        this.imageUrls = imageUrls;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
@@ -85,7 +81,6 @@ public class AuctionListItemResult {
     public Long getWinnerUserId() { return winnerUserId; }
     public Boolean getReserveMet() { return reserveMet; }
     public String getThumbnailUrl() { return thumbnailUrl; }
-    public List<String> getImageUrls() { return imageUrls; }
     public LocalDateTime getStartingTime() { return startingTime; }
     public LocalDateTime getEndingTime() { return endingTime; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

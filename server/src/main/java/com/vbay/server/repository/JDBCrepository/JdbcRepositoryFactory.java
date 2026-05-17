@@ -38,7 +38,7 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
     }
     @Override
     public ProductImageRepository createProductImageRepository(Connection connection) {
-        return new JdbcProductImageRepository(connection);
+        return new JdbcProductImageRepository(connection, imageStorageService);
     }
 
     @Override

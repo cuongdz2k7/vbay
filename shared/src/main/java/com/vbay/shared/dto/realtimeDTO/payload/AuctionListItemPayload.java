@@ -2,7 +2,6 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class AuctionListItemPayload {
     private long auctionId;
@@ -21,7 +20,6 @@ public class AuctionListItemPayload {
     private Long winnerUserId;
     private Boolean reserveMet;
     private String thumbnailUrl;
-    private List<String> imageUrls;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
@@ -46,7 +44,6 @@ public class AuctionListItemPayload {
             Long winnerUserId,
             Boolean reserveMet,
             String thumbnailUrl,
-            List<String> imageUrls,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             LocalDateTime updatedAt) {
@@ -66,7 +63,6 @@ public class AuctionListItemPayload {
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
         this.thumbnailUrl = thumbnailUrl;
-        this.imageUrls = imageUrls;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
@@ -198,14 +194,6 @@ public class AuctionListItemPayload {
 
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
     }
 
     public LocalDateTime getStartingTime() {

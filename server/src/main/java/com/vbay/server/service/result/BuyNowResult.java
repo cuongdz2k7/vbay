@@ -2,6 +2,7 @@ package com.vbay.server.service.result;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class BuyNowResult {
     private final long auctionId;
@@ -14,6 +15,7 @@ public class BuyNowResult {
     private final Long previousWinningUserId;
     private final Long previousWinningBidId;
     private final LocalDateTime boughtAt;
+    private final List<UserMyBidListItemResult> affectedMyBidItems;
 
     public BuyNowResult(
             long auctionId,
@@ -25,7 +27,8 @@ public class BuyNowResult {
             BigDecimal finalPrice,
             Long previousWinningUserId,
             Long previousWinningBidId,
-            LocalDateTime boughtAt) {
+            LocalDateTime boughtAt,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
         this.buyerId = buyerId;
@@ -36,6 +39,7 @@ public class BuyNowResult {
         this.previousWinningUserId = previousWinningUserId;
         this.previousWinningBidId = previousWinningBidId;
         this.boughtAt = boughtAt;
+        this.affectedMyBidItems = affectedMyBidItems == null ? List.of() : List.copyOf(affectedMyBidItems);
     }
 
     public long getAuctionId() {
@@ -76,5 +80,9 @@ public class BuyNowResult {
 
     public LocalDateTime getBoughtAt() {
         return boughtAt;
+    }
+
+    public List<UserMyBidListItemResult> getAffectedMyBidItems() {
+        return affectedMyBidItems;
     }
 }

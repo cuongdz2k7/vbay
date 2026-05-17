@@ -1,0 +1,270 @@
+.my-bid-scroll,
+.my-bid-scroll > .viewport {
+    -fx-background-color: transparent;
+}
+
+.my-bid-scroll {
+    -fx-background: transparent;
+}
+
+.my-bid-scroll .scroll-bar:vertical {
+    -fx-background-color: transparent;
+}
+
+.my-bid-scroll .scroll-bar:vertical .thumb {
+    -fx-background-color: #343535;
+    -fx-background-radius: 0;
+}
+
+.my-bid-page {
+    -fx-background-color: transparent;
+    -fx-font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    -fx-min-width: 720;
+}
+
+.my-bid-heading-row {
+    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.45) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 0 0 16 0;
+}
+
+.my-bid-title {
+    -fx-text-fill: #fff2de;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 18px;
+    -fx-font-weight: 800;
+}
+
+.my-bid-subtitle {
+    -fx-text-fill: rgba(224, 192, 178, 0.58);
+    -fx-font-size: 11px;
+    -fx-font-weight: 700;
+}
+
+.my-bid-table-header .label {
+    -fx-text-fill: rgba(224, 192, 178, 0.72);
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+}
+
+.my-bid-filter-combo {
+    -fx-background-color: rgba(255, 95, 46, 0.1);
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(217, 95, 26, 0.42);
+    -fx-border-radius: 8;
+    -fx-padding: 5 10 5 10;
+    -fx-cursor: hand;
+    -fx-effect: null;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+}
+
+.my-bid-filter-combo:focused,
+.my-bid-filter-combo:showing {
+    -fx-background-color: rgba(255, 95, 46, 0.16);
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.68);
+    -fx-effect: null;
+}
+
+.my-bid-filter-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #e3e2e2;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.my-bid-filter-combo .arrow {
+    -fx-background-color: #d95f1a;
+}
+
+.my-bid-filter-combo .combo-box-popup .list-view {
+    -fx-background-color: #0d0f0f;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(217, 95, 26, 0.5);
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(217, 95, 26, 0.18), 7, 0.1, 0, 2);
+    -fx-padding: 6 0 6 0;
+}
+
+.my-bid-filter-combo .combo-box-popup .list-cell {
+    -fx-background-color: #0d0f0f;
+    -fx-text-fill: rgba(224, 192, 178, 0.75);
+    -fx-padding: 9 12 9 12;
+}
+
+.my-bid-filter-combo .combo-box-popup .list-cell:hover {
+    -fx-background-color: rgba(217, 95, 26, 0.16);
+    -fx-text-fill: #ffb595;
+}
+
+.my-bid-table {
+    -fx-background-color: rgba(13, 14, 15, 0.86);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-max-width: 1120;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.055), 12, 0.08, 0, 2);
+}
+
+.my-bid-table-header {
+    -fx-background-color: rgba(255, 255, 255, 0.015);
+    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.62) transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 11 16 11 16;
+}
+
+.my-bid-row {
+    -fx-background-color: rgba(13, 14, 15, 0.88);
+    -fx-border-color: transparent transparent #262626 transparent;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 11 16 11 16;
+    -fx-cursor: hand;
+}
+
+.my-bid-row:hover {
+    -fx-background-color: rgba(255, 95, 46, 0.055);
+    -fx-border-color: transparent transparent #3a2c25 transparent;
+}
+
+.my-bid-product-image-frame {
+    -fx-background-color: #0d0e0f;
+    -fx-border-color: rgba(168, 138, 126, 0.4);
+    -fx-border-width: 1;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-alignment: center;
+    -fx-min-width: 42;
+    -fx-min-height: 42;
+    -fx-pref-width: 42;
+    -fx-pref-height: 42;
+    -fx-max-width: 42;
+    -fx-max-height: 42;
+}
+
+.my-bid-product-title {
+    -fx-text-fill: #fff2de;
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.my-bid-product-meta {
+    -fx-text-fill: #777777;
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+}
+
+.my-bid-price {
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 13px;
+    -fx-font-weight: 700;
+}
+
+.my-bid-muted-price,
+.my-bid-source {
+    -fx-text-fill: rgba(224, 192, 178, 0.68);
+    -fx-font-size: 13px;
+    -fx-font-weight: 600;
+}
+
+.my-bid-time {
+    -fx-text-fill: #d95f1a;
+    -fx-font-size: 13px;
+    -fx-font-weight: 800;
+}
+
+.my-bid-time-ended {
+    -fx-text-fill: #a0a0a0;
+}
+
+.my-bid-status-winning,
+.my-bid-status-won,
+.my-bid-status-outbid,
+.my-bid-status-lost,
+.my-bid-status-cancelled,
+.my-bid-status-ended {
+    -fx-background-color: rgba(38, 213, 105, 0.11);
+    -fx-border-color: rgba(38, 213, 105, 0.38);
+    -fx-border-width: 1;
+    -fx-padding: 4 8 4 8;
+    -fx-text-fill: #4ce083;
+    -fx-font-size: 10px;
+    -fx-font-weight: 900;
+    -fx-background-radius: 2;
+    -fx-border-radius: 2;
+    -fx-effect: dropshadow(gaussian, rgba(38, 213, 105, 0.28), 12, 0.2, 0, 0);
+}
+
+.my-bid-status-won {
+    -fx-background-color: rgba(4, 75, 35, 0.38);
+    -fx-border-color: rgba(18, 138, 67, 0.7);
+    -fx-text-fill: #1fb15d;
+    -fx-effect: dropshadow(gaussian, rgba(31, 177, 93, 0.34), 14, 0.22, 0, 0);
+}
+
+.my-bid-status-outbid {
+    -fx-background-color: rgba(146, 28, 28, 0.18);
+    -fx-border-color: rgba(255, 84, 84, 0.45);
+    -fx-text-fill: #ff5454;
+    -fx-effect: dropshadow(gaussian, rgba(255, 84, 84, 0.32), 14, 0.2, 0, 0);
+}
+
+.my-bid-status-lost {
+    -fx-background-color: rgba(160, 160, 160, 0.1);
+    -fx-border-color: rgba(160, 160, 160, 0.35);
+    -fx-text-fill: #a0a0a0;
+}
+
+.my-bid-status-cancelled {
+    -fx-background-color: rgba(155, 112, 17, 0.18);
+    -fx-border-color: rgba(222, 168, 42, 0.55);
+    -fx-text-fill: #e0aa38;
+}
+
+.my-bid-status-ended {
+    -fx-background-color: rgba(160, 160, 160, 0.1);
+    -fx-border-color: rgba(160, 160, 160, 0.35);
+    -fx-text-fill: #a0a0a0;
+}
+
+.my-bid-empty {
+    -fx-background-color: rgba(26, 28, 28, 0.82);
+    -fx-background-radius: 12;
+    -fx-text-fill: rgba(224, 192, 178, 0.75);
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-padding: 14;
+    -fx-border-color: rgba(89, 66, 56, 0.45);
+    -fx-border-width: 1;
+    -fx-border-radius: 12;
+}
+
+.my-bid-col-product {
+    -fx-min-width: 300;
+    -fx-pref-width: 300;
+}
+
+.my-bid-col-price {
+    -fx-min-width: 145;
+    -fx-pref-width: 145;
+}
+
+.my-bid-col-status {
+    -fx-min-width: 125;
+    -fx-pref-width: 125;
+}
+
+.my-bid-col-time {
+    -fx-min-width: 110;
+    -fx-pref-width: 110;
+}
+
+.my-bid-col-source {
+    -fx-min-width: 95;
+    -fx-pref-width: 95;
+}

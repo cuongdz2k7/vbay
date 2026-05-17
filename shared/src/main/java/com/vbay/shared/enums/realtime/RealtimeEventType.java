@@ -3,8 +3,8 @@ package com.vbay.shared.enums.realtime;
 public enum RealtimeEventType {
     AUCTION_STATE_UPDATED,
     BID_HISTORY_ITEM_ADDED,
+    MY_BID_LIST_ITEM_UPDATED,
     NOTIFICATION_CREATED,
-    AUCTION_ENDED,
     AUCTION_LIST_ITEM_UPDATED,
     USER_BALANCE_UPDATED,
     WATCHER_COUNT_CHANGED

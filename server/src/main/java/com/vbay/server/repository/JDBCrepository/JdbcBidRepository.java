@@ -6,12 +6,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.mapper.rowmapper.BidRowMapper;
 import com.vbay.server.model.Bid;
 import com.vbay.server.repository.BidRepository;
-import com.vbay.shared.enums.auction.BidStatus;
+import com.vbay.shared.enums.bid.BidStatus;
 
 public class JdbcBidRepository implements BidRepository {
     private final Connection connection;
@@ -97,4 +99,84 @@ public class JdbcBidRepository implements BidRepository {
             statement.executeUpdate();
         }
     }
+
+    @Override
+    public void updateStatusesByAuctionIdExceptBid(long auctionId, long excludedBidId, BidStatus newStatus) throws SQLException {
+        String sql = "UPDATE bids SET status = ? WHERE auction_id = ? AND id <> ?";
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, newStatus.name());
+            statement.setLong(2, auctionId);
+            statement.setLong(3, excludedBidId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public List<Bid> findLatestBidPerBidderByAuctionId(long auctionId) throws SQLException {
+        String sql = """
+            SELECT b.id, b.auction_id, b.bidder_id, b.bid_amount, b.bid_time, b.bid_source, b.status
+            FROM bids b
+            JOIN (
+                SELECT bidder_id, MAX(id) AS latest_bid_id
+                FROM bids
+                WHERE auction_id = ?
+                GROUP BY bidder_id
+            ) latest ON latest.latest_bid_id = b.id
+            ORDER BY b.bid_time DESC
+            """; ///join bảng theo lastet_bid_id = b.id
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Bid> bids = new ArrayList<>();
+                while (rs.next()) {
+                    bids.add(BidRowMapper.mapBid(rs));
+                }
+                return bids;
+            }
+        }    
+    }
+
+    @Override
+    public List<Bid> findLatestBidsByBidderId(long bidderId) throws SQLException {
+        String sql = """
+            SELECT b.id, b.auction_id, b.bidder_id, b.bid_amount, b.bid_time, b.bid_source, b.status
+            FROM bids b
+            JOIN (
+                SELECT auction_id, MAX(id) AS latest_bid_id
+                FROM bids
+                WHERE bidder_id = ?
+                GROUP BY auction_id
+            ) latest ON latest.latest_bid_id = b.id
+            ORDER BY b.bid_time DESC, b.id DESC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, bidderId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Bid> bids = new ArrayList<>();
+                while (rs.next()) {
+                    bids.add(BidRowMapper.mapBid(rs));
+                }
+                return bids;
+            }
+        }
+    }
+
+    @Override
+    public int markAuctionBidsLost(long auctionId) throws SQLException {
+        String sql = """
+            UPDATE bids
+            SET status = 'LOST'
+            WHERE auction_id = ?
+            AND status IN ('WINNING', 'OUTBID')
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            return statement.executeUpdate();
+        }
+    }
+
+        
 }

@@ -5,13 +5,14 @@ import java.util.List;
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
 import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
+import com.vbay.server.realtime.handler.AuctionStartedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
 import com.vbay.server.realtime.handler.UserBalanceUpdatedRealtimeHandler;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
-import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.realtime.publisher.InMemoryDomainEventPublisher;
 import com.vbay.server.realtime.subscription.InMemorySubscriptionRegistry;
 import com.vbay.server.realtime.subscription.SubscriptionRegistry;
@@ -125,7 +126,9 @@ new AppConfig()
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(
+            new AuctionClosedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionListItemUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AuctionStartedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionScheduleDomainEventHandler(auctionScheduler),
             new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),

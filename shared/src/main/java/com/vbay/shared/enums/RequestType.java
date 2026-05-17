@@ -23,6 +23,7 @@ public enum RequestType {
     UNSUBSCRIBE_ROOM,
 
     // Bidder
+    GET_MY_BID_LIST,
     JOIN_AUCTION,
     PLACE_BID,
     BUY_NOW,

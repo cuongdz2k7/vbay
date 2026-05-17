@@ -23,6 +23,7 @@ import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
+import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
@@ -97,16 +98,18 @@ public class RequestDistributor {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
                 case LOGIN -> handleLogin(requestId, payload, session);
-                case LOGOUT -> handleLogout(requestId, session);
+                case LOGOUT -> handleLogout(requestId, session, connection);
                 case REGISTER -> handleRegister(requestId, payload);
                 case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
+                case GET_MY_BID_LIST -> handleGetMyBidList(requestId, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 case BUY_NOW -> handleBuyNow(requestId, payload, session);
                 case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
                 case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
+                case GET_AUCTION_DETAIL -> handleGetAuctionDetail(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -136,6 +139,21 @@ public class RequestDistributor {
         return new Respond<>(requestId, true, "Auction list loaded", response);
     }
 
+    private Respond<?> handleGetAuctionDetail(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        com.vbay.shared.dto.auctionDTO.AuctionDetailRequest request =
+            JsonUtils.fromJson(payload, com.vbay.shared.dto.auctionDTO.AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction detail request", null);
+        }
+
+        return new Respond<>(requestId, true, "Auction detail loaded", auctionService.getAuctionDetail(request, session));
+    }
+
+    ///
     private Respond<Void> handleSubscribeRoom(
         String requestId,
         JsonElement payload,
@@ -184,11 +202,12 @@ public class RequestDistributor {
         
         return new Respond<>(requestId, true, "Login successful", loginResponse);
     }
-
-    private Respond<Void> handleLogout(String requestId, ClientSession session) {
+    /// LogoutResponse not Available
+    private Respond<Void> handleLogout(String requestId, ClientSession session, ClientConnection connection) {
         if (session == null || !session.isAuthenticated()) {
             return new Respond<>(requestId, true, "Client is already logged out", null);
         }
+        subscriptionService.disconnect(connection);
         session.clearSession();
         return new Respond<>(requestId, true, "Logout successful", null);
     }
@@ -221,6 +240,10 @@ public class RequestDistributor {
         }
         auctionService.createAuction(createAuctionRequest, session);
         return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    private Respond<MyBidListResponse> handleGetMyBidList(String requestId, ClientSession session) throws SQLException {
+        return new Respond<>(requestId, true, "My bid list loaded successfully", bidService.getMyBidList(session));
     }
 
     private Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {

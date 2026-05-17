@@ -23,14 +23,11 @@ import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
-import com.vbay.ui.scene_ui.NotificationManager.NotificationType;
 import com.vbay.ui.util.MoneyInput;
 
-import atlantafx.base.controls.Notification;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -150,8 +147,10 @@ public class CreateAuctionController {
 
     @FXML
     private void handleBack(ActionEvent event) {
-        if (onBack != null) {
-            onBack.run();
+        Runnable backAction = onBack;
+        dispose();
+        if (backAction != null) {
+            backAction.run();
             return;
         }
 
@@ -173,7 +172,8 @@ public class CreateAuctionController {
                 new Request<>(RequestType.CREATE_AUCTION, createAuctionRequest)
             );
 
-            if (!response.isStatus()) {
+
+            if (response == null || !response.isStatus()) {
                 NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create auction failed", response.getMessage());
                 return;
             }
@@ -183,8 +183,10 @@ public class CreateAuctionController {
                 "Auction created",
                 "Auction created successfully."
             );
-            if (onAuctionCreated != null) {
-                onAuctionCreated.run();
+            Runnable auctionCreatedAction = onAuctionCreated;
+            dispose();
+            if (auctionCreatedAction != null) {
+                auctionCreatedAction.run();
             }
         } catch (IllegalArgumentException exception) {
             NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid auction data", exception.getMessage());
@@ -250,6 +252,8 @@ public class CreateAuctionController {
         applyCoverViewport(imageView, image, PREVIEW_SIZE, PREVIEW_SIZE);
 
         Rectangle clip = new Rectangle(PREVIEW_SIZE, PREVIEW_SIZE);
+        clip.setArcWidth(18);
+        clip.setArcHeight(18);
         imageView.setClip(clip);
 
         Button removeButton = new Button("x");
@@ -395,6 +399,15 @@ public class CreateAuctionController {
         if (selectedImageFiles.isEmpty()) {
             throw new IllegalArgumentException("Select at least one product image.");
         }
+    }
+
+    public void dispose() {
+        selectedImageFiles.clear();
+        if (imagePreviewContainer != null) {
+            imagePreviewContainer.getChildren().clear();
+        }
+        onBack = null;
+        onAuctionCreated = null;
     }
 
     private void setReservePriceEnabled(boolean enabled) {
