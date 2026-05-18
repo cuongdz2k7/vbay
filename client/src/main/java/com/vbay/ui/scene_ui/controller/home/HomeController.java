@@ -165,6 +165,7 @@ Mỗi màn mở lên:
 4. merge realtime event lên snapshot bằng version/updatedAt
 5. dispose thì unsubscribe + stop timer + bỏ state màn đó
 */
+
 public class HomeController {
     private static final Logger LOGGER = LoggingUtils.getLogger(HomeController.class);
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);

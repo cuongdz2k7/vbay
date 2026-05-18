@@ -24,11 +24,15 @@ import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.AutobidRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.enums.AuctionTransition;
+import com.vbay.server.service.bid.autobid.AutobidEngine;
+import com.vbay.server.service.bid.autobid.AutobidService;
+import com.vbay.server.service.bid.autobid.model.AutobidResolution;
 import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.CreateAuctionResult;
@@ -85,11 +89,15 @@ public class AuctionService {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final DomainEventPublisher domainEventPublisher;
+    private final AutobidEngine autobidEngine;
+    private final AutobidService autobidService;
 
     public AuctionService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, DomainEventPublisher domainEventPublisher) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.domainEventPublisher = domainEventPublisher;
+        this.autobidEngine = new AutobidEngine();
+        this.autobidService = new AutobidService(connectionProvider, repositoryFactory);
     }
 
     private void checkSession(ClientSession session) {
@@ -217,7 +225,9 @@ public class AuctionService {
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 BidRepository bidRepository = repositoryFactory.createBidRepository(connection);    
+                AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
                 ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+                
                 auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow(); //////lock auction first
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
                 AuctionTransition transition = auctionRepository.syncStatus(auctionId, dbNow);
@@ -233,8 +243,11 @@ public class AuctionService {
                             dbNow,
                             auctionRepository,
                             bidRepository,
-                            productImageRepository
+                            autobidRepository,
+                            productImageRepository,
+                            connection
                         );
+                        
                         if (closeResult != null) {
                             auctionClosedEvent = new AuctionClosedDomainEvent(closeResult);
                             statusChanged = true;
@@ -271,7 +284,9 @@ public class AuctionService {
             LocalDateTime closedAt,
             AuctionRepository auctionRepository,
             BidRepository bidRepository,
-            ProductImageRepository productImageRepository) throws SQLException {
+            AutobidRepository autobidRepository,
+            ProductImageRepository productImageRepository,
+            Connection connection) throws SQLException {
         if (checkIfAuctionFailed(auction)) {
             long version = auctionRepository.terminateAuction(auction.getId());
             if (version == 0L) {
@@ -279,6 +294,7 @@ public class AuctionService {
             }
             bidRepository.markAuctionBidsLost(auction.getId());
             Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+            endActiveAutobidsForClosedAuction(refreshedAuction, autobidRepository, connection);
             return buildAuctionClosedResult(
                 refreshedAuction,
                 AuctionCloseReason.TIME_EXPIRED_FAILED,
@@ -298,6 +314,7 @@ public class AuctionService {
         bidRepository.updateStatusesByAuctionIdExceptBid(auction.getId(), winningBid.getId(), BidStatus.LOST);
         bidRepository.updateStatus(winningBid.getId(), BidStatus.WON);
         Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+        endActiveAutobidsForClosedAuction(refreshedAuction, autobidRepository, connection);
         return buildAuctionClosedResult(
             refreshedAuction,
             AuctionCloseReason.TIME_EXPIRED_ENDED,
@@ -305,6 +322,19 @@ public class AuctionService {
             bidRepository,
             productImageRepository
         );
+    }
+
+    private void endActiveAutobidsForClosedAuction(
+            Auction auction,
+            AutobidRepository autobidRepository,
+            Connection connection) throws SQLException {
+        Optional<com.vbay.server.service.bid.autobid.model.Autobid> winningAutobid =
+            autobidRepository.findWinningByAuctionId(auction.getId());
+        if (winningAutobid.isEmpty()) {
+            return;
+        }
+        AutobidResolution resolution = autobidEngine.resolveAfterAuctionEnded(auction, winningAutobid.get());
+        autobidService.applyAutobidResolutionChanges(resolution, connection);
     }
 
     private AuctionClosedResult buildAuctionClosedResult(

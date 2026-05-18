@@ -6,6 +6,7 @@ public interface RepositoryFactory {
     ProductRepository createProductRepository(Connection connection);
     ProductImageRepository createProductImageRepository(Connection connection);
     AuctionRepository createAuctionRepository(Connection connection);
+    AutobidRepository createAutobidRepository(Connection connection);
     UserRepository createUserRepository(Connection connection);
     BidRepository createBidRepository(Connection connection); 
     PaymentRepository createPaymentRepository(Connection connection);
