@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.network_connection.ClientConnectionRegistry;
 import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
@@ -31,6 +32,7 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
+import com.vbay.server.service.AdminService;
 import com.vbay.server.service.UserAccountService;
 import com.vbay.server.upload.ImageStorageService;
 
@@ -61,6 +63,8 @@ public class AppConfig {
     private final List<DomainEventHandler> domainEventHandlers;
     private final RealtimeEventMapper realtimeEventMapper;
     private final AuctionTaskScheduler auctionScheduler;
+    private final ClientConnectionRegistry connectionRegistry;
+    private final AdminService adminService;
 
     
 /*
@@ -118,6 +122,8 @@ new AppConfig()
             new AuctionListRoomSubscriptionRule()
         ));
         this.subscriptionService = new SubscriptionService(subscriptionValidator, subscriptionRegistry);
+        this.connectionRegistry = new ClientConnectionRegistry();
+        this.adminService = new AdminService(connectionProvider, repositoryFactory, connectionRegistry, realtimeBroadcaster);
         ///business service
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
@@ -142,7 +148,9 @@ new AppConfig()
             bidService, 
             userAccountService,
             subscriptionService, 
-            imageStorageService);
+            imageStorageService,
+            adminService,
+            connectionRegistry);
     }
 
      public AuctionTaskScheduler getAuctionScheduler() {
