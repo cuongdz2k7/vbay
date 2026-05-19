@@ -79,16 +79,6 @@ public class AuthService {
         return new Respond<>(requestId, true, "Logout successful", null);
     }
 
-    public Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
-        RegisterRequest request = JsonUtils.fromJson(payload, RegisterRequest.class);
-        if (request == null) {
-            throw new ValidationException("Invalid register payload");
-        }
-
-        register(request);
-        return new Respond<>(requestId, true, "Registration successful", null);
-    }
-
     public LoginResponse login(LoginRequest request) throws SQLException {
         validateLoginRequest(request);
         String username = request.getUsername().trim();
@@ -102,6 +92,24 @@ public class AuthService {
                 throw new AuthenticationException("Invalid username or password");
             }
             User user = userOptional.get();
+            if (user.isBanned()) {
+                logError("LOGIN_FAILED", "username=" + username + ", reason: user_banned");
+                throw new AuthenticationException("Your account has been banned.");
+            }
+            if (user.isLocked()) {
+                if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {
+                    userRepository.updateStatus(user.getId(), com.vbay.shared.enums.auth.UserStatus.ACTIVE);
+                    userRepository.setLockUntil(user.getId(), null);
+                    user.setStatus(com.vbay.shared.enums.auth.UserStatus.ACTIVE);
+                    user.setLockUntil(null);
+                } else {
+                    logError("LOGIN_FAILED", "username=" + username + ", reason: user_locked");
+                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                    String until = user.getLockUntil() != null ? user.getLockUntil().format(formatter) : "indefinitely";
+                    throw new AuthenticationException("Your account is locked until " + until);
+                }
+            }
+
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
                 throw new AuthenticationException("Invalid username or password");
@@ -113,7 +121,9 @@ public class AuthService {
                 user.getEmail(),
                 user.getPosition(),
                 user.getAvailableBalance(),
-                user.getHoldBalance()
+                user.getHoldBalance(),
+                user.getWarningCount(),
+                user.getLockUntil() != null ? user.getLockUntil().toString() : null
             );
         } finally {
             if (request != null && request.getPassword() != null) {
@@ -153,5 +163,14 @@ public class AuthService {
                 Arrays.fill(request.getPassword(), '\0');
             }
         }
+    }
+
+    public Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
+        RegisterRequest registerRequest = JsonUtils.fromJson(payload, RegisterRequest.class);
+        if (registerRequest == null) {
+            return new Respond<>(requestId, false, "Invalid register request", null);
+        }
+        register(registerRequest);
+        return new Respond<>(requestId, true, "Register successful", null);
     }
 }

@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
+
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -564,4 +568,25 @@ public class BidService {
         return affectedMyBidItems;
     }
 
+    public Respond<MyBidListResponse> handleGetMyBidList(String requestId, ClientSession session) throws SQLException {
+        return new Respond<>(requestId, true, "My bid list loaded successfully", getMyBidList(session));
+    }
+
+    public Respond<Void> handlePlaceBid(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        PlaceBidRequest placeBidRequest = JsonUtils.fromJson(payload, PlaceBidRequest.class);
+        if (placeBidRequest == null) {
+            return new Respond<>(requestId, false, "Invalid place bid request", null);
+        }
+        placeBid(placeBidRequest, session);
+        return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
+
+    public Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        BuyNowRequest buyNowRequest = JsonUtils.fromJson(payload, BuyNowRequest.class);
+        if (buyNowRequest == null) {
+            return new Respond<>(requestId, false, "Invalid buy now request", null);
+        }
+        buyNow(buyNowRequest, session);
+        return new Respond<>(requestId, true, "Buy now completed successfully", null);
+    }
 }

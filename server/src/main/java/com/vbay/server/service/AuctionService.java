@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
+
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -402,5 +406,31 @@ public class AuctionService {
         if (limit > MAX_AUCTION_LIST_LIMIT) {
             request.setLimit(MAX_AUCTION_LIST_LIMIT);
         }
+    }
+
+    public Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
+        if (createAuctionRequest == null) {
+            return new Respond<>(requestId, false, "Invalid create auction request", null);
+        }
+        createAuction(createAuctionRequest, session);
+        return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    public Respond<AuctionListResponse> handleGetAuctionList(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        AuctionListRequest request = JsonUtils.fromJson(payload, AuctionListRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction list request", null);
+        }
+        AuctionListResponse response = getAuctionList(request, session);
+        return new Respond<>(requestId, true, "Auction list loaded", response);
+    }
+
+    public Respond<?> handleGetAuctionDetail(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        AuctionDetailRequest request = JsonUtils.fromJson(payload, AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction detail request", null);
+        }
+        return new Respond<>(requestId, true, "Auction detail loaded", getAuctionDetail(request, session));
     }
 }
