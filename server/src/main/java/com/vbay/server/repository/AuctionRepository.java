@@ -32,5 +32,7 @@ public interface AuctionRepository {
     Optional<AuctionListItemResult> findAuctionListItemById(long auctionId) throws SQLException;
     Optional<AuctionItemResult> findAuctionItemById(long auctionId) throws SQLException;
     List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException;
-    
+    void deleteById(long auctionId) throws SQLException;
+    void updateStatus(long auctionId, com.vbay.shared.enums.auction.AuctionStatus status) throws SQLException;
+    List<Auction> findAllForAdmin() throws SQLException;
 }
