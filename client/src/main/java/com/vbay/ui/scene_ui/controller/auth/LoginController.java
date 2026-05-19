@@ -6,12 +6,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.Desktop;
 
-import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
+import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
@@ -69,10 +70,13 @@ public class LoginController {
             passwordField.requestFocus();
             return;
         }
-        //Sever Side
         try {
             loginUser(username, password);
-            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+            if (UserData.getWarningCount() > 0) {
+                NotificationManager.show(NotificationManager.NotificationType.WARNING, "Warning", "You have " + UserData.getWarningCount() + " warning(s). 3 warnings will result in a permanent ban.");
+            } else {
+                NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+            }
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
@@ -82,11 +86,15 @@ public class LoginController {
             return; // Stop switch scene improperly
         }
         //UI Sides
-        try{
-            SceneManager.switchScene("/jfx/scene/Home.fxml");
+        try {
+            if (Position.ADMIN.equals(UserData.getPosition())) {
+                SceneManager.switchScene("/jfx/scene/admin/AdminDashboard.fxml");
+            } else {
+                SceneManager.switchScene("/jfx/scene/Home.fxml");
+            }
             SceneManager.enterImmersiveMode();
-        }catch ( Exception exception){
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
+        } catch (Exception exception) {
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed", exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
         }
     }
     //Method Login
