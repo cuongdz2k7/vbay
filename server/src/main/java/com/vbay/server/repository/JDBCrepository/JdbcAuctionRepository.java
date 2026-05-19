@@ -601,6 +601,38 @@ public class JdbcAuctionRepository implements AuctionRepository {
             }
         }
     }
-    
 
+    @Override
+    public void deleteById(long auctionId) throws SQLException {
+        String sql = "DELETE FROM auctions WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void updateStatus(long auctionId, com.vbay.shared.enums.auction.AuctionStatus status) throws SQLException {
+        String sql = "UPDATE auctions SET status = ?, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setLong(2, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public List<Auction> findAllForAdmin() throws SQLException {
+        String sql = """
+            SELECT id, product_id, seller_id, title, description, minimum_bid_step,
+                   starting_price, current_price, reserve_price, buy_now_price,
+                   starting_time, ending_time, status, winner_user_id, version
+            FROM auctions
+            ORDER BY id DESC
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            return AuctionRowMapper.mapAuctions(rs);
+        }
+    }
 }
