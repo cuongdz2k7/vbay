@@ -2,6 +2,7 @@ package com.vbay.server.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
@@ -18,6 +19,8 @@ public class User {
     private UserStatus status;
     private BigDecimal availableBalance;
     private BigDecimal holdBalance;
+    private int warningCount;
+    private LocalDateTime lockUntil;
     private long version;
 
     public User(
@@ -35,6 +38,8 @@ public class User {
             UserStatus.ACTIVE,
             availableBalance,
             BigDecimal.ZERO,
+            0,
+            null,
             LocalDate.now().toString()
         );
     }
@@ -48,6 +53,8 @@ public class User {
             UserStatus status,
             BigDecimal availableBalance,
             BigDecimal holdBalance,
+            int warningCount,
+            LocalDateTime lockUntil,
             String timeinit) {
         this.username = username;
         this.email = email;
@@ -57,6 +64,8 @@ public class User {
         this.status = status;
         this.availableBalance = availableBalance;
         this.holdBalance = holdBalance;
+        this.warningCount = warningCount;
+        this.lockUntil = lockUntil;
         this.timeinit = timeinit;
     }
 
@@ -104,6 +113,14 @@ public class User {
         return version;
     }
 
+    public int getWarningCount() {
+        return warningCount;
+    }
+
+    public LocalDateTime getLockUntil() {
+        return lockUntil;
+    }
+
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
     }
@@ -114,6 +131,10 @@ public class User {
 
     public boolean isSuspended() {
         return status == UserStatus.SUSPENDED;
+    }
+
+    public boolean isLocked() {
+        return status == UserStatus.LOCKED;
     }
 
     public boolean isDeleted() {
@@ -160,4 +181,11 @@ public class User {
         this.version = version;
     }
 
+    public void setWarningCount(int warningCount) {
+        this.warningCount = warningCount;
+    }
+
+    public void setLockUntil(LocalDateTime lockUntil) {
+        this.lockUntil = lockUntil;
+    }
 }
