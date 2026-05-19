@@ -20,4 +20,8 @@ public class ClientConnection {
     public ClientSession getSession() {
         return session;
     }
+
+    public synchronized void close() {
+        out.close();
+    }
 }
