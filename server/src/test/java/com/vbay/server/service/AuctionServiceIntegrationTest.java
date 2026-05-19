@@ -607,6 +607,8 @@ class AuctionServiceIntegrationTest {
                     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
                     available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
                     hold_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+                    warning_count INT NOT NULL DEFAULT 0,
+                    lock_until TIMESTAMP DEFAULT NULL,
                     version BIGINT NOT NULL DEFAULT 0,
                     time_init TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
