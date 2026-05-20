@@ -20,6 +20,7 @@ import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.enums.auction.AuctionStatus;
 
 
 
@@ -612,7 +613,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
     @Override
-    public void updateStatus(long auctionId, com.vbay.shared.enums.auction.AuctionStatus status) throws SQLException {
+    public void updateStatus(long auctionId, AuctionStatus status) throws SQLException {
         String sql = "UPDATE auctions SET status = ?, version = version + 1 WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, status.name());

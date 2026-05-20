@@ -46,6 +46,7 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 
 /*
 BUG:
@@ -247,7 +248,7 @@ public class BidService {
             AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
             ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
 
-            List<com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload> items = new ArrayList<>();
+            List<MyBidListItemPayload> items = new ArrayList<>();
             for (Bid bid : bidRepository.findLatestBidsByBidderId(session.getUserId())) {
                 Auction auction = auctionRepository.findById(bid.getAuctionId())
                     .orElseThrow(() -> new ValidationException("Auction not found"));

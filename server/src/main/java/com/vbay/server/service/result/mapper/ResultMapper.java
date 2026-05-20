@@ -21,6 +21,7 @@ import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.bid.BidStatus;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 
 public class ResultMapper {
     private ResultMapper() {
@@ -186,9 +187,9 @@ public class ResultMapper {
         );
     }
 
-    public static com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload toMyBidListItemPayload(
+    public static MyBidListItemPayload toMyBidListItemPayload(
             UserMyBidListItemResult result) {
-        return new com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload(
+        return new MyBidListItemPayload(
             result.getBidId(),
             result.getAuctionId(),
             result.getAuctionVersion(),

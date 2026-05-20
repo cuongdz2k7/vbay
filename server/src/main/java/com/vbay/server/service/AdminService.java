@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import com.google.gson.JsonElement;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.shared.protocol.RealtimeEvent;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.ValidationException;
@@ -209,7 +210,7 @@ public class AdminService {
         Room room = new Room();
         room.setType(roomType);
         room.setTargetId(targetId);
-        realtimeBroadcaster.broadcast(new com.vbay.shared.protocol.RealtimeEvent<>(type, room, payload));
+        realtimeBroadcaster.broadcast(new RealtimeEvent<>(type, room, payload));
     }
 
     public Respond<AdminUserListResponse> handleAdminGetAllUsers(String requestId, ClientSession session) throws SQLException {

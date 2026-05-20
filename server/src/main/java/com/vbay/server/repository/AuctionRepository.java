@@ -11,6 +11,7 @@ import com.vbay.server.repository.enums.AuctionTransition;
 import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.enums.auction.AuctionStatus;
 
 public interface AuctionRepository {
     Auction save(Auction auction) throws SQLException;
@@ -33,6 +34,6 @@ public interface AuctionRepository {
     Optional<AuctionItemResult> findAuctionItemById(long auctionId) throws SQLException;
     List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException;
     void deleteById(long auctionId) throws SQLException;
-    void updateStatus(long auctionId, com.vbay.shared.enums.auction.AuctionStatus status) throws SQLException;
+    void updateStatus(long auctionId, AuctionStatus status) throws SQLException;
     List<Auction> findAllForAdmin() throws SQLException;
 }

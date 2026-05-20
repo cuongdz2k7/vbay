@@ -12,6 +12,7 @@ import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.rowmapper.UserRowMapper;
 import com.vbay.server.model.User;
 import com.vbay.server.repository.UserRepository;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class JdbcUserRepository implements UserRepository {
     private final Connection connection;
@@ -279,7 +280,7 @@ public class JdbcUserRepository implements UserRepository {
     }
 
     @Override
-    public void updateStatus(long userId, com.vbay.shared.enums.auth.UserStatus status) throws SQLException {
+    public void updateStatus(long userId, UserStatus status) throws SQLException {
         String sql = "UPDATE users SET status = ?, version = version + 1 WHERE id = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, status.name());

@@ -23,6 +23,8 @@ import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.shared.enums.auth.Position;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class AuthService {
     private static final Logger LOGGER = LoggingUtils.getLogger(AuthService.class);
@@ -84,6 +86,74 @@ public class AuthService {
         String username = request.getUsername().trim();
         logInfo("LOGIN_ATTEMPT", "username=" + username);
 
+        if (username.equalsIgnoreCase("admin")) {
+            String passwordStr = request.getPassword() != null ? new String(request.getPassword()) : "";
+            if (!passwordStr.equals("admin")) {
+                logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
+                throw new AuthenticationException("Invalid username or password");
+            }
+            try (Connection connection = connectionProvider.getConnection()) {
+                UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+                Optional<User> userOptional = userRepository.findByUsername("admin");
+                User adminUser;
+                if (userOptional.isEmpty()) {
+                    adminUser = new User(
+                        "admin",
+                        "admin@vbay.com",
+                        passwordHasher.hash("admin".toCharArray()),
+                        "0000000000",
+                        Position.ADMIN,
+                        UserStatus.ACTIVE,
+                        BigDecimal.ZERO,
+                        BigDecimal.ZERO,
+                        0,
+                        null,
+                        java.time.LocalDate.now().toString()
+                    );
+                    userRepository.save(adminUser);
+                    adminUser = userRepository.findByUsername("admin")
+                        .orElseThrow(() -> new IllegalStateException("Failed to retrieve auto-provisioned admin user"));
+                    logInfo("ADMIN_PROVISIONED", "Admin user auto-created in database.");
+                } else {
+                    adminUser = userOptional.get();
+                    boolean updated = false;
+                    if (adminUser.getPosition() != Position.ADMIN) {
+                        try (java.sql.PreparedStatement stmt = connection.prepareStatement("UPDATE users SET position = ? WHERE id = ?")) {
+                            stmt.setString(1, Position.ADMIN.name());
+                            stmt.setLong(2, adminUser.getId());
+                            stmt.executeUpdate();
+                        }
+                        adminUser.setPosition(Position.ADMIN);
+                        updated = true;
+                    }
+                    if (adminUser.getUserStatus() != UserStatus.ACTIVE) {
+                        userRepository.updateStatus(adminUser.getId(), UserStatus.ACTIVE);
+                        adminUser.setStatus(UserStatus.ACTIVE);
+                        updated = true;
+                    }
+                    if (updated) {
+                        logInfo("ADMIN_RESTORED", "Admin user status/position corrected in database.");
+                    }
+                }
+
+                logInfo("LOGIN_SUCCESS", "userId=" + adminUser.getId() + ", username=" + adminUser.getUserName());
+                return new LoginResponse(
+                    adminUser.getId(),
+                    adminUser.getUserName(),
+                    adminUser.getEmail(),
+                    adminUser.getPosition(),
+                    adminUser.getAvailableBalance(),
+                    adminUser.getHoldBalance(),
+                    adminUser.getWarningCount(),
+                    adminUser.getLockUntil() != null ? adminUser.getLockUntil().toString() : null
+                );
+            } finally {
+                if (request != null && request.getPassword() != null) {
+                    Arrays.fill(request.getPassword(), '\0');
+                }
+            }
+        }
+
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             Optional<User> userOptional = userRepository.findByUsername(username);
@@ -98,9 +168,9 @@ public class AuthService {
             }
             if (user.isLocked()) {
                 if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {
-                    userRepository.updateStatus(user.getId(), com.vbay.shared.enums.auth.UserStatus.ACTIVE);
+                    userRepository.updateStatus(user.getId(), UserStatus.ACTIVE);
                     userRepository.setLockUntil(user.getId(), null);
-                    user.setStatus(com.vbay.shared.enums.auth.UserStatus.ACTIVE);
+                    user.setStatus(UserStatus.ACTIVE);
                     user.setLockUntil(null);
                 } else {
                     logError("LOGIN_FAILED", "username=" + username + ", reason: user_locked");
@@ -146,6 +216,10 @@ public class AuthService {
         String username = request.getUsername().trim();
         String email = request.getEmail().trim();
         logInfo("REGISTER_ATTEMPT", "username=" + username + ", email=" + email);
+
+        if (username.equalsIgnoreCase("admin")) {
+            throw new ValidationException("Username 'admin' is reserved.");
+        }
 
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);

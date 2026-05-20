@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.realtime.subscription.SubscriptionService;
+import com.vbay.server.service.AdminService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
@@ -43,8 +44,8 @@ public class RequestDistributor {
     private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
-    private final com.vbay.server.service.AdminService adminService;
-    private final com.vbay.server.network_connection.ClientConnectionRegistry connectionRegistry;
+    private final AdminService adminService;
+    private final ClientConnectionRegistry connectionRegistry;
 
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
@@ -52,8 +53,8 @@ public class RequestDistributor {
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService,
-                                com.vbay.server.service.AdminService adminService,
-                                com.vbay.server.network_connection.ClientConnectionRegistry connectionRegistry) {
+                                AdminService adminService,
+                                ClientConnectionRegistry connectionRegistry) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
