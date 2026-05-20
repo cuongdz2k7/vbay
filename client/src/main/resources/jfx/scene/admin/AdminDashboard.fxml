@@ -12,13 +12,17 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 
 <BorderPane fx:id="adminRoot" styleClass="admin-dashboard" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.vbay.ui.scene_ui.controller.admin.AdminDashboardController">
     <left>
         <VBox styleClass="sidebar">
             <VBox alignment="CENTER" spacing="10" styleClass="sidebar-header">
-                <SVGPath content="M12 2L2 22h20L12 2z" styleClass="logo-icon" />
-                <Label styleClass="logo-text" text="vBay Admin" />
+                <ImageView fitWidth="48" fitHeight="48" pickOnBounds="true" preserveRatio="true" smooth="true">
+                    <Image url="@../../image/logo.png"/>
+                </ImageView>
+                <Label styleClass="logo-text" text="VBAY Admin" />
                 <Label styleClass="sidebar-subtitle" text="Superuser Control Panel" />
             </VBox>
             
@@ -37,7 +41,7 @@
             </VBox>
             
             <VBox spacing="10" styleClass="sidebar-footer">
-                <Label fx:id="accountNameLabel" styleClass="account-name" text="Admin" />
+                <Label fx:id="accountNameLabel" alignment="CENTER" maxWidth="Infinity" styleClass="account-name" text="Admin" />
                 <Button maxWidth="Infinity" onAction="#handleLogout" styleClass="logout-btn" text="Sign Out" />
             </VBox>
         </VBox>

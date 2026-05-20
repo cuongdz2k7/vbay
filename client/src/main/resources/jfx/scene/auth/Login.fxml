@@ -36,13 +36,10 @@
 
                                                 <Hyperlink focusTraversable="false" styleClass="logo-link">
                                                         <graphic>
-                                                            <ImageView fitWidth="32" fitHeight="44" pickOnBounds="true" preserveRatio="true" smooth="false" styleClass="brand-logo-image">
+                                                            <ImageView fitWidth="70" fitHeight="70" pickOnBounds="true" preserveRatio="true" smooth="true" styleClass="brand-logo-image">
                                                                 <image>
-                                                                    <Image url="@../../image/uet.png"/>
+                                                                    <Image url="@../../image/logo.png"/>
                                                                 </image>
-                                                                <viewport>
-                                                                    <Rectangle2D minX="261.0" minY="40.0" width="246.0" height="370.0"/>
-                                                                </viewport>
                                                             </ImageView>
                                                         </graphic>
                                                     </Hyperlink>            
