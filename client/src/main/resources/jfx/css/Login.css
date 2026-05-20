@@ -32,7 +32,7 @@
 
 .brand-wordmark {
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    -fx-font-size: 24px;
+    -fx-font-size: 32px;
     -fx-font-weight: 800;
     -fx-text-fill: #ff9f6f;
     -fx-font-smoothing-type: lcd;

@@ -289,63 +289,78 @@
     -fx-text-fill: rgba(255, 181, 160, 0.6);
 }
 
-/* Custom Dialog Styling */
+/* Custom Dialog Styling with Translucent Glassmorphism */
 .custom-dialog {
-    -fx-background-color: #131313;
-    -fx-border-color: rgba(255, 181, 160, 0.15);
-    -fx-border-width: 1px;
+    -fx-background-color: rgba(19, 17, 17, 0.96);
+    -fx-background-radius: 20px;
+    -fx-border-radius: 20px;
+    -fx-border-color: rgba(255, 95, 46, 0.45);
+    -fx-border-width: 1.5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.85), 24, 0.5, 0, 10);
+    -fx-padding: 24px;
 }
 
 .custom-dialog .label {
     -fx-text-fill: #ffb5a0;
+    -fx-font-weight: 700;
 }
 
 .custom-dialog .text-field {
-    -fx-background-color: rgba(10, 10, 10, 0.8);
-    -fx-border-color: rgba(255, 181, 160, 0.2);
-    -fx-border-width: 1px;
-    -fx-border-radius: 6px;
-    -fx-background-radius: 6px;
+    -fx-background-color: rgba(10, 10, 10, 0.7);
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-border-width: 1.2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
     -fx-text-fill: #ffffff;
-    -fx-padding: 8px 12px;
+    -fx-padding: 10px 14px;
+    -fx-font-size: 14px;
 }
 
 .custom-dialog .text-field:focused {
     -fx-border-color: #ff5f2e;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.25), 10, 0, 0, 0);
 }
 
 .custom-dialog .button {
-    -fx-background-color: rgba(255, 95, 46, 0.12);
-    -fx-text-fill: #ffb5a0;
-    -fx-border-color: rgba(255, 95, 46, 0.3);
-    -fx-border-radius: 6px;
-    -fx-background-radius: 6px;
-    -fx-padding: 6px 16px;
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-text-fill: rgba(255, 181, 160, 0.8);
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 8px 20px;
     -fx-cursor: hand;
+    -fx-font-weight: 700;
 }
 
 .custom-dialog .button:hover {
-    -fx-background-color: rgba(255, 95, 46, 0.2);
-    -fx-border-color: #ff5f2e;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-text-fill: #ffffff;
+    -fx-border-color: rgba(255, 181, 160, 0.3);
 }
 
 .custom-dialog .button:default {
-    -fx-background-color: #ff5f2e;
-    -fx-text-fill: #131313;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff4f1f 0%, #ff713d 100%);
+    -fx-text-fill: #321005;
     -fx-border-color: transparent;
-    -fx-font-weight: bold;
+    -fx-font-weight: 800;
+    -fx-effect: dropshadow(gaussian, rgba(255, 84, 34, 0.25), 12, 0, 0, 3);
 }
 
 .custom-dialog .button:default:hover {
-    -fx-background-color: #ff7b54;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #ff6334 0%, #ff875a 100%);
+    -fx-effect: dropshadow(gaussian, rgba(255, 84, 34, 0.35), 16, 0, 0, 4);
 }
 
 .custom-dialog > .header-panel {
-    -fx-background-color: #521300;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #3e1203 0%, #1e0801 100%);
+    -fx-background-radius: 18px 18px 0 0;
+    -fx-padding: 16px 20px;
+    -fx-border-color: transparent transparent rgba(255, 95, 46, 0.24) transparent;
+    -fx-border-width: 0 0 1.5 0;
 }
 
 .custom-dialog > .header-panel > .label {
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
+    -fx-font-size: 20px;
+    -fx-font-weight: 800;
     -fx-text-fill: #ffb5a0;
 }
