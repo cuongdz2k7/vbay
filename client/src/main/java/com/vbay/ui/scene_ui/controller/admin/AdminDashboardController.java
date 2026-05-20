@@ -73,7 +73,13 @@ public class AdminDashboardController {
 
     @FXML
     private void initialize() {
-        accountNameLabel.setText(UserData.getUsername() != null ? UserData.getUsername() : "Admin");
+        String username = UserData.getUsername();
+        if (username != null && !username.isEmpty()) {
+            username = username.substring(0, 1).toUpperCase() + username.substring(1);
+            accountNameLabel.setText(username);
+        } else {
+            accountNameLabel.setText("Admin");
+        }
 
         setupUsersTable();
         setupAuctionsTable();
@@ -323,10 +329,52 @@ public class AdminDashboardController {
 
         auctionsTable.setItems(auctionsData);
     }
-    //Helper css styles
+    //Helper css styles (Popup dialogs)
     private void styleDialog(javafx.scene.control.Dialog<?> dialog) {
         dialog.getDialogPane().getStylesheets().add(getClass().getResource("/jfx/css/AdminDashboard.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("custom-dialog");
+        
+        // Create custom red triangle with white question mark icon
+        javafx.scene.shape.SVGPath triangle = new javafx.scene.shape.SVGPath();
+        triangle.setContent("M12 2L2 22h20L12 2z");
+        triangle.setFill(javafx.scene.paint.Color.web("#e53935"));
+        triangle.setStroke(javafx.scene.paint.Color.TRANSPARENT);
+        triangle.setScaleX(1.8);
+        triangle.setScaleY(1.8);
+
+        Label qLabel = new Label("?");
+        qLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
+        qLabel.setTranslateY(2); // Shift question mark down slightly to center inside triangle
+
+        javafx.scene.layout.StackPane customIcon = new javafx.scene.layout.StackPane(triangle, qLabel);
+        customIcon.setPrefWidth(40);
+        customIcon.setPrefHeight(40);
+        dialog.setGraphic(customIcon);
+        
+        // Set the stage style to TRANSPARENT before showing
+        dialog.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+        
+        // Configure Scene and Window once the dialog starts showing (ensuring scene is fully initialized)
+        dialog.setOnShowing(event -> {
+            javafx.scene.Scene scene = dialog.getDialogPane().getScene();
+            if (scene != null) {
+                scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
+                javafx.stage.Stage stage = (javafx.stage.Stage) scene.getWindow();
+                if (stage != null) {
+                    // Mouse drag handlers so users can move the frameless window naturally
+                    final double[] xOffset = new double[1];
+                    final double[] yOffset = new double[1];
+                    dialog.getDialogPane().setOnMousePressed(me -> {
+                        xOffset[0] = me.getSceneX();
+                        yOffset[0] = me.getSceneY();
+                    });
+                    dialog.getDialogPane().setOnMouseDragged(me -> {
+                        stage.setX(me.getScreenX() - xOffset[0]);
+                        stage.setY(me.getScreenY() - yOffset[0]);
+                    });
+                }
+            }
+        });
     }
 
     private void handleUserAction(RequestType type, long targetUserId, String promptText) {
