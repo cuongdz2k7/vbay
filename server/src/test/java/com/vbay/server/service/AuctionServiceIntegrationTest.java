@@ -41,7 +41,7 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
-import com.vbay.server.service.bid.BidService;
+import com.vbay.server.service.bid.manual.ManualBidService;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 
@@ -52,7 +52,7 @@ class AuctionServiceIntegrationTest {
     private String jdbcUrl;
     private Connection keepAliveConnection;
     private AuctionService auctionService;
-    private BidService bidService;
+    private ManualBidService bidService;
     private ClientSession session;
 
     @BeforeEach
@@ -65,7 +65,7 @@ class AuctionServiceIntegrationTest {
             new JdbcRepositoryFactory(),
             NO_OP_PUBLISHER
         );
-        bidService = new BidService(
+        bidService = new ManualBidService(
             () -> DriverManager.getConnection(jdbcUrl),
             new JdbcRepositoryFactory(),
             NO_OP_PUBLISHER

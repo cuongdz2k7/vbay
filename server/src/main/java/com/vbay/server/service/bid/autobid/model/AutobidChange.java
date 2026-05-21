@@ -12,7 +12,7 @@ public class AutobidChange {
     private long auctionId;
     private AutobidStatus newStatus;
     private BigDecimal newMaxBidAmount;
-    private BigDecimal newHoldAmount;
+    private BigDecimal newHoldAmount; ///new hold amount
 
     public AutobidChange(long autobidId, long userId, long auctionId, AutobidStatus newStatus, BigDecimal newMaxBidAmount, BigDecimal newHoldAmount) {
         this.autobidId = autobidId;

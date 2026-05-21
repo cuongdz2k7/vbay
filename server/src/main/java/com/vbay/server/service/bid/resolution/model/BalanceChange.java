@@ -1,7 +1,7 @@
-package com.vbay.server.service.bid.autobid.model;
+package com.vbay.server.service.bid.resolution.model;
 import java.math.BigDecimal;
 
-import com.vbay.server.service.bid.autobid.enums.BalanceChangeType;
+import com.vbay.server.service.bid.enums.BalanceChangeType;
 
 public class BalanceChange {
     private long userId;

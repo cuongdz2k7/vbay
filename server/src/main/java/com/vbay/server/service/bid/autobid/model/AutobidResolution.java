@@ -3,6 +3,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.vbay.server.service.bid.resolution.model.BalanceChange;
 import com.vbay.shared.enums.auction.AuctionStatus;
 
 public class AutobidResolution {

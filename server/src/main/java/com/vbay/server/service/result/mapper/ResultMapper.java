@@ -102,7 +102,7 @@ public class ResultMapper {
             affectedMyBidItems
         );
     }
-
+    ///userbalance result chỉ có lưu holdbalance và available balance (mới) sau khi đã apply
     public static UserBalanceResult toUserBalanceResult(
             User user,
             String reason,

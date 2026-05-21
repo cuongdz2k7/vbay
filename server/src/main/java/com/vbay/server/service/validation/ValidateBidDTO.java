@@ -1,5 +1,7 @@
 package com.vbay.server.service.validation;
 
+import java.math.BigDecimal;
+
 import com.vbay.server.exception.ValidationException;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
@@ -28,6 +30,15 @@ public class ValidateBidDTO {
             throw new ValidationException("Request cannot be null");
         }
         ValidationUtils.requireNotNull(request.getAuctionId(), "Auction ID is required");
+    }
+
+    public static void validateAutoBidRequest(long auctionId, BigDecimal maxBidAmount) {
+        if (auctionId <= 0) {
+            throw new ValidationException("Auction ID is required");
+        }
+        ValidationUtils.requireNotNull(maxBidAmount, "Max bid amount is required");
+        ValidationUtils.requirePositive(maxBidAmount, "Max bid amount must be a positive number");
+        ValidationUtils.requireMoneyScale(maxBidAmount, "Max bid amount");
     }
 
 }

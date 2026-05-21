@@ -272,11 +272,11 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
         @Override
-    public long completeByBuyNow(long auctionId, long buyerId) throws SQLException {
+    public long completeByBuyNow(long auctionId, long buyerId, BigDecimal buyNowPrice) throws SQLException {
         String sql = """
             UPDATE auctions
-            SET current_price = buy_now_price,
-                final_price = buy_now_price,
+            SET current_price = ?,
+                final_price = ?,
                 winner_user_id = ?,
                 status = 'ENDED',
                 version = version + 1
@@ -284,8 +284,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
             """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, buyerId);
-            statement.setLong(2, auctionId);
+            statement.setBigDecimal(1, buyNowPrice);
+            statement.setBigDecimal(2, buyNowPrice);
+            statement.setLong(3, buyerId);
+            statement.setLong(4, auctionId);
             statement.executeUpdate();
         }
         return findVersionById(auctionId);

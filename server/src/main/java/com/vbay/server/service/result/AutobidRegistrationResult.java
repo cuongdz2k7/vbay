@@ -4,28 +4,32 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 
-public class PlaceBidResult extends BidUpdateResult {
-    private final String auctionTitle;
+public class AutobidRegistrationResult extends BidUpdateResult {
+    private final long autobidId;
+    private final BigDecimal maxBidAmount;
+    private final AutobidStatus autobidStatus;
 
-    public PlaceBidResult(
+    public AutobidRegistrationResult(
             long auctionId,
             long auctionVersion,
             long sellerId,
-            long bidderId,
+            long autobidId,
+            long userId,
             long bidId,
-            String auctionTitle,
-            BigDecimal bidAmount,
+            BigDecimal maxBidAmount,
             BigDecimal currentPrice,
             Boolean reserveMet,
             String auctionStatus,
             Long previousWinningUserId,
             Long previousWinningBidId,
+            AutobidStatus autobidStatus,
             BidStatus bidStatus,
             BidSource bidSource,
-            LocalDateTime bidTime,
+            LocalDateTime registeredAt,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             List<UserMyBidListItemResult> affectedMyBidItems) {
@@ -33,9 +37,9 @@ public class PlaceBidResult extends BidUpdateResult {
             auctionId,
             auctionVersion,
             sellerId,
-            bidderId,
+            userId,
             bidId,
-            bidAmount,
+            currentPrice,
             currentPrice,
             reserveMet,
             auctionStatus,
@@ -43,15 +47,37 @@ public class PlaceBidResult extends BidUpdateResult {
             previousWinningBidId,
             bidStatus,
             bidSource,
-            bidTime,
+            registeredAt,
             startingTime,
             endingTime,
             affectedMyBidItems
         );
-        this.auctionTitle = auctionTitle;
+        this.autobidId = autobidId;
+        this.maxBidAmount = maxBidAmount;
+        this.autobidStatus = autobidStatus;
     }
 
-    public String getAuctionTitle() {
-        return auctionTitle;
+    public long getAutobidId() {
+        return autobidId;
+    }
+
+    public long getUserId() {
+        return getBidderId();
+    }
+
+    public BigDecimal getMaxBidAmount() {
+        return maxBidAmount;
+    }
+
+    public AutobidStatus getAutobidStatus() {
+        return autobidStatus;
+    }
+
+    public AutobidStatus getStatus() {
+        return autobidStatus;
+    }
+
+    public LocalDateTime getRegisteredAt() {
+        return getBidTime();
     }
 }

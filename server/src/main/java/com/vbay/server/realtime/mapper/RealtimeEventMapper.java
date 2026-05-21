@@ -1,7 +1,7 @@
 package com.vbay.server.realtime.mapper;
 
-import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
@@ -9,8 +9,8 @@ import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.BidUpdateResult;
 import com.vbay.server.service.result.BuyNowResult;
-import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
@@ -29,7 +29,7 @@ import com.vbay.shared.protocol.RealtimeEvent;
 
 public class RealtimeEventMapper {
     public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BidUpdatedDomainEvent event) {
-        PlaceBidResult result = event.getResult();
+        BidUpdateResult result = event.getResult();
         AuctionStatePayload payload = new AuctionStatePayload();
         payload.setAuctionId(result.getAuctionId());
         payload.setAuctionVersion(result.getAuctionVersion());
@@ -49,7 +49,7 @@ public class RealtimeEventMapper {
     }
 
     public RealtimeEvent<BidHistoryItemPayload> toBidHistoryItemAddedEvent(BidUpdatedDomainEvent event) {
-        PlaceBidResult result = event.getResult();
+        BidUpdateResult result = event.getResult();
         BidHistoryItemPayload payload = new BidHistoryItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
@@ -186,7 +186,7 @@ public class RealtimeEventMapper {
             null,
             result.getFinalPrice(),
             BidStatus.WON.name(),
-            BidSource.USER_BID.name(),
+            BidSource.BUY_NOW.name(),
             result.getBoughtAt()
         );
 

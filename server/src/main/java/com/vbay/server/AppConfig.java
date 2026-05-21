@@ -33,7 +33,7 @@ import com.vbay.server.service.AuthService;
 import com.vbay.server.service.UserAccountService;
 import com.vbay.server.service.bid.autobid.AutobidEngine;
 import com.vbay.server.service.bid.autobid.AutobidService;
-import com.vbay.server.service.bid.BidService;
+import com.vbay.server.service.bid.manual.ManualBidService;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -51,7 +51,7 @@ public class AppConfig {
     private final PasswordHasher passwordHasher;
     private final AuthService authService;
     private final AuctionService auctionService;
-    private final BidService bidService;
+    private final ManualBidService bidService;
     private final UserAccountService userAccountService;
     private final RequestDistributor requestDistributor;
     private final ImageStorageService imageStorageService;
@@ -123,7 +123,7 @@ new AppConfig()
         ///business service
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.bidService = new BidService(
+        this.bidService = new ManualBidService(
             connectionProvider,
             repositoryFactory,
             domainEventPublisher,

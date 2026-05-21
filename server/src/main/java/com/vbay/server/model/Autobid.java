@@ -1,4 +1,4 @@
-package com.vbay.server.service.bid.autobid.model;
+package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -15,7 +15,6 @@ public class Autobid {
     private long auctionId;
     private long userId;
     private BigDecimal maxBidAmount;
-    private BigDecimal holdAmount;
     private AutobidStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -23,14 +22,12 @@ public class Autobid {
     public Autobid(long auctionId, 
                     long userId, 
                     BigDecimal maxBidAmount, 
-                    BigDecimal holdAmount, 
                     AutobidStatus status, 
                     LocalDateTime createdAt, 
                     LocalDateTime updatedAt) {
         this.auctionId = auctionId;
         this.userId = userId;
         this.maxBidAmount = maxBidAmount;
-        this.holdAmount = holdAmount;
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -61,12 +58,6 @@ public class Autobid {
     }
     public void setMaxBidAmount(BigDecimal maxBidAmount) {
         this.maxBidAmount = maxBidAmount;
-    }
-    public BigDecimal getHoldAmount() {
-        return holdAmount;
-    }
-    public void setHoldAmount(BigDecimal holdAmount) {
-        this.holdAmount = holdAmount;
     }
     public AutobidStatus getStatus() {
         return status;

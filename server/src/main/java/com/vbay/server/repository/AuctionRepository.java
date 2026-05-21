@@ -24,7 +24,7 @@ public interface AuctionRepository {
     long updateCurrentBid(long auctionId, 
                             BigDecimal currentBid, 
                             long winningUserId) throws SQLException;   
-    long completeByBuyNow(long auctionId, long buyerId) throws SQLException;
+    long completeByBuyNow(long auctionId, long buyerId, BigDecimal buyNowPrice) throws SQLException;
     long terminateAuction(long auctionId) throws SQLException;
     long finalizeAuction(long auctionId) throws SQLException;
     List<Auction> findPendingSchedules() throws SQLException;

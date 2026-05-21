@@ -2,7 +2,7 @@ package com.vbay.server.service.bid.autobid.model;
 
 import java.math.BigDecimal;
 
-import com.vbay.server.service.bid.autobid.enums.BidType;
+import com.vbay.server.service.bid.enums.BidType;
 
 public class BidRecordChange {
     private long auctionId;

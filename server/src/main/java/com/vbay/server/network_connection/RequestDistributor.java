@@ -1,6 +1,7 @@
 package com.vbay.server.network_connection;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,7 +14,8 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.UserAccountService;
-import com.vbay.server.service.bid.BidService;
+import com.vbay.server.service.bid.manual.ManualBidService;
+import com.vbay.server.service.result.AutobidRegistrationResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.upload.ImageStorageService;
@@ -39,7 +41,7 @@ public class RequestDistributor {
     private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
     private final AuctionService auctionService;
-    private final BidService bidService;
+    private final ManualBidService bidService;
     private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
@@ -47,7 +49,7 @@ public class RequestDistributor {
 
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
-                                BidService bidService, 
+                                ManualBidService bidService, 
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService) {
@@ -104,6 +106,7 @@ public class RequestDistributor {
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case GET_MY_BID_LIST -> handleGetMyBidList(requestId, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
+                case AUTO_BID -> handleAutoBid(requestId, payload, session);
                 case BUY_NOW -> handleBuyNow(requestId, payload, session);
                 case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
@@ -262,6 +265,27 @@ public class RequestDistributor {
         }
         bidService.placeBid(placeBidRequest, session);
         return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
+
+    private Respond<AutobidRegistrationResult> handleAutoBid(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        if (payload == null || !payload.isJsonObject()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
+        JsonObject object = payload.getAsJsonObject();
+        JsonElement auctionIdElement = object.get("auctionId");
+        JsonElement maxBidAmountElement = object.get("maxBidAmount");
+        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            maxBidAmountElement = object.get("bidAmount");
+        }
+        if (auctionIdElement == null || auctionIdElement.isJsonNull()
+                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
+
+        long auctionId = auctionIdElement.getAsLong();
+        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
+        AutobidRegistrationResult result = bidService.autoBid(auctionId, maxBidAmount, session);
+        return new Respond<>(requestId, true, "AutoBid subscribed successfully", result);
     }
 
     private Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {

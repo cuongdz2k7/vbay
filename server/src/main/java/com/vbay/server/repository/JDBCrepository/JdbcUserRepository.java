@@ -145,6 +145,7 @@ public class JdbcUserRepository implements UserRepository {
             SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
             FROM users
             WHERE id = ?
+            FOR UPDATE
             """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {

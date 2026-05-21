@@ -1,4 +1,4 @@
-package com.vbay.server.service.bid.autobid.command;
+package com.vbay.server.service.bid.command;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

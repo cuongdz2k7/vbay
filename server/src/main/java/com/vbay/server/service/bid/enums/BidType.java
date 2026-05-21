@@ -1,4 +1,4 @@
-package com.vbay.server.service.bid.autobid.enums;
+package com.vbay.server.service.bid.enums;
 
 public enum BidType {
     MANUAL,

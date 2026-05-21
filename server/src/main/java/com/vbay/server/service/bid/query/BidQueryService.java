@@ -1,4 +1,4 @@
-package com.vbay.server.service.bid;
+package com.vbay.server.service.bid.query;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -14,6 +14,7 @@ import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.Auction;
+import com.vbay.server.model.Autobid;
 import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.User;
@@ -33,14 +34,16 @@ import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.bid.autobid.AutobidEngine;
 import com.vbay.server.service.bid.autobid.AutobidService;
-import com.vbay.server.service.bid.autobid.command.BuyNowCommand;
-import com.vbay.server.service.bid.autobid.command.ManualBidCommand;
-import com.vbay.server.service.bid.autobid.enums.BalanceChangeType;
-import com.vbay.server.service.bid.autobid.model.Autobid;
+import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
 import com.vbay.server.service.bid.autobid.model.AutobidChange;
 import com.vbay.server.service.bid.autobid.model.AutobidResolution;
-import com.vbay.server.service.bid.autobid.model.BalanceChange;
+import com.vbay.server.service.bid.command.BuyNowCommand;
+import com.vbay.server.service.bid.command.ManualBidCommand;
+import com.vbay.server.service.bid.command.RegisterAutobidCommand;
+import com.vbay.server.service.bid.enums.BalanceChangeType;
+import com.vbay.server.service.bid.resolution.model.BalanceChange;
 import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.AutobidRegistrationResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
@@ -172,7 +175,7 @@ Thay vì chỉ hiện số dư khả dụng, hãy hiện thêm một dòng nhỏ
     -> vấn đề ở đây là mình CHO PHÉP thằng đang thắng đc bid thêm
 */
 
-public class BidService {
+public class BidQueryService {
     ///tạo connection provider để sử dụng h2 in-memory database cho integration test, tránh ảnh hưởng đến database thật khi test
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
@@ -181,14 +184,14 @@ public class BidService {
     private final AutobidService autobidService;
 
 
-    public BidService
+    public BidQueryService
         (ConnectionProvider connectionProvider, 
         RepositoryFactory repositoryFactory, 
         DomainEventPublisher domainEventPublisher) {
         this(connectionProvider, repositoryFactory, domainEventPublisher, new AutobidEngine(), new AutobidService(connectionProvider, repositoryFactory));
     }
 
-    public BidService
+    public BidQueryService
         (ConnectionProvider connectionProvider, 
         RepositoryFactory repositoryFactory, 
         DomainEventPublisher domainEventPublisher, 
@@ -196,7 +199,7 @@ public class BidService {
         this(connectionProvider, repositoryFactory, domainEventPublisher, autobidEngine, new AutobidService(connectionProvider, repositoryFactory));
     }
 
-    public BidService
+    public BuyNowService
         (ConnectionProvider connectionProvider, 
         RepositoryFactory repositoryFactory, 
         DomainEventPublisher domainEventPublisher, 
@@ -285,10 +288,16 @@ public class BidService {
             throw new ValidationException("Cannot place bid on your own auction");
         }
     }
+    
+    private void checkAutoBidBuyNowLimit(Auction auction, BigDecimal maxBidAmount) {
+        if (auction.getBuyNowPrice() != null && maxBidAmount.compareTo(auction.getBuyNowPrice()) >= 0) {
+            throw new ValidationException("Max AutoBid must be lower than the Buy Now price");
+        }
+    }
 
-    private void checkBuyNowIfBypassedUI(Auction auction, BigDecimal bidAmount) {
-        if (auction.getBuyNowPrice() != null && bidAmount.compareTo(auction.getBuyNowPrice()) >= 0) {
-            throw new ValidationException("Bid amount is >= the Buy Now price, UI must check beforehand");
+    private void rejectIfUserAlreadyHasWinningAutobid(Autobid winningAutobid, long userId) {
+        if (winningAutobid != null && winningAutobid.getUserId() == userId) {
+            throw new ValidationException("You are already the winning AutoBid user");
         }
     }
 
@@ -431,6 +440,10 @@ public class BidService {
                     if (session.getUserId() == winningAutobid.getUserId()) {
                         throw new ValidationException("Winning autobid user cannot place a manual bid on this auction");
                     }
+                    User user = userRepository.lockUserForUpdate(session.getUserId())
+                        .orElseThrow(() -> new ValidationException("User not found"));
+                    validateUserEligibility(user, request.getBidAmount(), currentWinningBid);
+
                     ManualBidCommand command = new ManualBidCommand(
                         auctionId,
                         session.getUserId(),
@@ -439,9 +452,7 @@ public class BidService {
                     );
                     resolution = autobidEngine.resolveAfterManualBid(auction, winningAutobid, command);
                     if (resolution.isAccepted()) {
-                        User user = userRepository.lockUserForUpdate(session.getUserId())
-                            .orElseThrow(() -> new ValidationException("User not found"));
-                        validateUserEligibility(user, request.getBidAmount(), currentWinningBid);
+                        userRepository.holdBalance(session.getUserId(), request.getBidAmount());
                     }
                     result = autobidService.applyManualBidResolution(resolution, oldWinningBid, dbNow, connection);
                 }
@@ -469,6 +480,14 @@ public class BidService {
                         ));
                     }
                 } else {
+                    if (resolution.isAccepted()) {
+                        balanceResults.add(readUserBalanceResult(
+                            userRepository,
+                            session.getUserId(),
+                            "PLACE_BID_HOLD",
+                            balanceUpdatedAt
+                        ));
+                    }
                     for (BalanceChange balanceChange : resolution.getBalanceChanges()) {
                         balanceResults.add(readUserBalanceResult(
                             userRepository,
@@ -503,6 +522,102 @@ public class BidService {
         }
     }
 
+    public AutobidRegistrationResult autoBid(long auctionId, BigDecimal maxBidAmount, ClientSession session) throws SQLException {
+        checkSession(session);
+        ValidateBidDTO.validateAutoBidRequest(auctionId, maxBidAmount);
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+                UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
+                AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
+
+                Auction auction = auctionRepository.lockAuctionForUpdate(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
+                LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
+
+                validateAuctionEligibility(auction, session.getUserId(), dbNow);
+                checkAutoBidBuyNowLimit(auction, maxBidAmount);
+
+                Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
+                validateMinimumBid(auction, maxBidAmount, currentWinningBid);
+
+                Autobid winningAutobid = autobidRepository.findWinningByAuctionId(auctionId).orElse(null);
+                rejectIfUserAlreadyHasWinningAutobid(winningAutobid, session.getUserId());
+
+                User user = userRepository.lockUserForUpdate(session.getUserId())
+                    .orElseThrow(() -> new ValidationException("User not found"));
+                validateUserEligibility(user, maxBidAmount, currentWinningBid);
+
+                RegisterAutobidCommand command = new RegisterAutobidCommand(
+                    auctionId,
+                    session.getUserId(),
+                    maxBidAmount,
+                    dbNow
+                );
+                AutobidResolution resolution = autobidEngine.resolveAfterRegisterAutobid(
+                    auction,
+                    winningAutobid,
+                    command
+                );
+
+                Autobid autobidToCreate = resolution.isAccepted()
+                    ? new Autobid(
+                        auctionId,
+                        session.getUserId(),
+                        maxBidAmount,
+                        maxBidAmount,
+                        AutobidStatus.WINNING,
+                        dbNow,
+                        dbNow
+                    )
+                    : null;
+
+                AutobidRegistrationResult result = autobidService.applyRegisterAutobidResolution(
+                    resolution,
+                    autobidToCreate,
+                    currentWinningBid,
+                    dbNow,
+                    connection
+                );
+
+                AuctionListItemResult listItem = auctionRepository.findAuctionListItemById(auctionId)
+                    .orElseThrow(() -> new ValidationException("Auction list item not found"));
+                List<UserBalanceResult> balanceResults = new ArrayList<>();
+                for (BalanceChange balanceChange : resolution.getBalanceChanges()) {
+                    balanceResults.add(readUserBalanceResult(
+                        userRepository,
+                        balanceChange.getUserId(),
+                        balanceChange.getReason(),
+                        dbNow
+                    ));
+                }
+
+                connection.commit();
+
+                domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                    listItem,
+                    AuctionListItemUpdateReason.BID_UPDATED,
+                    dbNow
+                ));
+                domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
+                for (UserBalanceResult balanceResult : balanceResults) {
+                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
+                }
+
+                if (!resolution.isAccepted()) {
+                    throw new ValidationException(resolution.getMessage());
+                }
+                return result;
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        }
+    }
+
     private BuyNowResult buyNow (
             Auction auction,
             long buyerId,
@@ -519,8 +634,9 @@ public class BidService {
         ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
         PaymentRepository paymentRepository = repositoryFactory.createPaymentRepository(connection);
         
+        autobidService.applyAutobidResolutionChanges(autobidResolution, connection);
         Set<Long> autobidUserIds = new HashSet<>();
-        for (BalanceChange balanceChange : autobidService.applyAutobidResolutionChanges(autobidResolution, connection)) {
+        for (BalanceChange balanceChange : autobidResolution.getBalanceChanges()) {
             if (BalanceChangeType.RELEASE.equals(balanceChange.getType())) {
                 autobidUserIds.add(balanceChange.getUserId());
             }

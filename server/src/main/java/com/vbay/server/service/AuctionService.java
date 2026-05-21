@@ -13,6 +13,7 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
+import com.vbay.server.model.Autobid;
 import com.vbay.server.model.Bid;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
@@ -328,7 +329,7 @@ public class AuctionService {
             Auction auction,
             AutobidRepository autobidRepository,
             Connection connection) throws SQLException {
-        Optional<com.vbay.server.service.bid.autobid.model.Autobid> winningAutobid =
+        Optional<Autobid> winningAutobid =
             autobidRepository.findWinningByAuctionId(auction.getId());
         if (winningAutobid.isEmpty()) {
             return;
