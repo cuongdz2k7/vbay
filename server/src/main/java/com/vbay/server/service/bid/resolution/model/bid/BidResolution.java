@@ -74,6 +74,18 @@ public class BidResolution {
     public List<AuctionChange> getAuctionChanges() { return auctionChanges; }
     public List<PaymentCreate> getPaymentCreates() { return paymentCreates; }
 
+    public boolean hasChangesToApply() {
+        return !balanceChanges.isEmpty()
+            || !bidCreates.isEmpty()
+            || !bidStatusUpdates.isEmpty()
+            || !bidFinalizations.isEmpty()
+            || !autobidCreates.isEmpty()
+            || !autobidStatusChanges.isEmpty()
+            || !autobidMaxBidUpdates.isEmpty()
+            || !auctionChanges.isEmpty()
+            || !paymentCreates.isEmpty();
+    }
+
     public Optional<BidCreate> findBidCreateBySource(BidSource source) {
         return bidCreates.stream()
             .filter(bidCreate -> bidCreate.getSource() == source)

@@ -653,6 +653,7 @@ class AuctionServiceIntegrationTest {
                     ending_time TIMESTAMP NOT NULL,
                     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
                     winner_user_id BIGINT NULL,
+                    anti_snipe_extension_count INT NOT NULL DEFAULT 0,
                     version BIGINT NOT NULL DEFAULT 0,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

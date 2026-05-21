@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
@@ -24,29 +22,19 @@ import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.AutobidRepository;
 import com.vbay.server.repository.BidRepository;
-import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
-import com.vbay.server.service.bid.autobid.AutobidEngine;
-import com.vbay.server.service.bid.autobid.AutobidService;
-import com.vbay.server.service.bid.autobid.model.AutobidResolution;
 import com.vbay.server.service.bid.command.ManualBidCommand;
 import com.vbay.server.service.bid.engine.AuctionBidEngine;
 import com.vbay.server.service.bid.resolution.AppliedBidResultMapper;
 import com.vbay.server.service.bid.resolution.BidResolutionApplier;
-import com.vbay.server.service.bid.resolution.model.BalanceChange;
 import com.vbay.server.service.bid.resolution.model.bid.AppliedBidResolution;
 import com.vbay.server.service.bid.resolution.model.bid.BidResolution;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
-import com.vbay.server.service.result.UserMyBidListItemResult;
-import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateBidDTO;
-import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
-import com.vbay.shared.enums.bid.BidSource;
-import com.vbay.shared.enums.bid.BidStatus;
 
 /*
 BUG:
@@ -176,19 +164,6 @@ public class ManualBidService {
     public ManualBidService(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
-            DomainEventPublisher domainEventPublisher) {
-        this(
-            connectionProvider,
-            repositoryFactory,
-            domainEventPublisher,
-            new AuctionBidEngine(),
-            new BidResolutionApplier(repositoryFactory)
-        );
-    }
-
-    public ManualBidService(
-            ConnectionProvider connectionProvider,
-            RepositoryFactory repositoryFactory,
             DomainEventPublisher domainEventPublisher,
             AuctionBidEngine auctionBidEngine,
             BidResolutionApplier bidResolutionApplier) {
@@ -197,6 +172,16 @@ public class ManualBidService {
         this.domainEventPublisher = domainEventPublisher;
         this.auctionBidEngine = auctionBidEngine;
         this.bidResolutionApplier = bidResolutionApplier;
+    }
+
+
+    private void validateMinimumBid(Auction auction, BigDecimal bidAmount, Optional<Bid> currentWinningBid) {
+        BigDecimal minimumBid = currentWinningBid.isEmpty()
+            ? auction.getCurrentPrice()
+            : auction.getCurrentPrice().add(auction.getMinimumBidStep());
+        if (bidAmount.compareTo(minimumBid) < 0) {
+            throw new ValidationException("Bid amount must be at least " + minimumBid);
+        }
     }
 
     private void checkSession(ClientSession session) {
@@ -256,95 +241,12 @@ public class ManualBidService {
             throw new ValidationException("You are already the winning AutoBid user");
         }
     }
-
-    public MyBidListResponse getMyBidList(ClientSession session) throws SQLException {
-        checkSession(session);
-
-        try (Connection connection = connectionProvider.getConnection()) {
-            BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
-            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-            ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
-
-            List<com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload> items = new ArrayList<>();
-            for (Bid bid : bidRepository.findLatestBidsByBidderId(session.getUserId())) {
-                Auction auction = auctionRepository.findById(bid.getAuctionId())
-                    .orElseThrow(() -> new ValidationException("Auction not found"));
-                String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
-                UserMyBidListItemResult result = ResultMapper.toUserMyBidListItemResult(
-                    auction,
-                    thumbnailUrl,
-                    bid,
-                    bid.getStatus(),
-                    bid.getBidTime()
-                );
-                items.add(ResultMapper.toMyBidListItemPayload(result));
-            }
-            return new MyBidListResponse(items);
-        }
-    }
-
-    private void validateMinimumBid(Auction auction, BigDecimal bidAmount, Optional<Bid> currentWinningBid) {
-        BigDecimal minimumBid = currentWinningBid.isEmpty()
-            ? auction.getCurrentPrice()
-            : auction.getCurrentPrice().add(auction.getMinimumBidStep());
-        if (bidAmount.compareTo(minimumBid) < 0) {
-            throw new ValidationException("Bid amount must be at least " + minimumBid);
-        }
-    }
      /*
     Nếu lock user trước rồi mới lock auction, user A có thể bị giữ ví trong lúc chờ auction lock. 
     Như vậy A chưa chắc bid được, nhưng các thao tác tiền khác của A đã bị chặn.
     Điều này ảnh hưởng lớn đến các thao tác autobid, khi thằng a nó đến thời điểm đặt bid, chưa bid được nma nó đc cộng tiền bởi 1 Auction khác (bị outbid chẳng hạn)
     Flow nên là: lock Auction trước -> validate -> lock user để thay đổi balance
     */
-    private PlaceBidResult placeBid (long auctionId, long bidderId, BigDecimal bidAmount, Optional<Bid> oldWinningBid, LocalDateTime dbNow, Connection connection) throws SQLException {
-        BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
-        UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-        AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-        ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
-        //1. Release Hold và Update Status
-        Long previousWinningUserId = null;
-        Long previousWinningBidId = null;
-        if (!oldWinningBid.isEmpty()) {
-            Bid oldBid = oldWinningBid.get();
-            previousWinningUserId = oldBid.getBidderId();
-            previousWinningBidId = oldBid.getId();
-            userRepository.releaseHoldBalance(oldBid.getBidderId(), oldBid.getBidAmount());
-
-            bidRepository.updateStatus(oldBid.getId(), BidStatus.OUTBID);
-        }
-        //2. Trừ tiền bidder
-        userRepository.holdBalance(bidderId, bidAmount);
-        ///3. save bid
-        Bid currentBid = new Bid(
-            auctionId,
-            bidderId,
-            bidAmount,
-            dbNow,
-            BidStatus.WINNING,
-            BidSource.USER_BID
-        );
-        bidRepository.save(currentBid);
-        ///4. Update Auction
-        auctionRepository.updateCurrentBid(auctionId, bidAmount, bidderId);
-        Auction refreshedAuction = auctionRepository.findById(auctionId).orElseThrow(() -> new ValidationException("Auction not found"));
-        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
-        List<UserMyBidListItemResult> affectedMyBidItems = buildAffectedMyBidItems(
-            refreshedAuction,
-            thumbnailUrl,
-            bidRepository,
-            dbNow
-        );
-
-        return ResultMapper.toPlaceBidResult(
-            refreshedAuction,
-            currentBid,
-            previousWinningUserId,
-            previousWinningBidId,
-            affectedMyBidItems
-        );
-    }
-
     ///manual
     public PlaceBidResult placeBid(PlaceBidRequest request, ClientSession session) throws SQLException {
         checkSession(session);
@@ -353,6 +255,7 @@ public class ManualBidService {
         ///Authentication/Authorization check:
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
+            boolean commited = false;
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
@@ -393,10 +296,6 @@ public class ManualBidService {
                     )
                 );
 
-                if (!resolution.isAccepted()) {
-                    throw new ValidationException(resolution.getMessage());
-                }
-
                 AppliedBidResolution applied = bidResolutionApplier.apply(
                     resolution,
                     dbNow,
@@ -415,92 +314,43 @@ public class ManualBidService {
                     dbNow
                 );
                 ///anti sniping: nếu có autobid resolution mà bị reject, cũng gửi event để UI hiện message
-                boolean endingTimeExtended = applied.getRefreshedAuction()
+                boolean auctionExtendedByAntiSnipe = applied.getRefreshedAuction()
                     .getEndingTime()
                     .isAfter(auction.getEndingTime());
+                AuctionListItemUpdateReason listReason = auctionExtendedByAntiSnipe
+                    ? AuctionListItemUpdateReason.TIME_CHANGED
+                    : AuctionListItemUpdateReason.BID_UPDATED;
 
 
-        
-                List<UserBalanceResult> balanceResults = new ArrayList<>();
-                LocalDateTime balanceUpdatedAt = dbNow;
-                if (resolution == null) {
-                    balanceResults.add(readUserBalanceResult(
-                        userRepository,
-                        ///tạo result
-                        session.getUserId(),
-                        "PLACE_BID_HOLD",
-                        balanceUpdatedAt
-                    ));
-                    Long previousWinningUserId = result.getPreviousWinningUserId();
-                    if (previousWinningUserId != null && previousWinningUserId != session.getUserId().longValue()) {
-                        balanceResults.add(readUserBalanceResult(
-                            userRepository,
-                            previousWinningUserId,
-                            "OUTBID_RELEASE",
-                            balanceUpdatedAt
-                        ));
-                    }
-                } else {
-                    if (resolution.isAccepted()) {
-                        balanceResults.add(readUserBalanceResult(
-                            userRepository,
-                            session.getUserId(),
-                            "PLACE_BID_HOLD",
-                            balanceUpdatedAt
-                        ));
-                    }
-                    for (BalanceChange balanceChange : resolution.getBalanceChanges()) {
-                        balanceResults.add(readUserBalanceResult(
-                            userRepository,
-                            balanceChange.getUserId(),
-                            balanceChange.getReason(),
-                            balanceUpdatedAt
-                        ));
-                    }
-                }
-                
                 connection.commit();
+                commited = true;
                 ///publish event
                 domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
                     listItem,
-                    AuctionListItemUpdateReason.BID_UPDATED,
+                    listReason,
                     dbNow
                 ));
                 domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
-                for (UserBalanceResult balanceResult : balanceResults) {
-                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
+                for (UserBalanceResult balanceResult : applied.getBalanceResults()) {
+                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(
+                        balanceResult,
+                        balanceResult.getUpdatedAt()
+                    ));
                 }
-
-                ///nếu có autobid resolution mà bị reject, cũng gửi event để UI hiện message
-                if (resolution != null && !resolution.isAccepted()) {
+                ///nếu bid bị reject thì throw sau khi commit
+                if (!resolution.isAccepted()) {
                     throw new ValidationException(resolution.getMessage());
                 }
+
                 return result;
             } catch (Exception e) {
-                connection.rollback(); ///rollback là nhả lock luôn
+                if (!commited) {
+                    connection.rollback(); ///rollback là nhả lock luôn
+                }
                 throw e;
             } 
         }
     }
-
-    private List<UserMyBidListItemResult> buildAffectedMyBidItems(
-            Auction refreshedAuction,
-            String thumbnailUrl,
-            BidRepository bidRepository,
-            LocalDateTime updatedAt) throws SQLException {
-        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
-        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId())) {
-            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
-                refreshedAuction,
-                thumbnailUrl,
-                bid,
-                bid.getStatus(),
-                updatedAt
-            ));
-        }
-        return affectedMyBidItems;
-    }
-
 }
 /*
     public AutobidRegistrationResult autoBid(long auctionId, BigDecimal maxBidAmount, ClientSession session) throws SQLException {
@@ -599,3 +449,48 @@ public class ManualBidService {
         }
     }
  */
+
+    /*
+    public MyBidListResponse getMyBidList(ClientSession session) throws SQLException {
+        checkSession(session);
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+
+            List<com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload> items = new ArrayList<>();
+            for (Bid bid : bidRepository.findLatestBidsByBidderId(session.getUserId())) {
+                Auction auction = auctionRepository.findById(bid.getAuctionId())
+                    .orElseThrow(() -> new ValidationException("Auction not found"));
+                String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
+                UserMyBidListItemResult result = ResultMapper.toUserMyBidListItemResult(
+                    auction,
+                    thumbnailUrl,
+                    bid,
+                    bid.getStatus(),
+                    bid.getBidTime()
+                );
+                items.add(ResultMapper.toMyBidListItemPayload(result));
+            }
+            return new MyBidListResponse(items);
+        }
+    }
+        private List<UserMyBidListItemResult> buildAffectedMyBidItems(
+            Auction refreshedAuction,
+            String thumbnailUrl,
+            BidRepository bidRepository,
+            LocalDateTime updatedAt) throws SQLException {
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId())) {
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
+                refreshedAuction,
+                thumbnailUrl,
+                bid,
+                bid.getStatus(),
+                updatedAt
+            ));
+        }
+        return affectedMyBidItems;
+    }
+*/

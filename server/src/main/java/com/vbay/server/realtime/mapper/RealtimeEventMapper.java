@@ -33,12 +33,16 @@ public class RealtimeEventMapper {
         AuctionStatePayload payload = new AuctionStatePayload();
         payload.setAuctionId(result.getAuctionId());
         payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getAuctionStatus());
         payload.setCurrentPrice(result.getCurrentPrice());
         payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
         payload.setWinnerUserId(result.getBidderId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
         payload.setUpdatedAt(result.getBidTime());
         payload.setStateChangeReason(AuctionStateChangeReason.BID_PLACED);
-
+        
         RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
             RealtimeEventType.AUCTION_STATE_UPDATED,
             auctionRoom(result.getAuctionId()),
@@ -115,6 +119,7 @@ public class RealtimeEventMapper {
         payload.setStatus(result.getStatus());
         payload.setCurrentPrice(result.getCurrentPrice());
         payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
         payload.setWinnerUserId(result.getWinnerUserId());
         payload.setStartingTime(result.getStartingTime());
         payload.setEndingTime(result.getEndingTime());

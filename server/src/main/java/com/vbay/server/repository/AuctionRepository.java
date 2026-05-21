@@ -32,5 +32,5 @@ public interface AuctionRepository {
     Optional<AuctionListItemResult> findAuctionListItemById(long auctionId) throws SQLException;
     Optional<AuctionItemResult> findAuctionItemById(long auctionId) throws SQLException;
     List<AuctionListItemResult> findAuctionList(AuctionListRequest request) throws SQLException;
-    
+    long applyAntiSnipeExtension(long auctionId, LocalDateTime endingTime) throws SQLException;
 }

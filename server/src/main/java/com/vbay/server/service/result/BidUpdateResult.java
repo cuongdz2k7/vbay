@@ -16,6 +16,7 @@ public abstract class BidUpdateResult {
     private final BigDecimal bidAmount;
     private final BigDecimal currentPrice;
     private final Boolean reserveMet;
+    private final boolean antiSnipeExtended;
     private final String auctionStatus;
     private final Long previousWinningUserId;
     private final Long previousWinningBidId;
@@ -35,6 +36,7 @@ public abstract class BidUpdateResult {
             BigDecimal bidAmount,
             BigDecimal currentPrice,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String auctionStatus,
             Long previousWinningUserId,
             Long previousWinningBidId,
@@ -52,6 +54,7 @@ public abstract class BidUpdateResult {
         this.bidAmount = bidAmount;
         this.currentPrice = currentPrice;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.auctionStatus = auctionStatus;
         this.previousWinningUserId = previousWinningUserId;
         this.previousWinningBidId = previousWinningBidId;
@@ -93,6 +96,10 @@ public abstract class BidUpdateResult {
 
     public Boolean getReserveMet() {
         return reserveMet;
+    }
+
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
     }
 
     public String getAuctionStatus() {

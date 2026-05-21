@@ -5,11 +5,11 @@ import java.time.LocalDateTime;
 
 import com.vbay.server.repository.AuctionRepository;
 
-public class ExtendAuctionEndingTimeChange implements AuctionChange {
+public class AntiSnipeAuctionExtensionChange implements AuctionChange {
     private final long auctionId;
     private final LocalDateTime endingTime;
 
-    public ExtendAuctionEndingTimeChange(long auctionId, LocalDateTime endingTime) {
+    public AntiSnipeAuctionExtensionChange(long auctionId, LocalDateTime endingTime) {
         this.auctionId = auctionId;
         this.endingTime = endingTime;
     }
@@ -21,6 +21,6 @@ public class ExtendAuctionEndingTimeChange implements AuctionChange {
 
     @Override
     public long apply(AuctionRepository auctionRepository) throws SQLException {
-        return auctionRepository.extendEndingTime(auctionId, endingTime);
+        return auctionRepository.applyAntiSnipeExtension(auctionId, endingTime);
     }
 }

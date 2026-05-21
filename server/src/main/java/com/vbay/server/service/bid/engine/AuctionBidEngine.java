@@ -1,6 +1,7 @@
 package com.vbay.server.service.bid.engine;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import com.vbay.server.model.Auction;
@@ -12,6 +13,7 @@ import com.vbay.server.service.bid.command.ManualBidCommand;
 import com.vbay.server.service.bid.enums.BalanceChangeType;
 import com.vbay.server.service.bid.resolution.model.BalanceChange;
 import com.vbay.server.service.bid.resolution.model.PaymentCreate;
+import com.vbay.server.service.bid.resolution.model.auction.AntiSnipeAuctionExtensionChange;
 import com.vbay.server.service.bid.resolution.model.auction.BuyNowAuctionChange;
 import com.vbay.server.service.bid.resolution.model.auction.CurrentBidAuctionChange;
 import com.vbay.server.service.bid.resolution.model.autobid.AutobidStatusChange;
@@ -25,6 +27,12 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 
 public class AuctionBidEngine {
+    private final AntiSnipePolicy antiSnipePolicy;
+
+    public AuctionBidEngine(AntiSnipePolicy antiSnipePolicy) {
+        this.antiSnipePolicy = antiSnipePolicy;
+    }
+
     public BidResolution resolveBuyNow(
             Auction auction,
             Optional<Bid> currentWinningBid,
@@ -146,6 +154,25 @@ public class AuctionBidEngine {
         return resolution.build();
     }
 
+    private void addAuctionChangesForWinningBid(
+            BidResolution.Builder resolution,
+            Auction auction,
+            long winnerUserId,
+            BigDecimal winningAmount,
+            LocalDateTime bidTime) {
+        resolution.addAuctionChange(new CurrentBidAuctionChange(
+            auction.getId(),
+            winnerUserId,
+            winningAmount
+        ));
+
+        antiSnipePolicy.resolveExtendedEndingTime(auction, bidTime).ifPresent(
+            endingTime -> resolution.addAuctionChange(
+                new AntiSnipeAuctionExtensionChange(auction.getId(), endingTime)
+            ));
+    }
+
+
     public BidResolution resolveManualBid
             (Auction auction,
             Optional<Bid> currentWinningBid,
@@ -156,12 +183,8 @@ public class AuctionBidEngine {
         long bidderId = command.getBidderUserId();
         BigDecimal manualAmount = command.getAmount();
         
-        ///1. User có winning autobid thì không được phép đặt manual bid
-        if (winningAutobid.isPresent() && winningAutobid.get().getUserId() == bidderId) {
-            return BidResolution
-                .rejected(auctionId, "CAI REJECT O SERVICE PHE CMNR")
-                .build(); ///service check để throw validation exception
-        }
+        ///1. User có winning autobid thì không được phép đặt manual bid (đã check ở service)
+        
         ///2. Không có winning autobid thì đặt manual bid bthg
         if (winningAutobid.isEmpty()) {
             BidResolution.Builder resolution = BidResolution.accepted(auctionId);
@@ -203,11 +226,12 @@ public class AuctionBidEngine {
                 BidStatus.WINNING
             ));
 
-            resolution.addAuctionChange(new CurrentBidAuctionChange(
-                auctionId,
-                bidderId,
-                manualAmount
-            ));
+            addAuctionChangesForWinningBid(
+                resolution, 
+                auction, 
+                bidderId, 
+                manualAmount, 
+                command.getBidTime());
 
             return resolution.build();
         }
@@ -264,11 +288,12 @@ public class AuctionBidEngine {
                 BidStatus.WINNING
             ));
 
-            resolution.addAuctionChange(new CurrentBidAuctionChange(
-                auctionId,
-                bidderId,
-                manualAmount
-            ));
+            addAuctionChangesForWinningBid(
+                resolution, 
+                auction, 
+                bidderId, 
+                manualAmount, 
+                command.getBidTime());
             return resolution.build();
         }
 
@@ -292,11 +317,16 @@ public class AuctionBidEngine {
             BidStatus.WINNING
         ));
 
-        resolution.addAuctionChange(new CurrentBidAuctionChange(
-            auctionId,
+        addAuctionChangesForWinningBid(
+            resolution,
+            auction,
             activeWinningAutobid.getUserId(),
-            autoBidAmount
-        ));
+            autoBidAmount,
+            command.getBidTime()
+        );
         return resolution.build();
     }
+
+
+    
 }

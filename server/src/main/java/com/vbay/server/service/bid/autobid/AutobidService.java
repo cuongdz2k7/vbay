@@ -134,6 +134,7 @@ public class AutobidService {
             maxBidAmount,
             refreshedAuction.getCurrentPrice(),
             reserveMet(refreshedAuction),
+            refreshedAuction.getAntiSnipeExtensionCount() > 0,
             refreshedAuction.getStatus().name(),
             previousWinningUserId,
             previousWinningBidId,

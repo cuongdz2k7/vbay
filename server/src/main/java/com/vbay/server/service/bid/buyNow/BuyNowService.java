@@ -161,14 +161,6 @@ public class BuyNowService {
     private final AuctionBidEngine auctionBidEngine;
     private final BidResolutionApplier bidResolutionApplier;
 
-
-    public BuyNowService
-        (ConnectionProvider connectionProvider, 
-        RepositoryFactory repositoryFactory, 
-        DomainEventPublisher domainEventPublisher) {
-        this(connectionProvider, repositoryFactory, domainEventPublisher, new AuctionBidEngine(), new BidResolutionApplier(repositoryFactory));
-    }
-
     public BuyNowService
         (ConnectionProvider connectionProvider, 
         RepositoryFactory repositoryFactory, 
@@ -181,8 +173,6 @@ public class BuyNowService {
         this.auctionBidEngine = auctionBidEngine;
         this.bidResolutionApplier = bidResolutionApplier;
     }
-
-
 
     private void checkSession(ClientSession session) {
         if (session == null || !session.isAuthenticated()) {

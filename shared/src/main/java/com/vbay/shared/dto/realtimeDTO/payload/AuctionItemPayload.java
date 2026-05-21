@@ -20,6 +20,7 @@ public class AuctionItemPayload {
     private BigDecimal buyNowPrice;
     private Long winnerUserId;
     private Boolean reserveMet;
+    private boolean antiSnipeExtended;
     private String thumbnailUrl;
     private List<String> imageUrls;
     private LocalDateTime startingTime;
@@ -45,6 +46,7 @@ public class AuctionItemPayload {
             BigDecimal buyNowPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String thumbnailUrl,
             List<String> imageUrls,
             LocalDateTime startingTime,
@@ -65,6 +67,7 @@ public class AuctionItemPayload {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.thumbnailUrl = thumbnailUrl;
         this.imageUrls = imageUrls;
         this.startingTime = startingTime;
@@ -102,6 +105,8 @@ public class AuctionItemPayload {
     public void setWinnerUserId(Long winnerUserId) { this.winnerUserId = winnerUserId; }
     public Boolean getReserveMet() { return reserveMet; }
     public void setReserveMet(Boolean reserveMet) { this.reserveMet = reserveMet; }
+    public boolean isAntiSnipeExtended() { return antiSnipeExtended; }
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) { this.antiSnipeExtended = antiSnipeExtended; }
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
     public List<String> getImageUrls() { return imageUrls; }

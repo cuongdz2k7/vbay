@@ -22,43 +22,140 @@ public class Auction {
     private LocalDateTime endingTime;
     private AuctionStatus status;
     private Long winnerUserId;
+    private int antiSnipeExtensionCount;
     private long version;
 
-    //Constructor (Create new auction) để lưu vào database
-    public Auction(long productId, long sellerId, BigDecimal startingPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime) {
-        //Base:
+    // Constructor create new auction
+    public Auction(
+            long productId,
+            long sellerId,
+            BigDecimal startingPrice,
+            BigDecimal minimumBidStep,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime) {
         this.productId = productId;
         this.sellerId = sellerId;
-        //Auction Detail:
         this.startingPrice = startingPrice;
         this.currentPrice = startingPrice;
         this.minimumBidStep = minimumBidStep;
-        //Time + State:
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.status = AuctionStatus.SCHEDULED;
+        this.antiSnipeExtensionCount = 0;
     }
 
-    public Auction(long sellerId, long productId, String title, String description, BigDecimal buyNowPrice, BigDecimal reservePrice, BigDecimal minimumBidStep, BigDecimal startingPrice, LocalDateTime startingTime, LocalDateTime endingTime) {
+    public Auction(
+            long sellerId,
+            long productId,
+            String title,
+            String description,
+            BigDecimal buyNowPrice,
+            BigDecimal reservePrice,
+            BigDecimal minimumBidStep,
+            BigDecimal startingPrice,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime) {
         this.productId = productId;
         this.sellerId = sellerId;
         this.title = title;
         this.description = description;
         this.startingPrice = startingPrice;
-        this.currentPrice = this.startingPrice;
+        this.currentPrice = startingPrice;
         this.reservePrice = reservePrice;
         this.buyNowPrice = buyNowPrice;
         this.minimumBidStep = minimumBidStep;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.status = AuctionStatus.SCHEDULED;
-    }
-    ///Constructor đầy đủ để tạo auction từ database, sẽ có tất cả các trường
-    public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state) {
-        this(id, productId, sellerId, title, description, startingPrice, currentPrice, reservePrice, buyNowPrice, minimumBidStep, startingTime, endingTime, state, null);
+        this.antiSnipeExtensionCount = 0;
     }
 
-    public Auction(long id, long productId, long sellerId, String title, String description, BigDecimal startingPrice, BigDecimal currentPrice, BigDecimal reservePrice, BigDecimal buyNowPrice, BigDecimal minimumBidStep, LocalDateTime startingTime, LocalDateTime endingTime, AuctionStatus state, Long winnerUserId) {
+    // Constructor from database, without winner
+    public Auction(
+            long id,
+            long productId,
+            long sellerId,
+            String title,
+            String description,
+            BigDecimal startingPrice,
+            BigDecimal currentPrice,
+            BigDecimal reservePrice,
+            BigDecimal buyNowPrice,
+            BigDecimal minimumBidStep,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime,
+            AuctionStatus status) {
+        this(
+            id,
+            productId,
+            sellerId,
+            title,
+            description,
+            startingPrice,
+            currentPrice,
+            reservePrice,
+            buyNowPrice,
+            minimumBidStep,
+            startingTime,
+            endingTime,
+            status,
+            null,
+            0
+        );
+    }
+
+    // Constructor from database, with winner, old call sites still compile
+    public Auction(
+            long id,
+            long productId,
+            long sellerId,
+            String title,
+            String description,
+            BigDecimal startingPrice,
+            BigDecimal currentPrice,
+            BigDecimal reservePrice,
+            BigDecimal buyNowPrice,
+            BigDecimal minimumBidStep,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime,
+            AuctionStatus status,
+            Long winnerUserId) {
+        this(
+            id,
+            productId,
+            sellerId,
+            title,
+            description,
+            startingPrice,
+            currentPrice,
+            reservePrice,
+            buyNowPrice,
+            minimumBidStep,
+            startingTime,
+            endingTime,
+            status,
+            winnerUserId,
+            0
+        );
+    }
+
+    // Full constructor from database
+    public Auction(
+            long id,
+            long productId,
+            long sellerId,
+            String title,
+            String description,
+            BigDecimal startingPrice,
+            BigDecimal currentPrice,
+            BigDecimal reservePrice,
+            BigDecimal buyNowPrice,
+            BigDecimal minimumBidStep,
+            LocalDateTime startingTime,
+            LocalDateTime endingTime,
+            AuctionStatus status,
+            Long winnerUserId,
+            int antiSnipeExtensionCount) {
         this.id = id;
         this.productId = productId;
         this.sellerId = sellerId;
@@ -71,9 +168,11 @@ public class Auction {
         this.minimumBidStep = minimumBidStep;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
-        this.status = state;
+        this.status = status;
         this.winnerUserId = winnerUserId;
+        this.antiSnipeExtensionCount = antiSnipeExtensionCount;
     }
+
 
     //Getter
     //a, Base:
@@ -120,6 +219,9 @@ public class Auction {
     }
     public Long getWinnerUserId() {
         return winnerUserId;
+    }
+    public int getAntiSnipeExtensionCount() {
+        return antiSnipeExtensionCount;
     }
     public long getVersion() {
         return version;
@@ -178,6 +280,9 @@ public class Auction {
     }
     public void setVersion(long version) {
         this.version = version;
+    }
+    public void setAntiSnipeExtensionCount(int antiSnipeExtensionCount) {
+        this.antiSnipeExtensionCount = antiSnipeExtensionCount;
     }
 
 }
