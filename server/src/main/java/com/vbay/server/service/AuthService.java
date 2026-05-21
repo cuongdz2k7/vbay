@@ -101,7 +101,7 @@ public class AuthService {
                         "admin",
                         "admin@vbay.com",
                         passwordHasher.hash("admin".toCharArray()),
-                        "0000000000",
+                        "0397085350",
                         Position.ADMIN,
                         UserStatus.ACTIVE,
                         BigDecimal.ZERO,
@@ -163,8 +163,15 @@ public class AuthService {
             }
             User user = userOptional.get();
             if (user.isBanned()) {
-                logError("LOGIN_FAILED", "username=" + username + ", reason: user_banned");
-                throw new AuthenticationException("Your account has been banned.");
+                Optional<String> banReason = userRepository.findLatestBanReason(user.getId());
+                logError("LOGIN_FAILED", "username=" + username + ", reason: "+ banReason.get());
+                String message = "Your account has been banned.\n";
+                if (banReason.isPresent() && !banReason.get().isBlank()) {
+                    message += "Reason: " + banReason.get();
+                } else {
+                    message += "Reason: No reason provided.";
+                }
+                throw new AuthenticationException(message);
             }
             if (user.isLocked()) {
                 if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {

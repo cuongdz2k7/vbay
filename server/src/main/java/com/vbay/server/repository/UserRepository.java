@@ -27,4 +27,5 @@ public interface UserRepository {
     void setLockUntil(long userId, LocalDateTime lockUntil) throws SQLException;
     void resetWarningCount(long userId) throws SQLException;
     void deleteById(long userId) throws SQLException;
+    Optional<String> findLatestBanReason(long userId) throws SQLException;
 }
