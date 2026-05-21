@@ -2,6 +2,7 @@ package com.vbay.server.repository.JDBCrepository;
 
 import java.sql.Connection;
 
+import com.vbay.server.repository.AdminAccountRepository;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
@@ -21,6 +22,11 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
 
     public JdbcRepositoryFactory(ImageStorageService imageStorageService) {
         this.imageStorageService = imageStorageService;
+    }
+
+    @Override
+    public AdminAccountRepository createAdminAccountRepository(Connection connection) {
+        return new JdbcAdminAccountRepository(connection);
     }
     
     @Override

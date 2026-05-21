@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.realtime.subscription.SubscriptionService;
+import com.vbay.server.service.AdminUserService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
@@ -19,6 +20,10 @@ import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
+import com.vbay.shared.dto.adminDTO.AdminUserDTO;
+import com.vbay.shared.dto.adminDTO.AdminUserListResponse;
+import com.vbay.shared.dto.adminDTO.BanUserRequest;
+import com.vbay.shared.dto.adminDTO.UnbanUserRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
@@ -38,6 +43,7 @@ import com.vbay.shared.protocol.Respond;
 public class RequestDistributor {
     private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
+    private final AdminUserService adminUserService;
     private final AuctionService auctionService;
     private final BidService bidService;
     private final UserAccountService userAccountService;
@@ -46,12 +52,14 @@ public class RequestDistributor {
     
 
     public RequestDistributor (AuthService authService, 
+                                AdminUserService adminUserService,
                                 AuctionService auctionService, 
                                 BidService bidService, 
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService) {
         this.authService = authService;
+        this.adminUserService = adminUserService;
         this.auctionService = auctionService;
         this.bidService = bidService;
         this.userAccountService = userAccountService;
@@ -95,11 +103,18 @@ public class RequestDistributor {
         }
 
         try {
+            if (requiresActiveUser(type) && session != null && session.isAuthenticated()) {
+                userAccountService.requireActiveUser(session.getUserId());
+            }
+
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
                 case LOGIN -> handleLogin(requestId, payload, session);
                 case LOGOUT -> handleLogout(requestId, session, connection);
                 case REGISTER -> handleRegister(requestId, payload);
+                case GET_ADMIN_USER_LIST -> handleGetAdminUserList(requestId, session);
+                case BAN_USER -> handleBanUser(requestId, payload, session);
+                case UNBAN_USER -> handleUnbanUser(requestId, payload, session);
                 case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
                 case GET_MY_BID_LIST -> handleGetMyBidList(requestId, session);
@@ -124,6 +139,61 @@ public class RequestDistributor {
         }
     }
 
+    private boolean requiresActiveUser(RequestType type) {
+        return switch (type) {
+            case VERIFY, LOGIN, LOGOUT, REGISTER, FORGOT_PASSWORD -> false;
+            default -> true;
+        };
+    }
+
+
+    private Respond<AdminUserListResponse> handleGetAdminUserList(
+        String requestId,
+        ClientSession session) throws SQLException {
+
+        return new Respond<>(
+            requestId,
+            true,
+            "Admin user list loaded",
+            adminUserService.getUsers(session)
+        );
+    }
+
+    private Respond<AdminUserDTO> handleBanUser(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        BanUserRequest request = JsonUtils.fromJson(payload, BanUserRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid ban user request", null);
+        }
+
+        return new Respond<>(
+            requestId,
+            true,
+            "User banned successfully",
+            adminUserService.banUser(request, session)
+        );
+    }
+
+    private Respond<AdminUserDTO> handleUnbanUser(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        UnbanUserRequest request = JsonUtils.fromJson(payload, UnbanUserRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid unban user request", null);
+        }
+
+        return new Respond<>(
+            requestId,
+            true,
+            "User unbanned successfully",
+            adminUserService.unbanUser(request, session)
+        );
+    }
 
     private Respond<AuctionListResponse> handleGetAuctionList(
         String requestId,

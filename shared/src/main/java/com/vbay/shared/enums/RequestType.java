@@ -9,6 +9,11 @@ public enum RequestType {
     VERIFY,
     UPDATE_PROFILE,
 
+    // Admin
+    GET_ADMIN_USER_LIST,
+    BAN_USER,
+    UNBAN_USER,
+
     // Auction lifecycle
     CLOSE_AUCTION,
     DECLARE_WINNER,

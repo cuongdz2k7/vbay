@@ -6,12 +6,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.rowmapper.UserRowMapper;
 import com.vbay.server.model.User;
 import com.vbay.server.repository.UserRepository;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class JdbcUserRepository implements UserRepository {
     private final Connection connection;
@@ -80,6 +83,25 @@ public class JdbcUserRepository implements UserRepository {
     }
 
     @Override
+    public List<User> findAllUsers() throws SQLException {
+        String sql = """
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
+            FROM users
+            WHERE status <> 'DELETED'
+            ORDER BY id ASC
+            """;
+
+        List<User> users = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                users.add(UserRowMapper.mapUser(rs));
+            }
+        }
+        return users;
+    }
+
+    @Override
     public boolean existsByUsername(String username) throws SQLException {
         String sql = "SELECT 1 FROM users WHERE username = ? LIMIT 1";
 
@@ -137,6 +159,24 @@ public class JdbcUserRepository implements UserRepository {
         }
 
         throw new SQLException("Creating user failed, no ID obtained.");
+    }
+
+    @Override
+    public void updateStatus(long userId, UserStatus status) throws SQLException {
+        String sql = """
+            UPDATE users
+            SET status = ?,
+                version = version + 1
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setLong(2, userId);
+            if (statement.executeUpdate() == 0) {
+                throw new ValidationException("User not found");
+            }
+        }
     }
 
     @Override

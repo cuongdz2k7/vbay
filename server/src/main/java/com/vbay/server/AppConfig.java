@@ -28,6 +28,8 @@ import com.vbay.server.scheduler.AuctionScheduleDomainEventHandler;
 import com.vbay.server.scheduler.AuctionTaskScheduler;
 import com.vbay.server.security.Argon2PasswordHasher;
 import com.vbay.server.security.PasswordHasher;
+import com.vbay.server.service.AdminAccountService;
+import com.vbay.server.service.AdminUserService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.BidService;
@@ -47,6 +49,8 @@ public class AppConfig {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
+    private final AdminAccountService adminAccountService;
+    private final AdminUserService adminUserService;
     private final AuthService authService;
     private final AuctionService auctionService;
     private final BidService bidService;
@@ -119,6 +123,8 @@ new AppConfig()
         ));
         this.subscriptionService = new SubscriptionService(subscriptionValidator, subscriptionRegistry);
         ///business service
+        this.adminAccountService = new AdminAccountService(connectionProvider, repositoryFactory, passwordHasher);
+        this.adminUserService = new AdminUserService(connectionProvider, repositoryFactory);
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
@@ -138,6 +144,7 @@ new AppConfig()
 
         this.requestDistributor = new RequestDistributor(
             authService, 
+            adminUserService,
             auctionService, 
             bidService, 
             userAccountService,
@@ -159,6 +166,14 @@ new AppConfig()
 
     public RequestDistributor getRequestDistributor() {
         return requestDistributor;
+    }
+
+    public AdminAccountService getAdminAccountService() {
+        return adminAccountService;
+    }
+
+    public AdminUserService getAdminUserService() {
+        return adminUserService;
     }
 
     public AuthService getAuthService() {

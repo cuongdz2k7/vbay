@@ -22,6 +22,7 @@ import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.dto.authDTO.RegisterRequest;
+import com.vbay.shared.enums.auth.UserStatus;
 import com.vbay.shared.protocol.Respond;
 
 public class AuthService {
@@ -105,6 +106,10 @@ public class AuthService {
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
                 throw new AuthenticationException("Invalid username or password");
+            }
+            if (user.getUserStatus() != UserStatus.ACTIVE) {
+                logError("LOGIN_FAILED", "username=" + username + ", reason: user_status_" + user.getUserStatus().name());
+                throw new AuthenticationException("Account is not active");
             }
             logInfo("LOGIN_SUCCESS", "userId=" + user.getId() + ", username=" + user.getUserName());
             return new LoginResponse(

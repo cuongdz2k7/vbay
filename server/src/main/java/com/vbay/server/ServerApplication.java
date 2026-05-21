@@ -45,6 +45,7 @@ public class ServerApplication {
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             DatabaseInitializer.init();
+            appConfig.getAdminAccountService().seedDefaultAdmins();
             imageHttpServer.start();
             auctionScheduler.start();
 

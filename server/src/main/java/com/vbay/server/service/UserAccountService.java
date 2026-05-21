@@ -66,6 +66,22 @@ public class UserAccountService {
         }
     }
 
+    public void requireActiveUser(Long userId) throws SQLException {
+        if (userId == null) {
+            throw new AuthenticationException("Login required");
+        }
+
+        try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            User user = userRepository.findById(userId).orElseThrow(
+                () -> new AuthenticationException("User session is no longer valid")
+            );
+            if (!user.isActive()) {
+                throw new AuthenticationException("Account is not active");
+            }
+        }
+    }
+
     public Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         DepositBalanceRequest request = JsonUtils.fromJson(payload, DepositBalanceRequest.class);
         if (request == null) {

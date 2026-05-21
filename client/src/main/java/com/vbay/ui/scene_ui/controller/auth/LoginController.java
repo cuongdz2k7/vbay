@@ -13,6 +13,7 @@ import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.authDTO.LoginRequest;
 import com.vbay.shared.dto.authDTO.LoginResponse;
 import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene_ui.NotificationManager;
@@ -26,6 +27,8 @@ import javafx.scene.shape.SVGPath;
 
 public class LoginController {
     private static final Logger LOGGER = LoggingUtils.getLogger(LoginController.class);
+    private static final String USER_HOME_VIEW = "/jfx/scene/Home.fxml";
+    private static final String ADMIN_DASHBOARD_VIEW = "/jfx/scene/admin/AdminDashboard.fxml";
 
     private static final String EYE_OPEN_ICON =
         "M1.5 0C0.6716 0 0 0.6716 0 1.5v9.002C0.6314 11.4642 1.6154 12.2766 2.8147 12.8393C4.1372 13.4602 5.9548 13.998 8 13.998s3.8628-0.5378 5.1853-1.1587C14.3846 12.2766 15.3686 11.4642 16 10.502V1.5C16 0.6716 15.3284 0 14.5 0H1.5ZM8 3.5a3.5 3.5 0 1 1 0 7.001A3.5 3.5 0 0 1 8 3.5Zm0 1.5a2 2 0 1 0 0 4.001A2 2 0 0 0 8 5Z";
@@ -72,7 +75,7 @@ public class LoginController {
         //Sever Side
         try {
             loginUser(username, password);
-            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back.");
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
@@ -83,11 +86,15 @@ public class LoginController {
         }
         //UI Sides
         try{
-            SceneManager.switchScene("/jfx/scene/Home.fxml");
+            SceneManager.switchScene(nextViewForCurrentUser());
             SceneManager.enterImmersiveMode();
         }catch ( Exception exception){
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the home screen.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed",exception.getMessage() != null ? exception.getMessage() : "Could not open the next screen.");
         }
+    }
+
+    private String nextViewForCurrentUser() {
+        return UserData.getPosition() == Position.ADMIN ? ADMIN_DASHBOARD_VIEW : USER_HOME_VIEW;
     }
     //Method Login
     private void loginUser(String username, String password) throws IOException {
