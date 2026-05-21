@@ -50,13 +50,13 @@
 }
 
 .login-card {
-    -fx-background-color: rgba(6, 6, 7, 0.94);
+    -fx-background-color: linear-gradient(to bottom right, rgba(24, 24, 26, 0.99) 0%, rgba(14, 14, 16, 0.99) 100%);
     -fx-background-radius: 28;
-    -fx-border-color: rgba(255, 119, 76, 0.28);
+    -fx-border-color: linear-gradient(to bottom right, rgba(255, 119, 76, 0.6) 0%, rgba(255, 119, 76, 0.08) 100%);
     -fx-border-radius: 28;
     -fx-border-width: 1.2;
     -fx-padding: 30;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.54), 34, 0.2, 0, 12);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.92), 80, 0.32, 0, 26);
 }
 
 .field-label {
@@ -73,11 +73,11 @@
     -fx-border-color: transparent transparent rgba(255, 154, 111, 0.74) transparent;
     -fx-border-width: 0 0 2 0;
     -fx-padding: 12 0 12 0;
-    -fx-text-fill: -app-text;
+    -fx-text-fill: #ff5f2e !important;
     -fx-prompt-text-fill: rgba(255, 181, 160, 0.36);
     -fx-font-size: 15px;
-    -fx-highlight-fill: -app-accent;
-    -fx-highlight-text-fill: -app-text;
+    -fx-highlight-fill: #ff5f2e !important;
+    -fx-highlight-text-fill: #f8efe6 !important;
 }
 
 .auth-input.text-field,
@@ -105,8 +105,36 @@
     -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.22), 12, 0.16, 0, 2);
 }
 
-.password-input {
-    -fx-padding: 12 38 12 0;
+.password-input,
+.password-input.password-field,
+.password-input.text-field {
+    -fx-background-color: #161618 !important; /* Dark inset background */
+    -color-input-bg: #161618 !important;
+    -color-input-bg-focused: #1e1e20 !important;
+    -color-input-border: rgba(255, 95, 46, 0.35) !important;
+    -color-input-border-focused: #ff5f2e !important;
+    
+    -fx-background-radius: 14 !important;
+    -fx-border-color: rgba(255, 95, 46, 0.35) !important; /* Subtle orange border */
+    -fx-border-radius: 14 !important;
+    -fx-border-width: 1.5 !important;
+    -fx-padding: 12 42 12 16 !important; /* Left-right balanced padding for the inner eye frame */
+    -fx-text-fill: #ff5f2e !important; /* Orange dots/text */
+    -fx-prompt-text-fill: rgba(255, 181, 160, 0.3) !important;
+    -fx-font-size: 15px !important;
+    
+    -fx-highlight-fill: #ff5f2e !important;
+    -fx-highlight-text-fill: #f8efe6 !important;
+}
+
+.password-input:focused,
+.password-input.password-field:focused,
+.password-input.text-field:focused {
+    -fx-background-color: #1e1e20 !important; /* Slightly lighter dark background on focus */
+    -color-input-bg: #1e1e20 !important;
+    -fx-border-color: #ff5f2e !important; /* Solid orange border on focus */
+    -color-input-border: #ff5f2e !important;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.35), 12, 0.16, 0, 2) !important;
 }
 
 .primary-button {
@@ -185,31 +213,57 @@
     -fx-underline: true;
 }
 
-.icon-button {
-    -fx-background-color: transparent, transparent, transparent;
-    -fx-background-insets: 0;
-    -fx-border-color: transparent;
-    -fx-padding: 0;
+.icon-button,
+.icon-button.button {
+    -fx-background-color: transparent !important;
+    -fx-background-insets: 0 !important;
+    -fx-background-radius: 0 !important;
+    -fx-border-color: transparent !important;
+    -fx-border-width: 0 !important;
+    -fx-padding: 0 !important;
+    -fx-effect: null !important;
+    -color-btn-bg: transparent !important;
+    -color-btn-border: transparent !important;
 }
 
-.password-toggle-button {
-    -fx-background-color: rgba(255, 255, 255, 0.03);
-    -fx-background-radius: 8;
-    -fx-border-color: transparent;
+.password-toggle-button,
+.password-toggle-button.button {
+    -fx-background-color: #2b2b2e !important; /* Xám nổi bật */
+    -fx-background-insets: 0 !important;
+    -fx-background-radius: 8 !important;
+    -fx-border-color: rgba(255, 255, 255, 0.08) !important;
+    -fx-border-radius: 8 !important;
+    -fx-border-width: 1 !important;
+    -fx-padding: 4 6 4 6 !important;
+    -fx-effect: null !important;
+    -color-btn-bg: #2b2b2e !important;
+    -color-btn-border: rgba(255, 255, 255, 0.08) !important;
+    -fx-cursor: hand;
 }
 
 .password-toggle-button:hover,
 .password-toggle-button:focused,
-.password-toggle-button:pressed {
-    -fx-background-color: rgba(255, 95, 46, 0.12);
+.password-toggle-button:pressed,
+.password-toggle-button.button:hover,
+.password-toggle-button.button:focused,
+.password-toggle-button.button:pressed {
+    -fx-background-color: #3e3e42 !important; /* Xám nổi bật sáng hơn khi hover */
+    -fx-border-color: rgba(255, 95, 46, 0.35) !important; /* Viền cam nhẹ khi hover */
+    -fx-border-radius: 8 !important;
+    -fx-border-width: 1 !important;
+    -color-btn-bg: #3e3e42 !important;
+    -color-btn-border: rgba(255, 95, 46, 0.35) !important;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 4, 0, 0, 2) !important;
 }
 
 .eye-icon {
-    -fx-fill: rgba(255, 181, 160, 0.84);
+    -fx-fill: #ff7a47 !important; /* Cam nổi bật */
 }
 
-.icon-button:hover .eye-icon {
-    -fx-fill: -app-accent-soft;
+.password-toggle-button:hover .eye-icon,
+.password-toggle-button.button:hover .eye-icon {
+    -fx-fill: #ff5f2e !important; /* Cam sáng rực khi hover */
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.8), 8, 0.4, 0, 0) !important; /* Hiệu ứng tỏa sáng */
 }
 
 .footer-bar {
