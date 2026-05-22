@@ -41,6 +41,7 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
+import com.vbay.server.service.bid.BidService;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 
@@ -671,6 +672,21 @@ class AuctionServiceIntegrationTest {
                     status VARCHAR(20) NOT NULL,
                     CONSTRAINT fk_bids_auction FOREIGN KEY (auction_id) REFERENCES auctions(id),
                     CONSTRAINT fk_bids_bidder FOREIGN KEY (bidder_id) REFERENCES users(id)
+                )
+                """);
+            statement.execute("""
+                CREATE TABLE autobids (
+                    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    auction_id BIGINT NOT NULL,
+                    user_id BIGINT NOT NULL,
+                    max_bid_amount DECIMAL(15,2) NOT NULL,
+                    hold_amount DECIMAL(15,2) NOT NULL,
+                    status VARCHAR(20) NOT NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT uq_autobids_auction_user UNIQUE (auction_id, user_id),
+                    CONSTRAINT fk_autobids_auction FOREIGN KEY (auction_id) REFERENCES auctions(id),
+                    CONSTRAINT fk_autobids_user FOREIGN KEY (user_id) REFERENCES users(id)
                 )
                 """);
             statement.execute("""

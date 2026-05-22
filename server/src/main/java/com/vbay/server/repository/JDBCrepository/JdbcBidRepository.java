@@ -102,7 +102,13 @@ public class JdbcBidRepository implements BidRepository {
 
     @Override
     public void updateStatusesByAuctionIdExceptBid(long auctionId, long excludedBidId, BidStatus newStatus) throws SQLException {
-        String sql = "UPDATE bids SET status = ? WHERE auction_id = ? AND id <> ?";
+        String sql = """
+            UPDATE bids
+            SET status = ?
+            WHERE auction_id = ?
+            AND id <> ?
+            AND status <> 'CANCELLED'
+            """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, newStatus.name());

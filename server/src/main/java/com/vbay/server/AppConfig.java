@@ -32,8 +32,10 @@ import com.vbay.server.service.AdminAccountService;
 import com.vbay.server.service.AdminUserService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
-import com.vbay.server.service.BidService;
 import com.vbay.server.service.UserAccountService;
+import com.vbay.server.service.bid.autobid.AutobidEngine;
+import com.vbay.server.service.bid.autobid.AutobidService;
+import com.vbay.server.service.bid.BidService;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -127,7 +129,13 @@ new AppConfig()
         this.adminUserService = new AdminUserService(connectionProvider, repositoryFactory);
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.bidService = new BidService(
+            connectionProvider,
+            repositoryFactory,
+            domainEventPublisher,
+            new AutobidEngine(),
+            new AutobidService(connectionProvider, repositoryFactory)
+        );
         this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);

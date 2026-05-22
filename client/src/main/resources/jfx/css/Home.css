@@ -273,20 +273,21 @@
 }
 
 .create-auctions-btn {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #0b4c29 0%, #12773e 100%);
-    -fx-border-color: rgba(104, 255, 163, 0.58);
-    -fx-border-width: 1.2;
-    -fx-text-fill: #ffffff;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(10, 92, 50, 0.82) 0%, rgba(18, 126, 65, 0.88) 100%);
+    -fx-border-color: rgba(96, 236, 151, 0.58);
+    -fx-border-width: 1;
+    -fx-text-fill: #f4fff8;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
     -fx-padding: 14 16 14 16;
-    -fx-effect: dropshadow(gaussian, rgba(32, 210, 102, 0.22), 18, 0.16, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(32, 210, 102, 0.18), 14, 0.13, 0, 4);
 }
 
 .create-auctions-btn:hover {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #0d6133 0%, #18934d 100%);
-    -fx-border-color: rgba(139, 255, 184, 0.86);
-    -fx-effect: dropshadow(gaussian, rgba(37, 235, 117, 0.28), 22, 0.18, 0, 6);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(12, 112, 60, 0.92) 0%, rgba(24, 150, 78, 0.94) 100%);
+    -fx-border-color: rgba(130, 255, 181, 0.78);
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(37, 235, 117, 0.28), 18, 0.16, 0, 5);
 }
 
 .secondary-action-btn {
@@ -296,20 +297,20 @@
 .logout-btn {
     -fx-alignment: CENTER;
     -fx-padding: 11 14 11 14;
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(103, 20, 24, 0.9) 0%, rgba(132, 24, 28, 0.86) 100%);
-    -fx-border-color: rgba(255, 86, 92, 0.62);
-    -fx-border-width: 1.2;
-    -fx-text-fill: #fff7f7;
+    -fx-background-color: rgba(139, 29, 34, 0.58);
+    -fx-border-color: rgba(255, 96, 96, 0.5);
+    -fx-border-width: 1;
+    -fx-text-fill: #fff3f3;
     -fx-font-size: 13px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(214, 40, 50, 0.2), 16, 0.14, 0, 4);
+    -fx-effect: dropshadow(gaussian, rgba(214, 40, 50, 0.16), 12, 0.12, 0, 3);
 }
 
 .logout-btn:hover {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(139, 23, 29, 0.98) 0%, rgba(185, 37, 44, 0.94) 100%);
-    -fx-border-color: rgba(255, 132, 136, 0.92);
+    -fx-background-color: rgba(177, 39, 45, 0.72);
+    -fx-border-color: rgba(255, 128, 128, 0.72);
     -fx-text-fill: #ffffff;
-    -fx-effect: dropshadow(gaussian, rgba(255, 56, 67, 0.3), 20, 0.16, 0, 5);
+    -fx-effect: dropshadow(gaussian, rgba(255, 56, 67, 0.24), 16, 0.14, 0, 4);
 }
 
 .main-scroll,

@@ -4,6 +4,7 @@ import java.sql.Connection;
 
 import com.vbay.server.repository.AdminAccountRepository;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.AutobidRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
 import com.vbay.server.repository.UserRepository;
@@ -32,6 +33,11 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
     @Override
     public AuctionRepository createAuctionRepository(Connection connection) {
         return new JdbcAuctionRepository(connection, imageStorageService);
+    }
+
+    @Override
+    public AutobidRepository createAutobidRepository(Connection connection) {
+        return new JdbcAutobidRepository(connection);
     }
 
     @Override
