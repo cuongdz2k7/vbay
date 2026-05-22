@@ -3,7 +3,7 @@ package com.vbay.server.service.bid.resolution.model.autobid;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 
 public class AutobidCreate {
     private Long id;

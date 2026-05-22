@@ -1,4 +1,4 @@
-package com.vbay.server.service.bid.buyNow;
+package com.vbay.server.service.bid;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -15,6 +15,7 @@ import com.vbay.server.model.Bid;
 import com.vbay.server.model.User;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.AutobidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
@@ -26,11 +27,13 @@ import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.server.service.bid.command.BuyNowCommand;
 import com.vbay.server.service.bid.engine.AuctionBidEngine;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 import com.vbay.server.service.bid.resolution.AppliedBidResultMapper;
 import com.vbay.server.service.bid.resolution.BidResolutionApplier;
 import com.vbay.server.service.bid.resolution.model.bid.AppliedBidResolution;
 import com.vbay.server.service.bid.resolution.model.bid.BidResolution;
 import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.AutobidUpdateResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.validation.ValidateBidDTO;
@@ -285,6 +288,20 @@ public class BuyNowService {
                 ));
                 ///publish buy now event đã bao gồm mybidlistitemresult bên trong rồi nên không cần publish thêm event update mybidlistitem nữa, client nhận buy now event sẽ update mybidlistitem luôn
                 domainEventPublisher.publish(new BuyNowDomainEvent(result));
+                if (winningAutobid.isPresent()) {
+                    Autobid oldAutobid = winningAutobid.get();
+                    AutobidStatus finalStatus = oldAutobid.getUserId() == session.getUserId()
+                        ? AutobidStatus.WON
+                        : AutobidStatus.LOST;
+                    domainEventPublisher.publish(new AutobidUpdatedDomainEvent(
+                        toAutobidUpdateResult(
+                            applied.getRefreshedAuction(),
+                            oldAutobid,
+                            finalStatus,
+                            dbNow
+                        )
+                    ));
+                }
                 for (UserBalanceResult balanceResult : applied.getBalanceResults()) {
                     domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(
                         balanceResult,
@@ -297,5 +314,26 @@ public class BuyNowService {
                 throw e;
             }
         }
+    }
+
+    private AutobidUpdateResult toAutobidUpdateResult(
+            Auction auction,
+            Autobid autobid,
+            AutobidStatus status,
+            LocalDateTime updatedAt) {
+        boolean showActiveMaxBid = status == AutobidStatus.WINNING
+            && auction.getWinnerUserId() != null
+            && auction.getWinnerUserId() == autobid.getUserId();
+
+        return new AutobidUpdateResult(
+            auction.getId(),
+            autobid.getUserId(),
+            autobid.getId(),
+            autobid.getMaxBidAmount(),
+            status,
+            showActiveMaxBid,
+            showActiveMaxBid,
+            updatedAt
+        );
     }
 }

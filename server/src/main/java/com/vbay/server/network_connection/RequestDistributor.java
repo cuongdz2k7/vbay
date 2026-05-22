@@ -14,7 +14,9 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.UserAccountService;
-import com.vbay.server.service.bid.manual.ManualBidService;
+import com.vbay.server.service.bid.BidQueryService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.service.result.AutobidRegistrationResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
@@ -42,6 +44,8 @@ public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final ManualBidService bidService;
+    private final BuyNowService buyNowService;
+    private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
@@ -50,12 +54,16 @@ public class RequestDistributor {
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
                                 ManualBidService bidService, 
+                                BuyNowService buyNowService,
+                                BidQueryService bidQueryService,
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.buyNowService = buyNowService;
+        this.bidQueryService = bidQueryService;
         this.userAccountService = userAccountService;
         this.subscriptionService = subscriptionService;
         this.imageStorageService = imageStorageService;
@@ -246,7 +254,7 @@ public class RequestDistributor {
     }
 
     private Respond<MyBidListResponse> handleGetMyBidList(String requestId, ClientSession session) throws SQLException {
-        return new Respond<>(requestId, true, "My bid list loaded successfully", bidService.getMyBidList(session));
+        return new Respond<>(requestId, true, "My bid list loaded successfully", bidQueryService.getMyBidList(session));
     }
 
     private Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {
@@ -267,33 +275,12 @@ public class RequestDistributor {
         return new Respond<>(requestId, true, "Placed bid successfully", null);
     }
 
-    private Respond<AutobidRegistrationResult> handleAutoBid(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        if (payload == null || !payload.isJsonObject()) {
-            return new Respond<>(requestId, false, "Invalid auto bid request", null);
-        }
-        JsonObject object = payload.getAsJsonObject();
-        JsonElement auctionIdElement = object.get("auctionId");
-        JsonElement maxBidAmountElement = object.get("maxBidAmount");
-        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
-            maxBidAmountElement = object.get("bidAmount");
-        }
-        if (auctionIdElement == null || auctionIdElement.isJsonNull()
-                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
-            return new Respond<>(requestId, false, "Invalid auto bid request", null);
-        }
-
-        long auctionId = auctionIdElement.getAsLong();
-        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
-        AutobidRegistrationResult result = bidService.autoBid(auctionId, maxBidAmount, session);
-        return new Respond<>(requestId, true, "AutoBid subscribed successfully", result);
-    }
-
     private Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         BuyNowRequest buyNowRequest = JsonUtils.fromJson(payload, BuyNowRequest.class);
         if (buyNowRequest == null) {
             return new Respond<>(requestId, false, "Invalid buy now request", null);
         }
-        bidService.buyNow(buyNowRequest, session);
+        buyNowService.buyNow(buyNowRequest, session);
         return new Respond<>(requestId, true, "Buy now completed successfully", null);
     }
     

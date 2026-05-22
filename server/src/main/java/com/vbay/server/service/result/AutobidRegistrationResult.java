@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 

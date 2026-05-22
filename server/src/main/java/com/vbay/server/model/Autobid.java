@@ -2,7 +2,7 @@ package com.vbay.server.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 
 /*
 Không lưu currentAmount 

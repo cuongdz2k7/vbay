@@ -1,18 +1,17 @@
 package com.vbay.server.repository.JDBCrepository;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.math.BigDecimal;
 import java.util.Optional;
 
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.Autobid;
 import com.vbay.server.repository.AutobidRepository;
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
-import com.vbay.server.service.bid.autobid.model.AutobidChange;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 
 public class JdbcAutobidRepository implements AutobidRepository {
     private final Connection connection;
@@ -54,7 +53,8 @@ public class JdbcAutobidRepository implements AutobidRepository {
         throw new SQLException("Creating autobid failed, no ID obtained.");
     }
 
-    private Optional<Autobid> findByAuctionIdAndUserId(long auctionId, long userId) throws SQLException {
+    @Override
+    public Optional<Autobid> findByAuctionIdAndUserId(long auctionId, long userId) throws SQLException {
         String sql = """
             SELECT id, auction_id, user_id, max_bid_amount, status, created_at, updated_at
             FROM autobids
@@ -92,26 +92,6 @@ public class JdbcAutobidRepository implements AutobidRepository {
                     return Optional.empty();
                 }
                 return Optional.of(mapAutobid(rs));
-            }
-        }
-    }
-
-    @Override
-    public void update(AutobidChange change) throws SQLException {
-        String sql = """
-            UPDATE autobids
-            SET status = ?,
-                max_bid_amount = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """;
-
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, change.getNewStatus().name());
-            statement.setBigDecimal(2, change.getNewMaxBidAmount());
-            statement.setLong(3, change.getAutobidId());
-            if (statement.executeUpdate() == 0) {
-                throw new ValidationException("Autobid not found");
             }
         }
     }

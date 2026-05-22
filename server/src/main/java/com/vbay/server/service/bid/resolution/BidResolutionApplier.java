@@ -2,6 +2,7 @@ package com.vbay.server.service.bid.resolution;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,8 @@ import com.vbay.server.service.bid.resolution.model.bid.BidStatusUpdate;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
+import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 
 public class BidResolutionApplier {
     private final RepositoryFactory repositoryFactory;
@@ -195,15 +198,17 @@ public class BidResolutionApplier {
             .orElseThrow(() -> new ValidationException("Auction not found"));
 
         String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(refreshedAuction.getProductId()).orElse(null);
-        List<UserMyBidListItemResult> affectedMyBidItems = bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId()).stream()
-            .map(bid -> ResultMapper.toUserMyBidListItemResult(
+        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
+        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId())) {
+            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
                 refreshedAuction,
                 thumbnailUrl,
                 bid,
+                resolveMyMaxBidAmount(bid, autobidRepository),
                 bid.getStatus(),
                 dbNow
-            ))
-            .toList();
+            ));
+        }
         return new AppliedBidResolution(
             refreshedAuction,
             createdBids,
@@ -223,5 +228,18 @@ public class BidResolutionApplier {
         return userRepository.findById(userId)
             .map(user -> ResultMapper.toUserBalanceResult(user, reason, updatedAt))
             .orElseThrow(() -> new ValidationException("User not found"));
+    }
+
+    private BigDecimal resolveMyMaxBidAmount(
+            Bid bid,
+            AutobidRepository autobidRepository) throws SQLException {
+        if (bid.getBidSource() != BidSource.AUTO_BID || bid.getStatus() != BidStatus.WINNING) {
+            return null;
+        }
+
+        return autobidRepository
+            .findByAuctionIdAndUserId(bid.getAuctionId(), bid.getBidderId())
+            .map(Autobid::getMaxBidAmount)
+            .orElse(null);
     }
 }

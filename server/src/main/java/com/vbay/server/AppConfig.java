@@ -8,6 +8,7 @@ import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionStartedRealtimeHandler;
+import com.vbay.server.realtime.handler.AutobidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
@@ -31,9 +32,12 @@ import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.UserAccountService;
-import com.vbay.server.service.bid.autobid.AutobidEngine;
-import com.vbay.server.service.bid.autobid.AutobidService;
-import com.vbay.server.service.bid.manual.ManualBidService;
+import com.vbay.server.service.bid.BidQueryService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.ManualBidService;
+import com.vbay.server.service.bid.engine.AntiSnipePolicy;
+import com.vbay.server.service.bid.engine.AuctionBidEngine;
+import com.vbay.server.service.bid.resolution.BidResolutionApplier;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -52,6 +56,8 @@ public class AppConfig {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final ManualBidService bidService;
+    private final BuyNowService buyNowService;
+    private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
     private final RequestDistributor requestDistributor;
     private final ImageStorageService imageStorageService;
@@ -123,13 +129,23 @@ new AppConfig()
         ///business service
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
+        AuctionBidEngine auctionBidEngine = new AuctionBidEngine(new AntiSnipePolicy());
+        BidResolutionApplier bidResolutionApplier = new BidResolutionApplier(repositoryFactory);
         this.bidService = new ManualBidService(
             connectionProvider,
             repositoryFactory,
             domainEventPublisher,
-            new AutobidEngine(),
-            new AutobidService(connectionProvider, repositoryFactory)
+            auctionBidEngine,
+            bidResolutionApplier
         );
+        this.buyNowService = new BuyNowService(
+            connectionProvider,
+            repositoryFactory,
+            domainEventPublisher,
+            auctionBidEngine,
+            bidResolutionApplier
+        );
+        this.bidQueryService = new BidQueryService(connectionProvider, repositoryFactory);
         this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
@@ -140,7 +156,8 @@ new AppConfig()
             new AuctionScheduleDomainEventHandler(auctionScheduler),
             new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
-            new UserBalanceUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
+            new UserBalanceUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AutobidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
         );
         this.domainEventPublisher.registerAll(domainEventHandlers);
 
@@ -148,6 +165,8 @@ new AppConfig()
             authService, 
             auctionService, 
             bidService, 
+            buyNowService,
+            bidQueryService,
             userAccountService,
             subscriptionService, 
             imageStorageService);

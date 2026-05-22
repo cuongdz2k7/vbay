@@ -200,6 +200,7 @@ public class ResultMapper {
             result.getCurrentPrice(),
             result.getAuctionStatus().name(),
             result.getMyBidAmount(),
+            result.getMyMaxBidAmount(),
             result.getBidStatus(),
             result.getBidSource(),
             result.getBidTime(),
@@ -217,6 +218,24 @@ public class ResultMapper {
             BidStatus bidStatus,
             LocalDateTime updatedAt
     ) {
+        return toUserMyBidListItemResult(
+            auction,
+            thumbnailUrl,
+            bid,
+            null,
+            bidStatus,
+            updatedAt
+        );
+    }
+
+    public static UserMyBidListItemResult toUserMyBidListItemResult(
+            Auction auction,
+            String thumbnailUrl,
+            Bid bid,
+            BigDecimal myMaxBidAmount,
+            BidStatus bidStatus,
+            LocalDateTime updatedAt
+    ) {
         return new UserMyBidListItemResult(
             bid.getBidderId(),
             bid.getId(),
@@ -227,6 +246,7 @@ public class ResultMapper {
             auction.getCurrentPrice(),
             auction.getStatus(),
             bid.getBidAmount(),
+            myMaxBidAmount,
             bidStatus,
             bid.getBidSource(),
             bid.getBidTime(),

@@ -41,7 +41,7 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
-import com.vbay.server.service.bid.manual.ManualBidService;
+import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 

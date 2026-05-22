@@ -19,6 +19,7 @@ public class UserMyBidListItemResult {
     private final AuctionStatus auctionStatus;
 
     private final BigDecimal myBidAmount;
+    private final BigDecimal myMaxBidAmount;
     private final BidStatus bidStatus;
     private final BidSource bidSource;
     private final LocalDateTime bidTime;
@@ -29,7 +30,7 @@ public class UserMyBidListItemResult {
 
     public UserMyBidListItemResult(long userId, long bidId, long auctionId, long auctionVersion, String auctionTitle,
             String thumbnailUrl, BigDecimal currentPrice, AuctionStatus auctionStatus, BigDecimal myBidAmount,
-            BidStatus bidStatus, BidSource bidSource, LocalDateTime bidTime, LocalDateTime startingTime,
+            BigDecimal myMaxBidAmount, BidStatus bidStatus, BidSource bidSource, LocalDateTime bidTime, LocalDateTime startingTime,
             LocalDateTime endingTime, LocalDateTime updatedAt) {
 
             this.userId = userId;
@@ -41,6 +42,7 @@ public class UserMyBidListItemResult {
             this.currentPrice = currentPrice;
             this.auctionStatus = auctionStatus;
             this.myBidAmount = myBidAmount;
+            this.myMaxBidAmount = myMaxBidAmount;
             this.bidStatus = bidStatus;
             this.bidSource = bidSource;
             this.bidTime = bidTime;
@@ -98,6 +100,9 @@ public class UserMyBidListItemResult {
     }
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+    public BigDecimal getMyMaxBidAmount() {
+        return myMaxBidAmount;
     }
 
 

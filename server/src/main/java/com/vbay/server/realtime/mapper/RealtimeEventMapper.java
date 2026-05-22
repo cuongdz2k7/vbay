@@ -3,12 +3,14 @@ package com.vbay.server.realtime.mapper;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
+import com.vbay.server.realtime.domain.AutobidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.AutobidUpdateResult;
 import com.vbay.server.service.result.BidUpdateResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserBalanceResult;
@@ -17,6 +19,7 @@ import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
@@ -84,6 +87,7 @@ public class RealtimeEventMapper {
             result.getCurrentPrice(),
             result.getAuctionStatus().name(),
             result.getMyBidAmount(),
+            result.getMyMaxBidAmount(),
             result.getBidStatus(),
             result.getBidSource(),
             result.getBidTime(),
@@ -210,6 +214,31 @@ public class RealtimeEventMapper {
             RealtimeEventType.USER_BALANCE_UPDATED,
             userRoom(result.getUserId()),
             ResultMapper.toUserBalanceUpdatedPayload(result)
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
+
+    public RealtimeEvent<AutobidUpdatedPayload> toAutobidUpdatedEvent(
+        AutobidUpdatedDomainEvent event) {
+    AutobidUpdateResult result = event.getResult();
+
+    AutobidUpdatedPayload payload = new AutobidUpdatedPayload(
+            result.getAuctionId(),
+            result.getUserId(),
+            result.getAutobidId(),
+            result.getMaxBidAmount(),
+            result.getAutobidStatus().name(),
+            result.isWinning(),
+            result.isShowActiveMaxBid(),
+            result.getUpdatedAt()
+        );
+
+        RealtimeEvent<AutobidUpdatedPayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUTOBID_UPDATED,
+            userRoom(result.getUserId()),
+            payload
         );
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;

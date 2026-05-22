@@ -7,15 +7,19 @@ import java.util.Optional;
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Autobid;
 import com.vbay.server.model.Bid;
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
 import com.vbay.server.service.bid.command.BuyNowCommand;
+import com.vbay.server.service.bid.command.IncreaseAutobidCommand;
 import com.vbay.server.service.bid.command.ManualBidCommand;
+import com.vbay.server.service.bid.command.RegisterAutobidCommand;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 import com.vbay.server.service.bid.enums.BalanceChangeType;
 import com.vbay.server.service.bid.resolution.model.BalanceChange;
 import com.vbay.server.service.bid.resolution.model.PaymentCreate;
 import com.vbay.server.service.bid.resolution.model.auction.AntiSnipeAuctionExtensionChange;
 import com.vbay.server.service.bid.resolution.model.auction.BuyNowAuctionChange;
 import com.vbay.server.service.bid.resolution.model.auction.CurrentBidAuctionChange;
+import com.vbay.server.service.bid.resolution.model.autobid.AutobidCreate;
+import com.vbay.server.service.bid.resolution.model.autobid.AutobidMaxBidUpdate;
 import com.vbay.server.service.bid.resolution.model.autobid.AutobidStatusChange;
 import com.vbay.server.service.bid.resolution.model.bid.BidCreate;
 import com.vbay.server.service.bid.resolution.model.bid.BidResolution;
@@ -25,6 +29,15 @@ import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
+
+
+/*
+Nếu có winningAutobid(status = WINNING)
+thì currentWinningBid phải tồn tại
+và currentWinningBid.bidderId == winningAutobid.userId
+và currentWinningBid.status == WINNING
+
+*/
 
 public class AuctionBidEngine {
     private final AntiSnipePolicy antiSnipePolicy;
@@ -154,6 +167,9 @@ public class AuctionBidEngine {
         return resolution.build();
     }
 
+    /*
+    implement anti-snipe ở đây:
+    */
     private void addAuctionChangesForWinningBid(
             BidResolution.Builder resolution,
             Auction auction,
@@ -170,6 +186,34 @@ public class AuctionBidEngine {
             endingTime -> resolution.addAuctionChange(
                 new AntiSnipeAuctionExtensionChange(auction.getId(), endingTime)
             ));
+    }
+
+    private Bid requireWinningBidForAutobid(
+            Optional<Bid> currentWinningBid,
+            Autobid winningAutobid) {
+        Bid oldWinningBid = currentWinningBid
+            .orElseThrow(() -> new IllegalStateException(
+                "Winning AutoBid exists without a winning bid"
+            ));
+
+        if (oldWinningBid.getBidderId() != winningAutobid.getUserId()) {
+            throw new IllegalStateException(
+                "Winning AutoBid user does not match current winning bid user"
+            );
+        }
+
+        return oldWinningBid;
+    }
+
+    private BigDecimal calculateAutoBidAmount(
+            BigDecimal challengerAmount,
+            BigDecimal winningAutobidMaxBidAmount,
+            BigDecimal minimumBidStep) {
+        BigDecimal autoBidAmount = challengerAmount.add(minimumBidStep);
+        if (autoBidAmount.compareTo(winningAutobidMaxBidAmount) > 0) {
+            return winningAutobidMaxBidAmount;
+        }
+        return autoBidAmount;
     }
 
 
@@ -244,23 +288,13 @@ public class AuctionBidEngine {
         */
         if (manualAmount.compareTo(activeWinningAutobid.getMaxBidAmount()) > 0) {
             BidResolution.Builder resolution = BidResolution.accepted(auctionId);
-            currentWinningBid.ifPresent(
-            oldBid -> {
-                resolution.addBidStatusUpdate(new BidStatusUpdate(
-                    oldBid.getId(),
-                    BidStatus.OUTBID
-                ));
-                boolean oldBidCoveredByAutobidRelease = oldBid.getBidderId() == activeWinningAutobid.getUserId();
+            Bid oldWinningBid = requireWinningBidForAutobid(currentWinningBid, activeWinningAutobid);
 
-                if (!oldBidCoveredByAutobidRelease) {
-                    resolution.addBalanceChange(new BalanceChange(
-                        oldBid.getBidderId(),
-                        oldBid.getBidAmount(),
-                        BalanceChangeType.RELEASE,
-                        "OUTBID_RELEASE"
-                    ));
-                }
-            });
+            resolution.addBidStatusUpdate(new BidStatusUpdate(
+                oldWinningBid.getId(),
+                BidStatus.OUTBID
+            ));
+
             resolution.addAutobidStatusChange(new AutobidStatusChange(
                 activeWinningAutobid.getId(),
                 AutobidStatus.LOST
@@ -297,17 +331,19 @@ public class AuctionBidEngine {
             return resolution.build();
         }
 
-        BigDecimal autoBidAmount = manualAmount.add(auction.getMinimumBidStep());
-        if (autoBidAmount.compareTo(activeWinningAutobid.getMaxBidAmount()) > 0) {
-            autoBidAmount = activeWinningAutobid.getMaxBidAmount();
-        }
+        BigDecimal autoBidAmount = calculateAutoBidAmount(
+            manualAmount,
+            activeWinningAutobid.getMaxBidAmount(),
+            auction.getMinimumBidStep()
+        );
         BidResolution.Builder resolution = BidResolution
             .rejected(auctionId, "Someone has already placed a higher maximum bid.");
 
-        currentWinningBid.ifPresent(oldBid -> resolution.addBidStatusUpdate(new BidStatusUpdate(
-            oldBid.getId(),
+        Bid oldWinningBid = requireWinningBidForAutobid(currentWinningBid, activeWinningAutobid);
+        resolution.addBidStatusUpdate(new BidStatusUpdate(
+            oldWinningBid.getId(),
             BidStatus.OUTBID
-        )));
+        ));
 
         resolution.addBidCreate(new BidCreate(
             BidSource.AUTO_BID,
@@ -327,6 +363,236 @@ public class AuctionBidEngine {
         return resolution.build();
     }
 
+    public BidResolution resolveRegisterAutobid(
+            Auction auction,
+            Optional<Bid> currentWinningBid,
+            Optional<Autobid> winningAutobid,
+            RegisterAutobidCommand command) {
+
+        long auctionId = auction.getId();
+        long userId = command.getUserId();
+        BigDecimal maxBidAmount = command.getMaxBidAmount();
+        
+        /*
+        1. Nếu không có winning AutoBid
+        */
+        if (winningAutobid.isEmpty()) {
+            ///giá autobid sẽ đặt khi đăng kí, không phải là maxbid Amount
+            ///service phải đảm bảo trước là maxbid amount phải > current price + min step
+            BigDecimal autoBidAmount = currentWinningBid.isEmpty()
+                ? auction.getStartPrice()
+                : auction.getCurrentPrice().add(auction.getMinimumBidStep());
+
+            if (autoBidAmount.compareTo(maxBidAmount) > 0) {
+                autoBidAmount = maxBidAmount;
+            }
+
+            BidResolution.Builder resolution = BidResolution.accepted(auctionId);
+
+            currentWinningBid.ifPresent(oldBid -> {
+                resolution.addBidStatusUpdate(new BidStatusUpdate(
+                    oldBid.getId(),
+                    BidStatus.OUTBID
+                ));
+                resolution.addBalanceChange(new BalanceChange(
+                    oldBid.getBidderId(),
+                    oldBid.getBidAmount(),
+                    BalanceChangeType.RELEASE,
+                    "OUTBID_RELEASE"
+                ));
+            });
+
+            resolution.addBalanceChange(new BalanceChange(
+                userId,
+                maxBidAmount,
+                BalanceChangeType.HOLD,
+                "AUTOBID_HOLD"
+            ));
+
+            resolution.addAutobidCreate(new AutobidCreate(
+                auctionId,
+                userId,
+                maxBidAmount,
+                AutobidStatus.WINNING,
+                command.getRegisteredAt(),
+                command.getRegisteredAt()
+            ));
+
+            resolution.addBidCreate(new BidCreate(
+                BidSource.AUTO_BID,
+                auctionId,
+                userId,
+                autoBidAmount,
+                BidStatus.WINNING
+            ));
+
+            addAuctionChangesForWinningBid(
+                resolution,
+                auction,
+                userId,
+                autoBidAmount,
+                command.getRegisteredAt()
+            );
+
+            return resolution.build();
+        }
+
+        Autobid activeWinningAutobid = winningAutobid.get();
+        ///2. nếu userId == winningAutobid thì cái này phải check ở service nó phải vào hàm update chứ không được hiện đăng kí nữa
+        if (activeWinningAutobid.getUserId() == userId) {
+            return BidResolution
+                .rejected(auctionId, "You are already the winning AutoBid user")
+                .build();
+        }
+        /*
+        3. Nếu có winning AutoBid mà user đăng kí AutoBid mới có maxBidAmount > maxBidAmount của winning AutoBid:
+         *    - AutoBid mới thắng AutoBid cũ.
+         *    - AutoBid cũ LOST.
+         *    - Nếu currentWinningBid là của winning AutoBid user thì KHÔNG release bidAmount,
+         *      vì AutoBid đã release maxBidAmount ở bước 1.
+         *    - Release maxBidAmount của AutoBid cũ.
+         *    - Hold maxBidAmount của AutoBid mới.
+        */
+        if (maxBidAmount.compareTo(activeWinningAutobid.getMaxBidAmount()) > 0) {
+            BigDecimal autoBidAmount = calculateAutoBidAmount(
+                activeWinningAutobid.getMaxBidAmount(),
+                maxBidAmount,
+                auction.getMinimumBidStep()
+            );
+
+            BidResolution.Builder resolution = BidResolution.accepted(auctionId);
+            
+            Bid oldWinningBid = requireWinningBidForAutobid(currentWinningBid, activeWinningAutobid);
+
+            resolution.addBidStatusUpdate(new BidStatusUpdate(
+                oldWinningBid.getId(),
+                BidStatus.OUTBID
+            ));
+
+            resolution.addAutobidStatusChange(new AutobidStatusChange(
+                activeWinningAutobid.getId(),
+                AutobidStatus.LOST
+            ));
+
+            resolution.addBalanceChange(new BalanceChange(
+                activeWinningAutobid.getUserId(),
+                activeWinningAutobid.getMaxBidAmount(),
+                BalanceChangeType.RELEASE,
+                "AUTOBID_LOST_RELEASE"
+            ));
+
+            resolution.addBalanceChange(new BalanceChange(
+                userId,
+                maxBidAmount,
+                BalanceChangeType.HOLD,
+                "AUTOBID_HOLD"
+            ));
+
+            resolution.addAutobidCreate(new AutobidCreate(
+                auctionId,
+                userId,
+                maxBidAmount,
+                AutobidStatus.WINNING,
+                command.getRegisteredAt(),
+                command.getRegisteredAt()
+            ));
+
+            resolution.addBidCreate(new BidCreate(
+                BidSource.AUTO_BID,
+                auctionId,
+                userId,
+                autoBidAmount,
+                BidStatus.WINNING
+            ));
+
+            addAuctionChangesForWinningBid(
+                resolution,
+                auction,
+                userId,
+                autoBidAmount,
+                command.getRegisteredAt()
+            );
+
+            return resolution.build();
+        }
+
+        BigDecimal autoBidAmount = calculateAutoBidAmount(
+            maxBidAmount,
+            activeWinningAutobid.getMaxBidAmount(),
+            auction.getMinimumBidStep()
+        );
+
+        BidResolution.Builder resolution = BidResolution
+            .rejected(auctionId, "Someone has already placed a higher maximum bid.");
+
+        Bid oldWinningBid = requireWinningBidForAutobid(currentWinningBid, activeWinningAutobid);
+        resolution.addBidStatusUpdate(new BidStatusUpdate(
+            oldWinningBid.getId(),
+            BidStatus.OUTBID
+        ));
+
+        resolution.addBidCreate(new BidCreate(
+            BidSource.AUTO_BID,
+            auctionId,
+            activeWinningAutobid.getUserId(),
+            autoBidAmount,
+            BidStatus.WINNING
+        ));
+
+        addAuctionChangesForWinningBid(
+            resolution,
+            auction,
+            activeWinningAutobid.getUserId(),
+            autoBidAmount,
+            command.getRegisteredAt()
+        );
+
+        return resolution.build();
+    }
+    
+    public BidResolution resolveIncreaseMaxAutobidAmount(
+            Auction auction,
+            Autobid existingAutobid,
+            IncreaseAutobidCommand command) {
+
+        long auctionId = auction.getId();
+        BigDecimal oldMaxBidAmount = existingAutobid.getMaxBidAmount();
+        BigDecimal newMaxBidAmount = command.getNewMaxBidAmount();
+        ///bảo hiểm nếu UI check ngu 
+        if (existingAutobid.getUserId() != command.getUserId()) {
+            throw new IllegalStateException("AutoBid does not belong to requester");
+        }
+
+        if (existingAutobid.getStatus() != AutobidStatus.WINNING) {
+            return BidResolution
+                .rejected(auctionId, "Only winning AutoBid can be increased")
+                .build();
+        }
+
+        if (newMaxBidAmount.compareTo(oldMaxBidAmount) <= 0) {
+            return BidResolution
+                .rejected(auctionId, "New AutoBid max must be greater than current max")
+                .build();
+        }
+
+        BigDecimal delta = newMaxBidAmount.subtract(oldMaxBidAmount);
+
+        BidResolution.Builder resolution = BidResolution.accepted(auctionId);
+
+        resolution.addBalanceChange(new BalanceChange(
+            command.getUserId(),
+            delta,
+            BalanceChangeType.HOLD,
+            "AUTOBID_INCREASE_HOLD"
+        ));
+
+        resolution.addAutobidMaxBidUpdate(new AutobidMaxBidUpdate(
+            existingAutobid.getId(),
+            newMaxBidAmount
+        ));
+
+        return resolution.build();
+    }
 
     
 }

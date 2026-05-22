@@ -26,6 +26,7 @@ public class Auction {
     private long version;
 
     // Constructor create new auction
+    //rule đang cho current price = starting price khi tạo auction, vì current price sẽ chỉ thay đổi khi có bid, còn starting price là giá khởi điểm của auction
     public Auction(
             long productId,
             long sellerId,

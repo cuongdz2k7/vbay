@@ -1,9 +1,11 @@
 package com.vbay.server.realtime.handler;
 
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
+import com.vbay.server.realtime.domain.AutobidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.DomainEvent;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
 import com.vbay.server.realtime.transport.RealtimeBroadcaster;
+import com.vbay.server.service.result.AutobidUpdateResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 
 public class AuctionClosedRealtimeHandler extends AbstractRealtimeHandler implements DomainEventHandler {
@@ -25,6 +27,9 @@ public class AuctionClosedRealtimeHandler extends AbstractRealtimeHandler implem
         broadcaster.broadcast(mapper.toAuctionStateEvent(closedEvent));
         for (UserMyBidListItemResult item : closedEvent.getResult().getAffectedMyBidItems()) {
             broadcaster.broadcast(mapper.toMyBidListItemUpdatedEvent(item));
+        }
+        for (AutobidUpdateResult item : closedEvent.getResult().getAffectedAutobids()) {
+            broadcaster.broadcast(mapper.toAutobidUpdatedEvent(new AutobidUpdatedDomainEvent(item)));
         }
     }
 }

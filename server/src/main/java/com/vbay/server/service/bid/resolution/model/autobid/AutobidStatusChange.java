@@ -1,6 +1,6 @@
 package com.vbay.server.service.bid.resolution.model.autobid;
 
-import com.vbay.server.service.bid.autobid.enums.AutobidStatus;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 
 public class AutobidStatusChange {
     private final long autobidId;

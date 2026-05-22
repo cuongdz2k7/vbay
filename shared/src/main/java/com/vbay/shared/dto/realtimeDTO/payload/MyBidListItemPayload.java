@@ -15,11 +15,15 @@ public class MyBidListItemPayload {
     private String thumbnailUrl;
     private BigDecimal currentPrice;
     private String auctionStatus;
+
     private BigDecimal myBidAmount;
+    private BigDecimal myMaxBidAmount;
+
     private BidStatus bidStatus;
     private BidSource bidSource;
     private LocalDateTime bidTime;
 
+    
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
@@ -36,6 +40,7 @@ public class MyBidListItemPayload {
             BigDecimal currentPrice,
             String auctionStatus,
             BigDecimal myBidAmount,
+            BigDecimal myMaxBidAmount,
             BidStatus bidStatus,
             BidSource bidSource,
             LocalDateTime bidTime,
@@ -50,6 +55,7 @@ public class MyBidListItemPayload {
         this.currentPrice = currentPrice;
         this.auctionStatus = auctionStatus;
         this.myBidAmount = myBidAmount;
+        this.myMaxBidAmount = myMaxBidAmount;
         this.bidStatus = bidStatus;
         this.bidSource = bidSource;
         this.bidTime = bidTime;
@@ -119,6 +125,14 @@ public class MyBidListItemPayload {
 
     public void setMyBidAmount(BigDecimal myBidAmount) {
         this.myBidAmount = myBidAmount;
+    }
+
+    public BigDecimal getMyMaxBidAmount() {
+        return myMaxBidAmount;
+    }
+
+    public void setMyMaxBidAmount(BigDecimal myMaxBidAmount) {
+        this.myMaxBidAmount = myMaxBidAmount;
     }
 
     public BidStatus getBidStatus() {
