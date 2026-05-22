@@ -194,17 +194,37 @@
                                         <ColumnConstraints percentWidth="50"/>
                                         <ColumnConstraints percentWidth="50"/>
                                     </columnConstraints>
-                                    <VBox spacing="8" GridPane.columnIndex="0">
+                                    <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="0" GridPane.hgrow="ALWAYS">
                                         <Label text="COMMENCEMENT" styleClass="mini-label"/>
                                         <DatePicker fx:id="startingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
-                                        <TextField fx:id="startingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
+                                        <HBox alignment="CENTER" maxWidth="Infinity" spacing="8" styleClass="time-segment-row">
+                                            <TextField fx:id="startingHourField" promptText="HH" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="time-segment-input"/>
+                                            <Label text=":" styleClass="time-separator"/>
+                                            <TextField fx:id="startingMinuteField" promptText="mm" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="time-segment-input"/>
+                                            <Label text=":" styleClass="time-separator"/>
+                                            <TextField fx:id="startingSecondField" promptText="ss" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="time-segment-input"/>
+                                        </HBox>
                                     </VBox>
-                                    <VBox spacing="8" GridPane.columnIndex="1">
-                                        <Label text="TERMINATION" styleClass="mini-label"/>
-                                        <DatePicker fx:id="endingDatePicker" maxWidth="Infinity" promptText="mm/dd/yyyy" styleClass="date-input"/>
-                                        <TextField fx:id="endingTimeField" promptText="HH:mm:ss" styleClass="line-input"/>
+                                    <VBox spacing="8" minWidth="0" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS">
+                                        <Label text="AUCTION TYPE &amp; DURATION" styleClass="mini-label"/>
+                                        <HBox alignment="CENTER_LEFT" maxWidth="Infinity" spacing="10" styleClass="auction-mode-row">
+                                            <Button fx:id="quickAuctionTabButton" text="⚡ Quick Auction" onAction="#handleQuickAuctionMode" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                                                <styleClass>
+                                                    <String fx:value="tab-label"/>
+                                                    <String fx:value="auction-duration-tab"/>
+                                                </styleClass>
+                                            </Button>
+                                            <Button fx:id="standardAuctionTabButton" text="Standard Auction" onAction="#handleStandardAuctionMode" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                                                <styleClass>
+                                                    <String fx:value="tab-label"/>
+                                                    <String fx:value="auction-duration-tab"/>
+                                                </styleClass>
+                                            </Button>
+                                        </HBox>
+                                        <ComboBox fx:id="durationPresetComboBox" maxWidth="Infinity" promptText="Choose fast duration" styleClass="duration-combo"/>
                                     </VBox>
                                 </GridPane>
+                                <Label fx:id="durationPreviewLabel" maxWidth="Infinity" text="Set start time and duration to preview ending time." styleClass="duration-preview"/>
                             </VBox>
 
                             <Region VBox.vgrow="ALWAYS"/>

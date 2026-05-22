@@ -14,6 +14,7 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
 import com.vbay.server.service.UserAccountService;
+import com.vbay.server.service.bid.AutobidService;
 import com.vbay.server.service.bid.BidQueryService;
 import com.vbay.server.service.bid.BuyNowService;
 import com.vbay.server.service.bid.ManualBidService;
@@ -44,6 +45,7 @@ public class RequestDistributor {
     private final AuthService authService;
     private final AuctionService auctionService;
     private final ManualBidService bidService;
+    private final AutobidService autobidService;
     private final BuyNowService buyNowService;
     private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
@@ -54,6 +56,7 @@ public class RequestDistributor {
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
                                 ManualBidService bidService, 
+                                AutobidService autobidService,
                                 BuyNowService buyNowService,
                                 BidQueryService bidQueryService,
                                 UserAccountService userAccountService,
@@ -62,6 +65,7 @@ public class RequestDistributor {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.autobidService = autobidService;
         this.buyNowService = buyNowService;
         this.bidQueryService = bidQueryService;
         this.userAccountService = userAccountService;
@@ -115,6 +119,7 @@ public class RequestDistributor {
                 case GET_MY_BID_LIST -> handleGetMyBidList(requestId, session);
                 case PLACE_BID -> handlePlaceBid(requestId, payload, session);
                 case AUTO_BID -> handleAutoBid(requestId, payload, session);
+                case INCREASE_AUTOBID_MAX -> handleIncreaseAutobidMax(requestId, payload, session);
                 case BUY_NOW -> handleBuyNow(requestId, payload, session);
                 case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
@@ -273,6 +278,58 @@ public class RequestDistributor {
         }
         bidService.placeBid(placeBidRequest, session);
         return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
+
+    private Respond<AutobidRegistrationResult> handleAutoBid(
+            String requestId,
+            JsonElement payload,
+            ClientSession session) throws SQLException {
+        if (payload == null || !payload.isJsonObject()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
+
+        JsonObject object = payload.getAsJsonObject();
+        JsonElement auctionIdElement = object.get("auctionId");
+        JsonElement maxBidAmountElement = object.get("maxBidAmount");
+        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            maxBidAmountElement = object.get("bidAmount");
+        }
+
+        if (auctionIdElement == null || auctionIdElement.isJsonNull()
+                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
+
+        long auctionId = auctionIdElement.getAsLong();
+        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
+        AutobidRegistrationResult result = autobidService.registerAutobid(auctionId, maxBidAmount, session);
+        return new Respond<>(requestId, true, "AutoBid subscribed successfully", result);
+    }
+
+    private Respond<Void> handleIncreaseAutobidMax(
+            String requestId,
+            JsonElement payload,
+            ClientSession session) throws SQLException {
+        if (payload == null || !payload.isJsonObject()) {
+            return new Respond<>(requestId, false, "Invalid increase auto bid request", null);
+        }
+
+        JsonObject object = payload.getAsJsonObject();
+        JsonElement auctionIdElement = object.get("auctionId");
+        JsonElement maxBidAmountElement = object.get("maxBidAmount");
+        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            maxBidAmountElement = object.get("bidAmount");
+        }
+
+        if (auctionIdElement == null || auctionIdElement.isJsonNull()
+                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            return new Respond<>(requestId, false, "Invalid increase auto bid request", null);
+        }
+
+        long auctionId = auctionIdElement.getAsLong();
+        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
+        autobidService.increaseMaxAutobidAmount(auctionId, maxBidAmount, session);
+        return new Respond<>(requestId, true, "AutoBid max increased successfully", null);
     }
 
     private Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {

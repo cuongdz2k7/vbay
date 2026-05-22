@@ -28,6 +28,7 @@ public enum RequestType {
     PLACE_BID,
     BUY_NOW,
     AUTO_BID,
+    INCREASE_AUTOBID_MAX,
     CANCEL_BID,
     WATCH_AUCTION,
     QUIT_AUCTION,

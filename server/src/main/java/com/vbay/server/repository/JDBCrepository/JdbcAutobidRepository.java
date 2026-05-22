@@ -6,6 +6,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.vbay.server.exception.ValidationException;
@@ -72,6 +76,37 @@ public class JdbcAutobidRepository implements AutobidRepository {
                 }
                 return Optional.of(mapAutobid(rs));
             }
+        }
+    }
+
+    @Override
+    public Map<Long, Autobid> findByAuctionIdsAndUserId(List<Long> auctionIds, long userId) throws SQLException {
+        if (auctionIds == null || auctionIds.isEmpty()) {
+            return Map.of();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(auctionIds.size(), "?"));
+        String sql = """
+            SELECT id, auction_id, user_id, max_bid_amount, status, created_at, updated_at
+            FROM autobids
+            WHERE user_id = ?
+            AND auction_id IN (%s)
+            """.formatted(placeholders);
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            for (int i = 0; i < auctionIds.size(); i++) {
+                statement.setLong(i + 2, auctionIds.get(i));
+            }
+
+            Map<Long, Autobid> autobidsByAuctionId = new HashMap<>();
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    Autobid autobid = mapAutobid(rs);
+                    autobidsByAuctionId.put(autobid.getAuctionId(), autobid);
+                }
+            }
+            return autobidsByAuctionId;
         }
     }
 

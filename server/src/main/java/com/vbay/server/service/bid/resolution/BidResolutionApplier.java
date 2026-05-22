@@ -5,7 +5,9 @@ import java.sql.SQLException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.Auction;
@@ -67,6 +69,7 @@ public class BidResolutionApplier {
                 vì tiền không còn là “đặt cọc có thể release do outbid” nữa. Nó chuyển sang payment HELD.
         */
 
+        Map<Long, String> affectedBalanceReasons = new LinkedHashMap<>();
         for (BalanceChange change : resolution.getBalanceChanges()) {
             if (change.getAmount() == null || change.getAmount().signum() <= 0) {
                 throw new ValidationException("Balance change amount must be positive");
@@ -79,10 +82,14 @@ public class BidResolutionApplier {
                 default -> throw new ValidationException("Unknown balance change type");
             }
 
+            affectedBalanceReasons.put(change.getUserId(), change.getReason());
+        }
+
+        for (Map.Entry<Long, String> entry : affectedBalanceReasons.entrySet()) {
             balanceResults.add(readUserBalanceResult(
                 userRepository,
-                change.getUserId(),
-                change.getReason(),
+                entry.getKey(),
+                entry.getValue(),
                 dbNow
             ));
         }

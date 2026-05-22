@@ -1,11 +1,11 @@
 package com.vbay.ui.scene_ui.controller.bid;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,14 +19,12 @@ import com.vbay.network.SocketClient;
 import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventDispatcher;
 import com.vbay.network.dispatcher.RealtimeEventListener;
-import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
-import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
-import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
-import com.vbay.shared.protocol.Request;
 import com.vbay.ui.util.ProductImageLoader;
 
 import javafx.animation.KeyFrame;
@@ -42,6 +40,7 @@ import javafx.scene.control.OverrunStyle;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
@@ -49,6 +48,9 @@ import javafx.scene.shape.Rectangle;
 public class MyBidController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
     private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter OTHER_YEAR_BID_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US);
     private static final String DEFAULT_IMAGE = "/jfx/image/products/collectibles.png";
     private static final String FILTER_ALL = "All Statuses";
     private static final String FILTER_WINNING = "Winning";
@@ -66,7 +68,9 @@ public class MyBidController {
 
     private final Map<Long, MyBidListItemPayload> bidItemsByAuctionId = new LinkedHashMap<>();
     private final Map<Long, Label> timeLabels = new HashMap<>();
+    private final Map<Long, Label> bidTimeLabels = new HashMap<>();
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
+    private RealtimeEventListener<AutobidUpdatedPayload> autobidUpdatedListener;
     private Timeline timeUpdater;
     private LongConsumer onAuctionSelected;
     private boolean disposed;
@@ -76,7 +80,6 @@ public class MyBidController {
         disposed = false;
         statusFilterComboBox.setValue(FILTER_ALL);
         statusFilterComboBox.setOnAction(event -> renderRows());
-        subscribeUserRoom();
         subscribeRealtime();
         startTimeUpdater();
     }
@@ -90,6 +93,7 @@ public class MyBidController {
         stopTimeUpdater();
         bidItemsByAuctionId.clear();
         timeLabels.clear();
+        bidTimeLabels.clear();
         if (rowsBox != null) {
             rowsBox.getChildren().clear();
         }
@@ -106,6 +110,13 @@ public class MyBidController {
                 myBidListener
             );
             myBidListener = null;
+        }
+        if (autobidUpdatedListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.AUTOBID_UPDATED,
+                autobidUpdatedListener
+            );
+            autobidUpdatedListener = null;
         }
         onAuctionSelected = null;
     }
@@ -126,22 +137,8 @@ public class MyBidController {
         myBidListener = this::handleMyBidUpdated;
         RealtimeEventDispatcher dispatcher = SocketClient.getClient().getRealtimeEventDispatcher();
         dispatcher.subscribe(RealtimeEventType.MY_BID_LIST_ITEM_UPDATED, myBidListener);
-    }
-
-    private void subscribeUserRoom() {
-        Long currentUserId = UserData.getUserId();
-        if (currentUserId == null) {
-            return;
-        }
-
-        Room userRoom = new Room();
-        userRoom.setType(RoomType.USER);
-        userRoom.setTargetId(currentUserId);
-        try {
-            SocketClient.getClient().sendMessage(new Request<>(RequestType.SUBSCRIBE_ROOM, userRoom));
-        } catch (IOException exception) {
-            exception.printStackTrace();
-        }
+        autobidUpdatedListener = this::handleAutobidUpdated;
+        dispatcher.subscribe(RealtimeEventType.AUTOBID_UPDATED, autobidUpdatedListener);
     }
 
     private void handleMyBidUpdated(RealtimeEvent<MyBidListItemPayload> event) {
@@ -159,6 +156,22 @@ public class MyBidController {
         });
     }
 
+    private void handleAutobidUpdated(RealtimeEvent<AutobidUpdatedPayload> event) {
+        AutobidUpdatedPayload payload = event.getPayload();
+        Long currentUserId = UserData.getUserId();
+        if (payload == null || currentUserId == null || payload.getUserId() != currentUserId) {
+            return;
+        }
+        Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
+            if (mergeAutobidUpdate(payload)) {
+                renderRows();
+            }
+        });
+    }
+
     private boolean mergeBidItem(MyBidListItemPayload item) {
         if (item == null) {
             return false;
@@ -169,6 +182,38 @@ public class MyBidController {
         }
         bidItemsByAuctionId.put(item.getAuctionId(), item);
         return true;
+    }
+
+    private boolean mergeAutobidUpdate(AutobidUpdatedPayload payload) {
+        MyBidListItemPayload existing = bidItemsByAuctionId.get(payload.getAuctionId());
+        if (existing == null || isStaleAutobidUpdate(payload, existing)) {
+            return false;
+        }
+        existing.setBidSource(BidSource.AUTO_BID);
+        existing.setMyMaxBidAmount(payload.isShowActiveMaxBid() ? payload.getMaxBidAmount() : null);
+        BidStatus bidStatus = bidStatusFromAutobidStatus(payload.getAutobidStatus());
+        if (bidStatus != null) {
+            existing.setBidStatus(bidStatus);
+        }
+        existing.setUpdatedAt(payload.getUpdatedAt());
+        return true;
+    }
+
+    private boolean isStaleAutobidUpdate(AutobidUpdatedPayload payload, MyBidListItemPayload existing) {
+        return payload.getUpdatedAt() != null
+            && existing.getUpdatedAt() != null
+            && !payload.getUpdatedAt().isAfter(existing.getUpdatedAt());
+    }
+
+    private BidStatus bidStatusFromAutobidStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return BidStatus.valueOf(status);
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private boolean isStaleItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
@@ -188,6 +233,7 @@ public class MyBidController {
     private void renderRows() {
         rowsBox.getChildren().clear();
         timeLabels.clear();
+        bidTimeLabels.clear();
         List<MyBidListItemPayload> visibleItems = filteredItems();
 
         boolean empty = visibleItems.isEmpty();
@@ -226,6 +272,7 @@ public class MyBidController {
         HBox row = new HBox();
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("my-bid-row");
+        row.setFillHeight(true);
         row.setFocusTraversable(true);
         row.setCursor(Cursor.HAND);
         row.setOnMouseClicked(event -> openAuction(item));
@@ -238,10 +285,11 @@ public class MyBidController {
 
         row.getChildren().add(productCell(item));
         row.getChildren().add(priceLabel(formatCurrency(item.getCurrentPrice()), "my-bid-price", "my-bid-col-price"));
-        row.getChildren().add(priceLabel(formatCurrency(item.getMyBidAmount()), "my-bid-muted-price", "my-bid-col-price"));
-        row.getChildren().add(statusCell(item));
+        row.getChildren().add(priceLabel(formatCurrency(displayBidAmount(item)), "my-bid-muted-price", "my-bid-col-price"));
+        row.getChildren().add(bidTimeLabel(item));
         row.getChildren().add(timeLabel(item));
-        row.getChildren().add(priceLabel(sourceText(item), "my-bid-source", "my-bid-col-source"));
+        row.getChildren().add(priceLabel(sourceText(item), sourceStyle(item), "my-bid-col-source"));
+        row.getChildren().add(statusCell(item));
         return row;
     }
 
@@ -249,13 +297,14 @@ public class MyBidController {
         HBox cell = new HBox(16);
         cell.setAlignment(Pos.CENTER_LEFT);
         cell.getStyleClass().add("my-bid-col-product");
+        HBox.setHgrow(cell, Priority.ALWAYS);
 
         StackPane imageFrame = new StackPane();
         imageFrame.getStyleClass().add("my-bid-product-image-frame");
         ImageView imageView = new ImageView();
-        imageView.setFitWidth(42);
-        imageView.setFitHeight(42);
-        Rectangle clip = new Rectangle(42, 42);
+        imageView.setFitWidth(40);
+        imageView.setFitHeight(40);
+        Rectangle clip = new Rectangle(40, 40);
         clip.setArcWidth(8);
         clip.setArcHeight(8);
         imageView.setClip(clip);
@@ -279,7 +328,9 @@ public class MyBidController {
 
     private Node statusCell(MyBidListItemPayload item) {
         VBox cell = new VBox();
+        cell.setAlignment(Pos.CENTER);
         cell.getStyleClass().add("my-bid-col-status");
+        HBox.setHgrow(cell, Priority.ALWAYS);
 
         Label status = new Label(statusText(item));
         status.getStyleClass().add(statusStyle(item));
@@ -293,9 +344,17 @@ public class MyBidController {
         return label;
     }
 
+    private Label bidTimeLabel(MyBidListItemPayload item) {
+        Label label = priceLabel(formatBidAge(item.getBidTime()), "my-bid-bid-time", "my-bid-col-bid-time");
+        bidTimeLabels.put(item.getAuctionId(), label);
+        return label;
+    }
+
     private Label priceLabel(String text, String textStyle, String columnStyle) {
         Label label = new Label(text);
         label.getStyleClass().addAll(textStyle, columnStyle);
+        label.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(label, Priority.ALWAYS);
         return label;
     }
 
@@ -320,6 +379,50 @@ public class MyBidController {
             return "Auto Bid";
         }
         return "Manual";
+    }
+
+    private String sourceStyle(MyBidListItemPayload item) {
+        return item.getBidSource() == BidSource.AUTO_BID
+            ? "my-bid-source-auto"
+            : "my-bid-source";
+    }
+
+    private BigDecimal displayBidAmount(MyBidListItemPayload item) {
+        if (item.getBidSource() == BidSource.AUTO_BID
+                && "WINNING".equals(statusText(item))
+                && item.getMyMaxBidAmount() != null) {
+            return item.getMyMaxBidAmount();
+        }
+        return item.getMyBidAmount();
+    }
+
+    private String formatBidAge(LocalDateTime bidTime) {
+        if (bidTime == null) {
+            return "-";
+        }
+        Duration elapsed = Duration.between(bidTime, LocalDateTime.now(UTC_ZONE));
+        if (elapsed.isNegative()) {
+            elapsed = Duration.ZERO;
+        }
+        long seconds = elapsed.getSeconds();
+        if (seconds < 60) {
+            return "Just now";
+        }
+        if (seconds < 3600) {
+            long minutes = seconds / 60;
+            long remainingSeconds = seconds % 60;
+            return String.format("%02dm %02ds", minutes, remainingSeconds);
+        }
+        if (seconds < 86400) {
+            long hours = seconds / 3600;
+            long minutes = (seconds % 3600) / 60;
+            return String.format("%02dh %02dm", hours, minutes);
+        }
+        LocalDateTime displayTime = bidTime
+            .atZone(UTC_ZONE)
+            .withZoneSameInstant(VIETNAM_ZONE)
+            .toLocalDateTime();
+        return displayTime.format(OTHER_YEAR_BID_TIME_FORMATTER);
     }
 
     private String formatTimeLeft(MyBidListItemPayload item) {
@@ -349,6 +452,14 @@ public class MyBidController {
     }
 
     private void updateTimeLabels() {
+        for (Map.Entry<Long, Label> entry : bidTimeLabels.entrySet()) {
+            MyBidListItemPayload item = bidItemsByAuctionId.get(entry.getKey());
+            Label label = entry.getValue();
+            if (item == null || label == null) {
+                continue;
+            }
+            label.setText(formatBidAge(item.getBidTime()));
+        }
         for (Map.Entry<Long, Label> entry : timeLabels.entrySet()) {
             MyBidListItemPayload item = bidItemsByAuctionId.get(entry.getKey());
             Label label = entry.getValue();

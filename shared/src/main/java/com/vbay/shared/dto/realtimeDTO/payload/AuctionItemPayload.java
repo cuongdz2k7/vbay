@@ -26,6 +26,7 @@ public class AuctionItemPayload {
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
+    private ViewerAuctionBidStatePayload viewerBidState;
 
     public AuctionItemPayload() {
     }
@@ -117,4 +118,6 @@ public class AuctionItemPayload {
     public void setEndingTime(LocalDateTime endingTime) { this.endingTime = endingTime; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public ViewerAuctionBidStatePayload getViewerBidState() { return viewerBidState; }
+    public void setViewerBidState(ViewerAuctionBidStatePayload viewerBidState) { this.viewerBidState = viewerBidState; }
 }

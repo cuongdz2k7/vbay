@@ -20,6 +20,7 @@ import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.AuctionStateChangeReason;
@@ -126,6 +127,8 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Button buyNowButton;
     @FXML
+    private Button proxyBidButton;
+    @FXML
     private VBox bidInfoPanel;
     @FXML
     private Label bidInfoStatusLabel;
@@ -171,6 +174,26 @@ public class BidController implements SceneDataReceiver<Auction> {
     private HBox productInfoContent;
     @FXML
     private VBox historySection;
+    @FXML
+    private StackPane proxyBidOverlay;
+    @FXML
+    private Label proxyBidTitleLabel;
+    @FXML
+    private Label proxyCurrentBidLabel;
+    @FXML
+    private Label proxyMinimumTextLabel;
+    @FXML
+    private Label proxyMinimumLabel;
+    @FXML
+    private HBox proxyCurrentMaxRow;
+    @FXML
+    private Label proxyCurrentMaxLabel;
+    @FXML
+    private TextField proxyBidAmountField;
+    @FXML
+    private Label proxyHintLabel;
+    @FXML
+    private Button proxyConfirmButton;
 
     private Auction currentAuction;
     private BigDecimal nextMinimumBid = BigDecimal.ZERO;
@@ -180,12 +203,26 @@ public class BidController implements SceneDataReceiver<Auction> {
     private Timeline timeUpdater;
     private RealtimeEventListener<AuctionStatePayload> auctionStateListener;
     private RealtimeEventListener<BidHistoryItemPayload> bidHistoryListener;
+    private RealtimeEventListener<AutobidUpdatedPayload> autobidUpdatedListener;
     private Long subscribedAuctionId;
+    private Long viewerAutobidId;
+    private BigDecimal viewerMaxBidAmount;
+    private String viewerAutobidStatus;
+    private boolean viewerAutobidWinning;
+    private boolean viewerShowActiveMaxBid;
+    private LocalDateTime viewerBidStateUpdatedAt;
+    private ProxyBidMode proxyBidMode = ProxyBidMode.REGISTER;
+
+    private enum ProxyBidMode {
+        REGISTER,
+        INCREASE
+    }
 
     ///không gộp vì lúc initialize thì chưa có auction data
     @FXML
     private void initialize() {
         MoneyInput.install(bidAmountField);
+        MoneyInput.install(proxyBidAmountField);
         titleLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
         applyRoundedClip(productImageView, 560, 352, 14);
         applyRoundedClip(thumbnailOneImageView, 128, 82, 10);
@@ -194,6 +231,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         applyRoundedClip(thumbnailFourImageView, 128, 82, 10);
         selectTab(productInfoTabButton, true);
         setNodeVisibility(bidInfoPanel, false);
+        setNodeVisibility(proxyBidOverlay, false);
     }
 
     private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
@@ -211,6 +249,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         disposeRealtime();
         currentAuction = data;
+        applyViewerBidState(data);
         renderAuction(data);
         subscribeAuctionRoom(data.getId());
         subscribeAuctionRealtimeListeners();
@@ -273,6 +312,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         currentImageUrls = List.of();
         currentAuction = null;
         nextMinimumBid = BigDecimal.ZERO;
+        clearViewerBidState();
+        setNodeVisibility(proxyBidOverlay, false);
         onBack = null;
     }
 
@@ -329,7 +370,48 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     @FXML
     private void handleProxyBid(ActionEvent event) {
-        NotificationManager.show(NotificationManager.NotificationType.INFO, "Proxy bid", "Proxy bidding flow is not connected yet.");
+        if (!canCurrentUserBid(currentAuction)) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy bid unavailable", proxyUnavailableMessage());
+            return;
+        }
+        if (hasActiveWinningAutobid()) {
+            openIncreaseProxyBidModal();
+        } else {
+            openRegisterProxyBidModal();
+        }
+    }
+
+    @FXML
+    private void handleProxyBidCancel(ActionEvent event) {
+        closeProxyBidModal();
+    }
+
+    @FXML
+    private void handleProxyBidConfirm(ActionEvent event) {
+        if (currentAuction == null) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded.");
+            return;
+        }
+
+        BigDecimal maxBidAmount;
+        try {
+            maxBidAmount = MoneyInput.parseRequired(proxyBidAmountField, "Max proxy bid");
+        } catch (IllegalArgumentException exception) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", exception.getMessage());
+            proxyBidAmountField.requestFocus();
+            return;
+        }
+
+        if (!validateProxyBidAmount(maxBidAmount)) {
+            proxyBidAmountField.requestFocus();
+            return;
+        }
+
+        if (proxyBidMode == ProxyBidMode.INCREASE) {
+            sendIncreaseProxyBid(maxBidAmount);
+        } else {
+            sendRegisterProxyBid(maxBidAmount);
+        }
     }
 
     @FXML
@@ -425,6 +507,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             currentPrice,
             payload.getWinnerUserId(),
             payload.getReserveMet() == null ? currentAuction.getReserveMet() : payload.getReserveMet(),
+            payload.isAntiSnipeExtended(),
             payload.getStartingTime() == null ? currentAuction.getStartingTime() : payload.getStartingTime(),
             payload.getEndingTime() == null ? currentAuction.getEndingTime() : payload.getEndingTime()
         );
@@ -496,9 +579,11 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         auctionStateListener = this::handleAuctionStateEvent;
         bidHistoryListener = this::handleBidHistoryEvent;
+        autobidUpdatedListener = this::handleAutobidUpdatedEvent;
 
         dispatcher.subscribe(RealtimeEventType.AUCTION_STATE_UPDATED, auctionStateListener);
         dispatcher.subscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
+        dispatcher.subscribe(RealtimeEventType.AUTOBID_UPDATED, autobidUpdatedListener);
     }
 
 
@@ -540,6 +625,10 @@ public class BidController implements SceneDataReceiver<Auction> {
             dispatcher.unsubscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
             bidHistoryListener = null;
         }
+        if (autobidUpdatedListener != null) {
+            dispatcher.unsubscribe(RealtimeEventType.AUTOBID_UPDATED, autobidUpdatedListener);
+            autobidUpdatedListener = null;
+        }
         unsubscribeAuctionRoom();
     }
 
@@ -549,6 +638,7 @@ public class BidController implements SceneDataReceiver<Auction> {
             BigDecimal currentPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             LocalDateTime startingTime,
             LocalDateTime endingTime) {
         return new Auction(
@@ -564,9 +654,16 @@ public class BidController implements SceneDataReceiver<Auction> {
             currentAuction.getBuyNowPrice(),
             winnerUserId,
             reserveMet,
+            antiSnipeExtended || currentAuction.isAntiSnipeExtended(),
             startingTime,
             endingTime,
-            currentAuction.getProduct()
+            currentAuction.getProduct(),
+            viewerAutobidId,
+            viewerMaxBidAmount,
+            viewerAutobidStatus,
+            viewerAutobidWinning,
+            viewerShowActiveMaxBid,
+            viewerBidStateUpdatedAt
         );
     }
 
@@ -574,6 +671,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         bidAmountField.setDisable(!enabled);
         placeBidButton.setDisable(!enabled);
         buyNowButton.setDisable(!enabled || currentAuction == null || currentAuction.getBuyNowPrice() == null);
+        proxyBidButton.setDisable(!enabled);
+        updateProxyBidButton();
     }
 
     private void updateBidPrompt() {
@@ -605,7 +704,11 @@ public class BidController implements SceneDataReceiver<Auction> {
             bidInfoStatusLabel.setText("YOU ARE LEADING");
             bidInfoStatusLabel.getStyleClass().add("bid-info-leading");
             BigDecimal currentCommitment = valueOrZero(auction.getCurrentPrice());
-            bidInfoLockedLabel.setText("Current commitment: " + formatCurrency(currentCommitment));
+            if (viewerShowActiveMaxBid && viewerMaxBidAmount != null) {
+                bidInfoLockedLabel.setText("Your max bid: " + formatCurrency(viewerMaxBidAmount));
+            } else {
+                bidInfoLockedLabel.setText("Current commitment: " + formatCurrency(currentCommitment));
+            }
             setNodeVisibility(bidInfoLockedLabel, true);
             BigDecimal buyNowDelta = valueOrZero(auction.getBuyNowPrice()).subtract(currentCommitment).max(BigDecimal.ZERO);
             bidInfoBuyNowDeltaLabel.setText("Buy now requires: +" + formatCurrency(buyNowDelta));
@@ -723,9 +826,9 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         Duration remainingUntilEnd = Duration.between(now, endingTime);
         if (remainingUntilEnd.compareTo(Duration.ofHours(24)) >= 0) {
-            setTimeLabels("Ends:", formatVietnamTime(endingTime));
+            setTimeLabels(auction.isAntiSnipeExtended() ? "Extended:" : "Ends:", formatVietnamTime(endingTime));
         } else {
-            setTimeLabels("Ends in", formatRemainingDuration(remainingUntilEnd));
+            setTimeLabels(auction.isAntiSnipeExtended() ? "Extended" : "Ends in", formatRemainingDuration(remainingUntilEnd));
         }
     }
 
@@ -921,6 +1024,238 @@ public class BidController implements SceneDataReceiver<Auction> {
         node.setManaged(visible);
     }
 
+    private void applyViewerBidState(Auction auction) {
+        viewerAutobidId = auction.getViewerAutobidId();
+        viewerMaxBidAmount = auction.getViewerMaxBidAmount();
+        viewerAutobidStatus = auction.getViewerAutobidStatus();
+        viewerAutobidWinning = auction.isViewerAutobidWinning();
+        viewerShowActiveMaxBid = auction.isViewerShowActiveMaxBid();
+        viewerBidStateUpdatedAt = auction.getViewerBidStateUpdatedAt();
+    }
+
+    private void clearViewerBidState() {
+        viewerAutobidId = null;
+        viewerMaxBidAmount = null;
+        viewerAutobidStatus = null;
+        viewerAutobidWinning = false;
+        viewerShowActiveMaxBid = false;
+        viewerBidStateUpdatedAt = null;
+        proxyBidMode = ProxyBidMode.REGISTER;
+    }
+
+    private void handleAutobidUpdatedEvent(RealtimeEvent<AutobidUpdatedPayload> event) {
+        AutobidUpdatedPayload payload = event.getPayload();
+        Long currentUserId = UserData.getUserId();
+        if (payload == null
+                || currentAuction == null
+                || currentUserId == null
+                || payload.getAuctionId() != currentAuction.getId()
+                || payload.getUserId() != currentUserId.longValue()
+                || isStaleAutobidPayload(payload)) {
+            return;
+        }
+
+        Platform.runLater(() -> applyAutobidUpdate(payload));
+    }
+
+    private boolean isStaleAutobidPayload(AutobidUpdatedPayload payload) {
+        LocalDateTime updatedAt = payload.getUpdatedAt();
+        return updatedAt != null
+            && viewerBidStateUpdatedAt != null
+            && !updatedAt.isAfter(viewerBidStateUpdatedAt);
+    }
+
+    private void applyAutobidUpdate(AutobidUpdatedPayload payload) {
+        if (currentAuction == null || isStaleAutobidPayload(payload)) {
+            return;
+        }
+        viewerAutobidId = payload.getAutobidId();
+        viewerMaxBidAmount = payload.getMaxBidAmount();
+        viewerAutobidStatus = payload.getAutobidStatus();
+        viewerAutobidWinning = payload.isWinning();
+        viewerShowActiveMaxBid = payload.isShowActiveMaxBid();
+        viewerBidStateUpdatedAt = payload.getUpdatedAt();
+        updateBidInfo(currentAuction);
+        updateProxyBidButton();
+    }
+
+    private void openRegisterProxyBidModal() {
+        if (currentAuction == null) {
+            return;
+        }
+        BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
+        if (buyNowPrice != null && nextMinimumBid.compareTo(buyNowPrice) >= 0) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
+                "Proxy bid unavailable",
+                "The next valid proxy bid has reached the Buy Now price."
+            );
+            return;
+        }
+
+        proxyBidMode = ProxyBidMode.REGISTER;
+        proxyBidTitleLabel.setText("Set Proxy Bid");
+        proxyConfirmButton.setText("SET PROXY BID");
+        proxyCurrentBidLabel.setText(formatCurrency(valueOrZero(currentAuction.getCurrentPrice())));
+        proxyMinimumTextLabel.setText("Minimum proxy bid");
+        proxyMinimumLabel.setText(formatCurrency(nextMinimumBid));
+        proxyBidAmountField.setPromptText("Not lower than " + formatCurrency(nextMinimumBid));
+        proxyHintLabel.setText("We will bid automatically up to your max. Your max bid stays private.");
+        setNodeVisibility(proxyCurrentMaxRow, false);
+        showProxyBidModal();
+    }
+
+    private void openIncreaseProxyBidModal() {
+        if (currentAuction == null || viewerMaxBidAmount == null) {
+            return;
+        }
+        proxyBidMode = ProxyBidMode.INCREASE;
+        proxyBidTitleLabel.setText("Increase Proxy Bid");
+        proxyConfirmButton.setText("INCREASE PROXY BID");
+        proxyCurrentBidLabel.setText(formatCurrency(valueOrZero(currentAuction.getCurrentPrice())));
+        proxyMinimumTextLabel.setText("New max must be higher than");
+        proxyMinimumLabel.setText(formatCurrency(viewerMaxBidAmount));
+        proxyCurrentMaxLabel.setText(formatCurrency(viewerMaxBidAmount));
+        proxyBidAmountField.setPromptText("Higher than " + formatCurrency(viewerMaxBidAmount));
+        proxyHintLabel.setText("Only the extra amount above your current max will be held.");
+        setNodeVisibility(proxyCurrentMaxRow, true);
+        showProxyBidModal();
+    }
+
+    private void showProxyBidModal() {
+        proxyBidAmountField.clear();
+        setNodeVisibility(proxyBidOverlay, true);
+        Platform.runLater(proxyBidAmountField::requestFocus);
+    }
+
+    private void closeProxyBidModal() {
+        proxyBidAmountField.clear();
+        setNodeVisibility(proxyBidOverlay, false);
+    }
+
+    private boolean validateProxyBidAmount(BigDecimal maxBidAmount) {
+        if (maxBidAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", "Max proxy bid must be greater than zero.");
+            return false;
+        }
+
+        BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
+        if (buyNowPrice != null && maxBidAmount.compareTo(buyNowPrice) >= 0) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
+                "Proxy bid too high",
+                "Max proxy bid must be lower than the Buy Now price " + formatCurrency(buyNowPrice) + "."
+            );
+            return false;
+        }
+
+        if (proxyBidMode == ProxyBidMode.INCREASE) {
+            return validateIncreaseProxyBidAmount(maxBidAmount);
+        }
+        return validateRegisterProxyBidAmount(maxBidAmount);
+    }
+
+    private boolean validateRegisterProxyBidAmount(BigDecimal maxBidAmount) {
+        if (maxBidAmount.compareTo(nextMinimumBid) < 0) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
+                "Proxy bid too low",
+                "Minimum proxy bid for this auction is " + formatCurrency(nextMinimumBid) + "."
+            );
+            return false;
+        }
+        if (maxBidAmount.compareTo(buyingPowerForCurrentAuction()) > 0) {
+            showInsufficientBalance(maxBidAmount);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean validateIncreaseProxyBidAmount(BigDecimal maxBidAmount) {
+        if (viewerMaxBidAmount == null) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy bid unavailable", "No active proxy bid was found.");
+            return false;
+        }
+        if (maxBidAmount.compareTo(viewerMaxBidAmount) <= 0) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
+                "Proxy bid too low",
+                "New max proxy bid must be higher than " + formatCurrency(viewerMaxBidAmount) + "."
+            );
+            return false;
+        }
+        BigDecimal requiredDelta = maxBidAmount.subtract(viewerMaxBidAmount);
+        if (requiredDelta.compareTo(availableBalance()) > 0) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING,
+                "Insufficient balance",
+                "Increasing this proxy bid requires " + formatCurrency(requiredDelta)
+                    + ", but your available balance is " + formatCurrency(availableBalance()) + "."
+            );
+            return false;
+        }
+        return true;
+    }
+
+    private void sendRegisterProxyBid(BigDecimal maxBidAmount) {
+        sendProxyBidRequest(RequestType.AUTO_BID, maxBidAmount, "Proxy bid set", "Your proxy bid was submitted.");
+    }
+
+    private void sendIncreaseProxyBid(BigDecimal maxBidAmount) {
+        sendProxyBidRequest(
+            RequestType.INCREASE_AUTOBID_MAX,
+            maxBidAmount,
+            "Proxy bid increased",
+            "Your max proxy bid was submitted."
+        );
+    }
+
+    private void sendProxyBidRequest(
+            RequestType requestType,
+            BigDecimal maxBidAmount,
+            String successTitle,
+            String successMessage) {
+        try {
+            Respond<?> response = SocketClient.getClient().sendMessage(
+                new Request<>(requestType, new ProxyBidRequest(currentAuction.getId(), maxBidAmount))
+            );
+            if (response == null || !response.isStatus()) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.ERROR,
+                    "Proxy bid failed",
+                    response != null ? response.getMessage() : "No response from server."
+                );
+                return;
+            }
+            closeProxyBidModal();
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, successTitle, successMessage);
+        } catch (IOException exception) {
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Proxy bid failed", exception.getMessage());
+        }
+    }
+
+    private boolean hasActiveWinningAutobid() {
+        return viewerShowActiveMaxBid
+            && viewerAutobidWinning
+            && viewerMaxBidAmount != null
+            && "WINNING".equals(viewerAutobidStatus);
+    }
+
+    private void updateProxyBidButton() {
+        if (proxyBidButton == null) {
+            return;
+        }
+        proxyBidButton.setText(hasActiveWinningAutobid() ? "INCREASE PROXY BID" : "SET PROXY BID");
+    }
+
+    private String proxyUnavailableMessage() {
+        Long currentUserId = UserData.getUserId();
+        if (currentAuction != null && currentUserId != null && currentUserId.longValue() == currentAuction.getSellerId()) {
+            return "You cannot proxy bid on your own auction.";
+        }
+        return "This auction cannot receive proxy bids right now.";
+    }
+
     private boolean confirmBuyNowFromBid(BigDecimal buyNowPrice) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
         alert.setTitle("VBay");
@@ -1045,6 +1380,24 @@ public class BidController implements SceneDataReceiver<Auction> {
             buyingPower = buyingPower.add(valueOrZero(currentAuction.getCurrentPrice()));
         }
         return buyingPower;
+    }
+
+    private static final class ProxyBidRequest {
+        private final long auctionId;
+        private final BigDecimal maxBidAmount;
+
+        private ProxyBidRequest(long auctionId, BigDecimal maxBidAmount) {
+            this.auctionId = auctionId;
+            this.maxBidAmount = maxBidAmount;
+        }
+
+        public long getAuctionId() {
+            return auctionId;
+        }
+
+        public BigDecimal getMaxBidAmount() {
+            return maxBidAmount;
+        }
     }
 }
     

@@ -17,6 +17,7 @@ public class UserMyBidListItemResult {
     private final String thumbnailUrl;
     private final BigDecimal currentPrice;
     private final AuctionStatus auctionStatus;
+    private final boolean antiSnipeExtended;
 
     private final BigDecimal myBidAmount;
     private final BigDecimal myMaxBidAmount;
@@ -29,9 +30,9 @@ public class UserMyBidListItemResult {
     private final LocalDateTime updatedAt;
 
     public UserMyBidListItemResult(long userId, long bidId, long auctionId, long auctionVersion, String auctionTitle,
-            String thumbnailUrl, BigDecimal currentPrice, AuctionStatus auctionStatus, BigDecimal myBidAmount,
-            BigDecimal myMaxBidAmount, BidStatus bidStatus, BidSource bidSource, LocalDateTime bidTime, LocalDateTime startingTime,
-            LocalDateTime endingTime, LocalDateTime updatedAt) {
+            String thumbnailUrl, BigDecimal currentPrice, AuctionStatus auctionStatus, boolean antiSnipeExtended,
+            BigDecimal myBidAmount, BigDecimal myMaxBidAmount, BidStatus bidStatus, BidSource bidSource,
+            LocalDateTime bidTime, LocalDateTime startingTime, LocalDateTime endingTime, LocalDateTime updatedAt) {
 
             this.userId = userId;
             this.bidId = bidId;
@@ -41,6 +42,7 @@ public class UserMyBidListItemResult {
             this.thumbnailUrl = thumbnailUrl;
             this.currentPrice = currentPrice;
             this.auctionStatus = auctionStatus;
+            this.antiSnipeExtended = antiSnipeExtended;
             this.myBidAmount = myBidAmount;
             this.myMaxBidAmount = myMaxBidAmount;
             this.bidStatus = bidStatus;
@@ -78,6 +80,9 @@ public class UserMyBidListItemResult {
     }
     public AuctionStatus getAuctionStatus() {
         return auctionStatus;
+    }
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
     }
 
     public BigDecimal getMyBidAmount() {

@@ -185,9 +185,7 @@ public class AutobidService {
                     validateWinningAutobidInvariant(currentWinningBid, winningAutobid.get());
                 }
 
-                if (existingAutobid.isPresent()) {
-                    throw new ValidationException("AutoBid already exists for this auction");
-                }
+                existingAutobid.ifPresent(this::validateExistingAutobidCanReenter);
 
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
@@ -300,6 +298,15 @@ public class AutobidService {
     private void validateAutobidCanBeIncreased(Autobid autobid) {
         if (autobid.getStatus() != AutobidStatus.WINNING) {
             throw new ValidationException("Only winning AutoBid can be increased");
+        }
+    }
+
+    private void validateExistingAutobidCanReenter(Autobid autobid) {
+        if (autobid.getStatus() == AutobidStatus.WINNING) {
+            throw new ValidationException("AutoBid already exists for this auction");
+        }
+        if (autobid.getStatus() == AutobidStatus.WON) {
+            throw new ValidationException("AutoBid already won this auction");
         }
     }
 

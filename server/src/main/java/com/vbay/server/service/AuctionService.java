@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -46,6 +47,9 @@ import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
 import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
 import com.vbay.shared.dto.productDTO.CreateProductRequest;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidSummaryPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.bid.BidStatus;
 
@@ -156,7 +160,7 @@ public class AuctionService {
                 domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
                     item,
                     AuctionListItemUpdateReason.CREATED,
-                    java.time.LocalDateTime.now()
+                    dbNow
                 ));
                 return result;
             } catch (SQLException | RuntimeException e) {
@@ -172,10 +176,27 @@ public class AuctionService {
 
         try (Connection connection = connectionProvider.getConnection()) {
             AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+            AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
+            List<AuctionListItemPayload> items = auctionRepository.findAuctionList(request).stream()
+                .map(ResultMapper::toAuctionListItemPayload)
+                .toList();
+            Map<Long, Autobid> viewerAutobids = autobidRepository.findByAuctionIdsAndUserId(
+                items.stream().map(AuctionListItemPayload::getAuctionId).toList(),
+                session.getUserId()
+            );
+
+            for (AuctionListItemPayload item : items) {
+                item.setViewerBidState(buildViewerAuctionBidSummary(
+                    item.getAuctionId(),
+                    item.getWinnerUserId(),
+                    item.getUpdatedAt(),
+                    session.getUserId(),
+                    viewerAutobids.get(item.getAuctionId())
+                ));
+            }
+
             return new AuctionListResponse(
-                auctionRepository.findAuctionList(request).stream()
-                    .map(ResultMapper::toAuctionListItemPayload)
-                    .toList()
+                items
             );
         }
     }
@@ -188,10 +209,88 @@ public class AuctionService {
 
         try (Connection connection = connectionProvider.getConnection()) {
             AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-            return auctionRepository.findAuctionItemById(request.getAuctionId())
+            AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
+            AuctionItemPayload payload = auctionRepository.findAuctionItemById(request.getAuctionId())
                 .map(ResultMapper::toAuctionItemPayload)
                 .orElseThrow(() -> new ValidationException("Auction not found"));
+            payload.setViewerBidState(buildViewerAuctionBidState(
+                payload.getAuctionId(),
+                payload.getWinnerUserId(),
+                payload.getUpdatedAt(),
+                session.getUserId(),
+                autobidRepository
+            ));
+            return payload;
         }
+    }
+
+    private ViewerAuctionBidStatePayload buildViewerAuctionBidState(
+            long auctionId,
+            Long winnerUserId,
+            LocalDateTime fallbackUpdatedAt,
+            long viewerUserId,
+            AutobidRepository autobidRepository) throws SQLException {
+        Optional<Autobid> viewerAutobid =
+            autobidRepository.findByAuctionIdAndUserId(auctionId, viewerUserId);
+        boolean winning = winnerUserId != null && winnerUserId == viewerUserId;
+
+        if (viewerAutobid.isEmpty()) {
+            return new ViewerAuctionBidStatePayload(
+                auctionId,
+                viewerUserId,
+                null,
+                null,
+                null,
+                winning,
+                false,
+                fallbackUpdatedAt
+            );
+        }
+
+        Autobid autobid = viewerAutobid.get();
+        boolean showActiveMaxBid = autobid.getStatus() == AutobidStatus.WINNING && winning;
+        return new ViewerAuctionBidStatePayload(
+            auctionId,
+            viewerUserId,
+            autobid.getId(),
+            autobid.getMaxBidAmount(),
+            autobid.getStatus().name(),
+            winning,
+            showActiveMaxBid,
+            autobid.getUpdatedAt()
+        );
+    }
+
+    private ViewerAuctionBidSummaryPayload buildViewerAuctionBidSummary(
+            long auctionId,
+            Long winnerUserId,
+            LocalDateTime fallbackUpdatedAt,
+            long viewerUserId,
+            Autobid viewerAutobid) {
+        boolean winning = winnerUserId != null && winnerUserId == viewerUserId;
+
+        if (viewerAutobid == null) {
+            return new ViewerAuctionBidSummaryPayload(
+                auctionId,
+                viewerUserId,
+                false,
+                null,
+                winning,
+                false,
+                fallbackUpdatedAt
+            );
+        }
+
+        boolean showActiveMaxBid = viewerAutobid.getStatus() == AutobidStatus.WINNING && winning;
+        return new ViewerAuctionBidSummaryPayload(
+            auctionId,
+            viewerUserId,
+            true,
+            viewerAutobid.getStatus().name(),
+            winning,
+            showActiveMaxBid,
+            viewerAutobid.getUpdatedAt()
+        );
     }
 
     public LocalDateTime getDatabaseTime() throws SQLException {
@@ -211,11 +310,13 @@ public class AuctionService {
     }
 
     public void syncAuctionStatus(long auctionId) throws SQLException {
+        AuctionClosedDomainEvent auctionClosedEvent = null;
+        AuctionStartedDomainEvent auctionStartedEvent = null;
+        AuctionListItemUpdatedDomainEvent auctionListEvent = null;
+
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
 
-            AuctionClosedDomainEvent auctionClosedEvent = null;
-            AuctionStartedDomainEvent auctionStartedEvent = null;
             boolean statusChanged = false;
 
             try {
@@ -249,28 +350,32 @@ public class AuctionService {
                         }
                     }
                 }
-                connection.commit();
                 if (statusChanged) {
                     AuctionListItemResult item = auctionRepository.findAuctionListItemById(auctionId).orElseThrow();
                     if (transition == AuctionTransition.STARTED) {
                         auctionStartedEvent = new AuctionStartedDomainEvent(item, dbNow);
                     }
-                    domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                    auctionListEvent = new AuctionListItemUpdatedDomainEvent(
                         item,
                         AuctionListItemUpdateReason.STATUS_CHANGED,
                         dbNow
-                    ));
+                    );
                 }
-                if (auctionStartedEvent != null) {
-                    domainEventPublisher.publish(auctionStartedEvent);
-                }
-                if (auctionClosedEvent != null) {
-                    domainEventPublisher.publish(auctionClosedEvent);
-                }
+                connection.commit();
             } catch (SQLException | RuntimeException exception) {
                 connection.rollback();
                 throw exception;
             }
+        }
+
+        if (auctionListEvent != null) {
+            domainEventPublisher.publish(auctionListEvent);
+        }
+        if (auctionStartedEvent != null) {
+            domainEventPublisher.publish(auctionStartedEvent);
+        }
+        if (auctionClosedEvent != null) {
+            domainEventPublisher.publish(auctionClosedEvent);
         }
     }
 
@@ -372,6 +477,7 @@ public class AuctionService {
             auction.getStatus(),
             auction.getCurrentPrice(),
             reserveMet(auction),
+            auction.getAntiSnipeExtensionCount() > 0,
             auction.getWinnerUserId(),
             auction.getStartingTime(),
             auction.getEndingTime(),

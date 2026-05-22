@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
@@ -17,6 +19,7 @@ import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AutobidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
+import com.vbay.server.realtime.domain.DomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
@@ -216,12 +219,30 @@ public class BuyNowService {
         }
     }
 
+    private void validateWinningAutobidInvariant(
+            Optional<Bid> currentWinningBid,
+            Optional<Autobid> winningAutobid) {
+        if (winningAutobid.isEmpty()) {
+            return;
+        }
+
+        Bid bid = currentWinningBid.orElseThrow(
+            () -> new ValidationException("Winning AutoBid exists without a winning bid")
+        );
+        if (bid.getBidderId() != winningAutobid.get().getUserId()) {
+            throw new ValidationException("Winning AutoBid user does not match current winning bid user");
+        }
+    }
+
     public BuyNowResult buyNow (BuyNowRequest request, ClientSession session) throws SQLException {
         checkSession(session);
 
         ValidateBidDTO.validateBuyNowRequest(request);
+        List<DomainEvent> events = new ArrayList<>();
+        BuyNowResult result;
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
+            boolean committed = false;
             try {
                 AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
@@ -236,6 +257,7 @@ public class BuyNowService {
 
                 Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
                 Optional<Autobid> winningAutobid = autobidRepository.findWinningByAuctionId(auctionId);
+                validateWinningAutobidInvariant(currentWinningBid, winningAutobid);
                 
                 validateAuctionEligibility (auction, session.getUserId(), dbNow);
 
@@ -272,28 +294,27 @@ public class BuyNowService {
                 AuctionListItemResult listItem = auctionRepository.findAuctionListItemById(auctionId)
                     .orElseThrow(() -> new ValidationException("Auction list item not found"));
 
-                BuyNowResult result = AppliedBidResultMapper.toBuyNowResult(
+                result = AppliedBidResultMapper.toBuyNowResult(
                     applied,
                     previousWinningUserId,
                     previousWinningBidId,
                     dbNow
                 );
 
-                connection.commit();
                 ///publish event
-                domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                events.add(new AuctionListItemUpdatedDomainEvent(
                     listItem,
                     AuctionListItemUpdateReason.STATUS_CHANGED,
                     dbNow
                 ));
                 ///publish buy now event đã bao gồm mybidlistitemresult bên trong rồi nên không cần publish thêm event update mybidlistitem nữa, client nhận buy now event sẽ update mybidlistitem luôn
-                domainEventPublisher.publish(new BuyNowDomainEvent(result));
+                events.add(new BuyNowDomainEvent(result));
                 if (winningAutobid.isPresent()) {
                     Autobid oldAutobid = winningAutobid.get();
                     AutobidStatus finalStatus = oldAutobid.getUserId() == session.getUserId()
                         ? AutobidStatus.WON
                         : AutobidStatus.LOST;
-                    domainEventPublisher.publish(new AutobidUpdatedDomainEvent(
+                    events.add(new AutobidUpdatedDomainEvent(
                         toAutobidUpdateResult(
                             applied.getRefreshedAuction(),
                             oldAutobid,
@@ -303,17 +324,24 @@ public class BuyNowService {
                     ));
                 }
                 for (UserBalanceResult balanceResult : applied.getBalanceResults()) {
-                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(
+                    events.add(new UserBalanceUpdatedDomainEvent(
                         balanceResult,
                         balanceResult.getUpdatedAt()
                     ));
                 }
-                return result;
+                connection.commit();
+                committed = true;
             } catch (Exception e) {
-                connection.rollback();
+                if (!committed) {
+                    connection.rollback();
+                }
                 throw e;
             }
         }
+        for (DomainEvent event : events) {
+            domainEventPublisher.publish(event);
+        }
+        return result;
     }
 
     private AutobidUpdateResult toAutobidUpdateResult(

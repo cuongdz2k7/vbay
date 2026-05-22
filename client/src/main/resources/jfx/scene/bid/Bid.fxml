@@ -39,6 +39,7 @@
     </top>
 
     <center>
+        <StackPane styleClass="bid-center-stack">
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true" styleClass="bid-scroll">
             <content>
                 <VBox alignment="TOP_CENTER" fillWidth="true" spacing="22" styleClass="bid-page">
@@ -128,7 +129,7 @@
                             <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" styleClass="auction-progress"/>
 
                             <HBox spacing="12">
-                                <Button text="SET PROXY BID" onAction="#handleProxyBid" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="proxyBidButton" text="SET PROXY BID" onAction="#handleProxyBid" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
                                 <Button text="WATCH ASSET" onAction="#handleWatchAsset" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
                             </HBox>
 
@@ -198,5 +199,49 @@
                 </VBox>
             </content>
         </ScrollPane>
+
+        <StackPane fx:id="proxyBidOverlay" visible="false" managed="false" styleClass="modal-backdrop">
+            <VBox spacing="14" prefWidth="440" minWidth="440" maxWidth="440" prefHeight="440" minHeight="440" maxHeight="440" styleClass="proxy-bid-dialog">
+                <HBox alignment="CENTER_LEFT" spacing="14" styleClass="proxy-dialog-header">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label fx:id="proxyBidTitleLabel" text="Set Proxy Bid" styleClass="proxy-title"/>
+                        <Label text="Your maximum stays private." styleClass="proxy-subtitle"/>
+                    </VBox>
+                    <StackPane styleClass="proxy-icon-frame">
+                        <SVGPath content="M10 2L18 17H2Z M10 7V11 M10 14V15" styleClass="proxy-alert-icon"/>
+                    </StackPane>
+                </HBox>
+
+                <VBox spacing="8" styleClass="proxy-summary">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Current bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyCurrentBidLabel" text="\$0.00" styleClass="proxy-value"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT">
+                        <Label fx:id="proxyMinimumTextLabel" text="Minimum proxy bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyMinimumLabel" text="\$0.00" styleClass="proxy-value"/>
+                    </HBox>
+                    <HBox fx:id="proxyCurrentMaxRow" alignment="CENTER_LEFT" visible="false" managed="false">
+                        <Label text="Current max bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyCurrentMaxLabel" text="\$0.00" styleClass="proxy-value highlight-money"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="MAX PROXY BID" styleClass="input-label"/>
+                    <TextField fx:id="proxyBidAmountField" onAction="#handleProxyBidConfirm" promptText="Not lower than \$0.00" styleClass="bid-input proxy-input"/>
+                    <Label fx:id="proxyHintLabel" text="We will bid automatically up to this max." wrapText="true" styleClass="proxy-hint"/>
+                </VBox>
+
+                <HBox spacing="12" alignment="CENTER">
+                    <Button fx:id="proxyConfirmButton" text="SET PROXY BID" onAction="#handleProxyBidConfirm" prefWidth="184" prefHeight="44" styleClass="primary-action-btn"/>
+                    <Button text="Cancel" onAction="#handleProxyBidCancel" prefWidth="118" prefHeight="44" styleClass="secondary-action-btn"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+        </StackPane>
     </center>
 </BorderPane>

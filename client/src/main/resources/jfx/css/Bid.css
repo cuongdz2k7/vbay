@@ -50,6 +50,10 @@
     -fx-background-color: transparent;
 }
 
+.bid-center-stack {
+    -fx-background-color: transparent;
+}
+
 .back-link {
     -fx-background-color: transparent;
     -fx-text-fill: rgba(255, 181, 160, 0.82);
@@ -462,4 +466,116 @@
 .buy-now-confirm-dialog .button-bar .button:hover {
     -fx-background-color: rgba(255, 95, 46, 0.2);
     -fx-border-color: rgba(255, 116, 71, 0.56);
+}
+
+.modal-backdrop {
+    -fx-background-color: rgba(0, 0, 0, 0.68);
+    -fx-padding: 24;
+}
+
+.proxy-bid-dialog {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(20, 19, 19, 0.98) 0%, rgba(12, 12, 13, 0.98) 58%, rgba(42, 14, 7, 0.96) 100%);
+    -fx-background-radius: 18;
+    -fx-border-color: rgba(255, 116, 71, 0.42);
+    -fx-border-radius: 18;
+    -fx-border-width: 1;
+    -fx-padding: 22;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.54), 32, 0.18, 0, 12);
+}
+
+.proxy-dialog-header {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 95, 46, 0.24) 0%, rgba(255, 255, 255, 0.035) 100%);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 181, 160, 0.08);
+    -fx-border-radius: 14;
+    -fx-padding: 14 14 14 16;
+}
+
+.proxy-title {
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 20px;
+    -fx-font-weight: 900;
+}
+
+.proxy-subtitle,
+.proxy-copy,
+.proxy-hint {
+    -fx-text-fill: rgba(255, 226, 210, 0.74);
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.proxy-hint {
+    -fx-text-fill: rgba(255, 226, 210, 0.58);
+    -fx-line-spacing: 2;
+}
+
+.proxy-summary {
+    -fx-background-color: rgba(255, 255, 255, 0.04);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 14;
+    -fx-padding: 12 14 12 14;
+}
+
+.proxy-value {
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+}
+
+.proxy-icon-frame {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #ff4e2d 0%, #ff8a62 100%);
+    -fx-background-radius: 12;
+    -fx-min-width: 48;
+    -fx-min-height: 48;
+    -fx-max-width: 48;
+    -fx-max-height: 48;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.22), 14, 0.16, 0, 4);
+}
+
+.proxy-alert-icon {
+    -fx-fill: transparent;
+    -fx-stroke: #fff2de;
+    -fx-stroke-width: 2;
+}
+
+.proxy-input {
+    -fx-pref-height: 46;
+    -fx-background-color: rgba(255, 255, 255, 0.045);
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-border-color: rgba(255, 116, 71, 0.42);
+    -fx-prompt-text-fill: rgba(255, 181, 160, 0.54);
+    -fx-font-size: 14px;
+}
+
+.proxy-input:focused {
+    -fx-border-color: rgba(255, 116, 71, 0.72);
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.12), 14, 0.12, 0, 3);
+}
+
+.proxy-bid-dialog .primary-action-btn,
+.proxy-bid-dialog .secondary-action-btn {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-font-size: 12px;
+    -fx-font-weight: 900;
+}
+
+.proxy-bid-dialog .primary-action-btn {
+    -fx-text-fill: #321006;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.18), 14, 0.14, 0, 4);
+}
+
+.proxy-bid-dialog .secondary-action-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.035);
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-text-fill: #fff2de;
+}
+
+.proxy-bid-dialog .secondary-action-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-border-color: rgba(255, 181, 160, 0.26);
 }

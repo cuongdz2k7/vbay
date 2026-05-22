@@ -13,6 +13,7 @@ public class AuctionClosedResult {
     private final AuctionStatus auctionStatus;
     private final BigDecimal currentPrice;
     private final Boolean reserveMet;
+    private final boolean antiSnipeExtended;
     private final Long winnerUserId;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
@@ -27,6 +28,7 @@ public class AuctionClosedResult {
             AuctionStatus auctionStatus,
             BigDecimal currentPrice,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             Long winnerUserId,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
@@ -39,6 +41,7 @@ public class AuctionClosedResult {
         this.auctionStatus = auctionStatus;
         this.currentPrice = currentPrice;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.winnerUserId = winnerUserId;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
@@ -66,6 +69,10 @@ public class AuctionClosedResult {
 
     public Boolean getReserveMet() {
         return reserveMet;
+    }
+
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
     }
 
     public Long getWinnerUserId() {

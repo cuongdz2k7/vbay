@@ -253,6 +253,8 @@
 .block-textarea,
 .line-combo,
 .date-input,
+.duration-combo,
+.time-segment-row,
 .text-field,
 .text-area,
 .combo-box-base,
@@ -271,7 +273,9 @@
 .money-input:hover,
 .block-textarea:hover,
 .line-combo:hover,
-.date-input:hover {
+.date-input:hover,
+.duration-combo:hover,
+.time-segment-row:hover {
     -fx-border-color: rgba(255, 116, 71, 0.26);
 }
 
@@ -295,9 +299,13 @@
 .line-input,
 .title-input,
 .line-combo,
-.date-input {
-    -fx-min-height: 42;
-    -fx-padding: 8 14 8 14;
+.date-input,
+.duration-combo,
+.time-segment-row {
+    -fx-min-height: 54;
+    -fx-pref-height: 54;
+    -fx-max-height: 54;
+    -fx-padding: 0 14 0 14;
 }
 
 .title-input {
@@ -309,9 +317,194 @@
 .line-input,
 .line-combo,
 .date-input,
+.duration-combo,
 .money-input,
-.block-textarea {
+.block-textarea,
+.time-segment-input {
     -fx-font-size: 14px;
+}
+
+.time-segment-row {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-pref-width: 10000;
+}
+
+.date-input {
+    -fx-pref-width: 10000;
+}
+
+.time-segment-input {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-text-fill: -app-text;
+    -fx-prompt-text-fill: rgba(255, 181, 160, 0.46);
+    -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-weight: 700;
+    -fx-alignment: CENTER;
+    -fx-padding: 0;
+    -fx-min-width: 0;
+    -fx-pref-width: 74;
+}
+
+.time-segment-input:focused {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-background-radius: 8;
+    -fx-border-color: transparent;
+    -fx-effect: null;
+}
+
+.time-separator {
+    -fx-text-fill: rgba(255, 181, 160, 0.58);
+    -fx-font-size: 16px;
+    -fx-font-weight: 900;
+}
+
+.auction-mode-row {
+    -fx-background-color: rgba(255, 255, 255, 0.045);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 181, 160, 0.14);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-min-height: 54;
+    -fx-pref-height: 54;
+    -fx-max-height: 54;
+    -fx-padding: 4;
+    -fx-pref-width: 10000;
+}
+
+.tab-label {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-border-insets: 0;
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-padding: 11 18 13 18;
+    -fx-text-fill: rgba(255, 181, 160, 0.68);
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
+    -fx-cursor: hand;
+    -fx-alignment: CENTER;
+}
+
+.auction-duration-tab {
+    -fx-min-width: 0;
+    -fx-min-height: 46;
+    -fx-pref-height: 46;
+    -fx-max-height: 46;
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 12;
+    -fx-font-weight: 900;
+    -fx-text-fill: rgba(245, 232, 226, 0.88);
+    -fx-effect: null;
+}
+
+.auction-duration-tab:focused,
+.auction-duration-tab:armed,
+.auction-duration-tab:selected,
+.auction-duration-tab:default,
+.auction-duration-tab:cancel {
+    -fx-background-insets: 0;
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(245, 232, 226, 0.88);
+    -fx-effect: null;
+}
+
+.auction-duration-tab:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.035);
+    -fx-text-fill: -app-accent-soft;
+    -fx-effect: null;
+}
+
+.active-tab {
+    -fx-background-color: rgba(255, 95, 46, 0.14);
+    -fx-background-insets: 0;
+    -fx-background-radius: 12;
+    -fx-text-fill: -app-accent-soft;
+    -fx-border-color: transparent transparent -app-accent-strong transparent;
+    -fx-border-width: 0 0 2 0;
+    -fx-font-weight: 900;
+    -fx-effect: null;
+}
+
+.active-tab:focused,
+.active-tab:armed,
+.active-tab:selected,
+.active-tab:default,
+.active-tab:cancel {
+    -fx-background-color: rgba(255, 95, 46, 0.14);
+    -fx-text-fill: -app-accent-soft;
+    -fx-effect: null;
+}
+
+.duration-combo {
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-min-height: 54;
+    -fx-pref-height: 54;
+    -fx-max-height: 54;
+    -fx-padding: 0 14 0 14;
+    -fx-pref-width: 10000;
+}
+
+.duration-combo > .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 14px;
+    -fx-font-weight: 900;
+    -fx-padding: 0 0 0 0;
+    -fx-alignment: CENTER_LEFT;
+}
+
+.duration-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #fff2de;
+    -fx-font-size: 14px;
+    -fx-font-weight: 800;
+}
+
+.duration-combo .combo-box-popup .list-view {
+    -fx-background-color: #151111;
+    -fx-background-insets: 0;
+    -fx-border-color: rgba(255, 116, 71, 0.38);
+    -fx-border-width: 1;
+    -fx-padding: 6 0 6 0;
+}
+
+.duration-combo .combo-box-popup .list-cell {
+    -fx-background-color: #151111;
+    -fx-text-fill: rgba(255, 226, 210, 0.86);
+    -fx-padding: 9 12 9 12;
+}
+
+.duration-combo .combo-box-popup .list-cell:hover,
+.duration-combo .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: rgba(255, 95, 46, 0.18);
+    -fx-text-fill: #fff2de;
+}
+
+.duration-preview {
+    -fx-background-color: rgba(255, 255, 255, 0.035);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 12;
+    -fx-padding: 10 12 10 12;
+    -fx-text-fill: rgba(255, 226, 210, 0.68);
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+}
+
+.duration-preview-quick {
+    -fx-text-fill: #ff8b48;
+    -fx-border-color: rgba(255, 95, 46, 0.34);
+    -fx-background-color: rgba(255, 95, 46, 0.08);
+}
+
+.duration-preview-standard {
+    -fx-text-fill: rgba(255, 226, 210, 0.72);
 }
 
 .line-combo .list-cell {
@@ -320,11 +513,13 @@
 }
 
 .line-combo .arrow-button,
+.duration-combo .arrow-button,
 .date-input .arrow-button {
     -fx-background-color: transparent;
 }
 
 .line-combo .arrow,
+.duration-combo .arrow,
 .date-input .arrow {
     -fx-background-color: rgba(255, 181, 160, 0.72);
 }

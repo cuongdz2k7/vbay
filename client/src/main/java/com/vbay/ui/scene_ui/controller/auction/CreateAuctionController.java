@@ -3,6 +3,7 @@ package com.vbay.ui.scene_ui.controller.auction;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,6 +13,7 @@ import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import com.vbay.network.SocketClient;
 import com.vbay.network.image.ImageUploadClient;
@@ -34,6 +36,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
@@ -64,14 +67,16 @@ public class CreateAuctionController {
     private static final String OPTIONAL_PRICE_ENABLED_CLASS = "optional-price-enabled";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MM/dd/uuuu")
         .withResolverStyle(ResolverStyle.STRICT);
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter PREVIEW_FORMATTER = DateTimeFormatter.ofPattern("MMM d, yyyy - HH:mm:ss");
     private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+    private static final String ACTIVE_TAB_STYLE_CLASS = "active-tab";
 
     private final ImageUploadClient imageUploadClient = new ImageUploadClient();
     private final List<File> selectedImageFiles = new ArrayList<>();
     private boolean reservePriceEnabled;
     private boolean buyNowPriceEnabled;
+    private boolean quickAuctionMode = true;
 
     private Runnable onBack;
     private Runnable onAuctionCreated;
@@ -109,16 +114,25 @@ public class CreateAuctionController {
     @FXML
     private DatePicker startingDatePicker;
     @FXML
-    private DatePicker endingDatePicker;
+    private TextField startingHourField;
     @FXML
-    private TextField startingTimeField;
+    private TextField startingMinuteField;
     @FXML
-    private TextField endingTimeField;
+    private TextField startingSecondField;
+    @FXML
+    private Button quickAuctionTabButton;
+    @FXML
+    private Button standardAuctionTabButton;
+    @FXML
+    private ComboBox<String> durationPresetComboBox;
+    @FXML
+    private Label durationPreviewLabel;
 
     @FXML
     private void initialize() {
         configureDatePicker(startingDatePicker);
-        configureDatePicker(endingDatePicker);
+        configureTimeSegmentInputs();
+        configureDurationControls();
         MoneyInput.install(startingPriceField);
         MoneyInput.install(minimumBidStepField);
         MoneyInput.install(reservePriceField);
@@ -235,6 +249,26 @@ public class CreateAuctionController {
         setBuyNowPriceEnabled(!buyNowPriceEnabled);
     }
 
+    @FXML
+    private void handleQuickAuctionMode(ActionEvent event) {
+        if (!quickAuctionMode) {
+            quickAuctionMode = true;
+            updateDurationModeStyles();
+            populateDurationOptions();
+            updateDurationPreview();
+        }
+    }
+
+    @FXML
+    private void handleStandardAuctionMode(ActionEvent event) {
+        if (quickAuctionMode) {
+            quickAuctionMode = false;
+            updateDurationModeStyles();
+            populateDurationOptions();
+            updateDurationPreview();
+        }
+    }
+
     private void renderSelectedImages() {
         imagePreviewContainer.getChildren().clear();
         for (int i = 0; i < selectedImageFiles.size(); i++) {
@@ -326,8 +360,8 @@ public class CreateAuctionController {
         BigDecimal minimumBidStep = requireMoney(minimumBidStepField, "Bid step");
         BigDecimal reservePrice = optionalReserveMoney();
         BigDecimal buyNowPrice = optionalBuyNowMoney();
-        LocalDateTime startingTime = requireDateTime(startingDatePicker, startingTimeField, "Starting date/time");
-        LocalDateTime endingTime = requireDateTime(endingDatePicker, endingTimeField, "Ending date/time");
+        LocalDateTime startingTime = requireStartingDateTime();
+        LocalDateTime endingTime = startingTime.plus(requireDuration());
 
         validateAuctionBusinessRules(startingPrice, reservePrice, buyNowPrice, startingTime, endingTime);
 
@@ -523,9 +557,14 @@ public class CreateAuctionController {
         return optionalMoney(buyNowPriceField, "Buy now price");
     }
 
-    private LocalDateTime requireDateTime(DatePicker datePicker, TextField timeField, String fieldName) {
-        LocalDate date = parseDate(datePicker, fieldName);
-        LocalTime time = parseTime(timeField, fieldName);
+    private LocalDateTime requireStartingDateTime() {
+        LocalDate date = parseDate(startingDatePicker, "Starting date/time");
+        LocalTime time = parseClockTime(
+            startingHourField,
+            startingMinuteField,
+            startingSecondField,
+            "Starting time"
+        );
         return LocalDateTime.of(date, time);
     }
 
@@ -542,16 +581,145 @@ public class CreateAuctionController {
         }
     }
 
-    private LocalTime parseTime(TextField timeField, String fieldName) {
-        String timeText = timeField.getText();
-        if (timeText == null || timeText.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " time is required in HH:mm:ss format.");
-        }
+    private LocalTime parseClockTime(TextField hourField, TextField minuteField, TextField secondField, String fieldName) {
+        int hour = requireTimePart(hourField, fieldName + " hour", 0, 23);
+        int minute = requireTimePart(minuteField, fieldName + " minute", 0, 59);
+        int second = requireTimePart(secondField, fieldName + " second", 0, 59);
+        return LocalTime.of(hour, minute, second);
+    }
 
+    private Duration requireDuration() {
+        Duration duration = durationForPreset(durationPresetComboBox.getValue());
+        if (duration.isZero() || duration.isNegative()) {
+            throw new IllegalArgumentException("Duration must be greater than 0.");
+        }
+        return duration;
+    }
+
+    private int requireTimePart(TextField field, String fieldName, int min, int max) {
+        String value = field.getText();
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " is required.");
+        }
         try {
-            return LocalTime.parse(timeText.trim(), TIME_FORMATTER);
-        } catch (DateTimeParseException exception) {
-            throw new IllegalArgumentException(fieldName + " time must use HH:mm:ss format.");
+            int parsedValue = Integer.parseInt(value.trim());
+            if (parsedValue < min || parsedValue > max) {
+                throw new IllegalArgumentException(fieldName + " must be between " + min + " and " + max + ".");
+            }
+            return parsedValue;
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException(fieldName + " must be numeric.");
+        }
+    }
+
+    private void configureTimeSegmentInputs() {
+        configureNumericSegment(startingHourField, 2);
+        configureNumericSegment(startingMinuteField, 2);
+        configureNumericSegment(startingSecondField, 2);
+    }
+
+    private void configureNumericSegment(TextField field, int maxLength) {
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String newText = change.getControlNewText();
+            return newText.matches("\\d{0," + maxLength + "}") ? change : null;
+        };
+        field.setTextFormatter(new TextFormatter<>(filter));
+    }
+
+    private void configureDurationControls() {
+        durationPresetComboBox.setOnAction(event -> updateDurationPreview());
+        startingDatePicker.valueProperty().addListener((observable, oldValue, newValue) -> updateDurationPreview());
+        startingDatePicker.getEditor().textProperty().addListener((observable, oldValue, newValue) -> updateDurationPreview());
+        startingHourField.textProperty().addListener((observable, oldValue, newValue) -> updateDurationPreview());
+        startingMinuteField.textProperty().addListener((observable, oldValue, newValue) -> updateDurationPreview());
+        startingSecondField.textProperty().addListener((observable, oldValue, newValue) -> updateDurationPreview());
+        updateDurationModeStyles();
+        populateDurationOptions();
+        updateDurationPreview();
+    }
+
+    private void populateDurationOptions() {
+        if (isQuickAuctionMode()) {
+            durationPresetComboBox.getItems().setAll(
+                "30 seconds",
+                "1 minute",
+                "3 minutes",
+                "5 minutes",
+                "15 minutes",
+                "30 minutes",
+                "1 hour"
+            );
+            durationPresetComboBox.setPromptText("Choose fast duration");
+            durationPresetComboBox.setValue("5 minutes");
+            return;
+        }
+        durationPresetComboBox.getItems().setAll(
+            "1 day",
+            "3 days",
+            "5 days",
+            "7 days",
+            "14 days",
+            "30 days"
+        );
+        durationPresetComboBox.setPromptText("Choose standard duration");
+        durationPresetComboBox.setValue("7 days");
+    }
+
+    private boolean isQuickAuctionMode() {
+        return quickAuctionMode;
+    }
+
+    private void updateDurationModeStyles() {
+        setActiveDurationTab(quickAuctionTabButton, isQuickAuctionMode());
+        setActiveDurationTab(standardAuctionTabButton, !isQuickAuctionMode());
+    }
+
+    private void setActiveDurationTab(Button button, boolean active) {
+        if (button == null) {
+            return;
+        }
+        button.getStyleClass().remove(ACTIVE_TAB_STYLE_CLASS);
+        if (active) {
+            button.getStyleClass().add(ACTIVE_TAB_STYLE_CLASS);
+        }
+    }
+
+    private Duration durationForPreset(String preset) {
+        if (preset == null || preset.isBlank()) {
+            throw new IllegalArgumentException("Duration is required.");
+        }
+        return switch (preset) {
+            case "30 seconds" -> Duration.ofSeconds(30);
+            case "1 minute" -> Duration.ofMinutes(1);
+            case "3 minutes" -> Duration.ofMinutes(3);
+            case "5 minutes" -> Duration.ofMinutes(5);
+            case "15 minutes" -> Duration.ofMinutes(15);
+            case "30 minutes" -> Duration.ofMinutes(30);
+            case "1 hour" -> Duration.ofHours(1);
+            case "1 day" -> Duration.ofDays(1);
+            case "3 days" -> Duration.ofDays(3);
+            case "5 days" -> Duration.ofDays(5);
+            case "7 days" -> Duration.ofDays(7);
+            case "14 days" -> Duration.ofDays(14);
+            case "30 days" -> Duration.ofDays(30);
+            default -> throw new IllegalArgumentException("Unsupported duration: " + preset);
+        };
+    }
+
+    private void updateDurationPreview() {
+        durationPreviewLabel.getStyleClass().removeAll("duration-preview-quick", "duration-preview-standard");
+        try {
+            LocalDateTime endingTime = requireStartingDateTime().plus(requireDuration());
+            if (isQuickAuctionMode()) {
+                durationPreviewLabel.setText("Ends quickly at: " + PREVIEW_FORMATTER.format(endingTime));
+                durationPreviewLabel.getStyleClass().add("duration-preview-quick");
+            } else {
+                durationPreviewLabel.setText("Auction ends at: " + PREVIEW_FORMATTER.format(endingTime));
+                durationPreviewLabel.getStyleClass().add("duration-preview-standard");
+            }
+        } catch (IllegalArgumentException exception) {
+            durationPreviewLabel.setText("Set start time and duration to preview ending time.");
+            durationPreviewLabel.getStyleClass().add("duration-preview-standard");
         }
     }
 

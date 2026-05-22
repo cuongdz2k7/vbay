@@ -258,6 +258,21 @@ public class ManualBidService {
             throw new ValidationException("You are already the winning AutoBid user");
         }
     }
+
+    private void validateWinningAutobidInvariant(
+            Optional<Bid> currentWinningBid,
+            Optional<Autobid> winningAutobid) {
+        if (winningAutobid.isEmpty()) {
+            return;
+        }
+
+        Bid bid = currentWinningBid.orElseThrow(
+            () -> new ValidationException("Winning AutoBid exists without a winning bid")
+        );
+        if (bid.getBidderId() != winningAutobid.get().getUserId()) {
+            throw new ValidationException("Winning AutoBid user does not match current winning bid user");
+        }
+    }
      /*
     Nếu lock user trước rồi mới lock auction, user A có thể bị giữ ví trong lúc chờ auction lock. 
     Như vậy A chưa chắc bid được, nhưng các thao tác tiền khác của A đã bị chặn.
@@ -293,6 +308,7 @@ public class ManualBidService {
                 Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
                 validateMinimumBid(auction, request.getBidAmount(), currentWinningBid);
                 Optional<Autobid> winningAutobid = autobidRepository.findWinningByAuctionId(auctionId);
+                validateWinningAutobidInvariant(currentWinningBid, winningAutobid);
                 rejectIfUserAlreadyHasWinningAutobid(winningAutobid, session.getUserId());
 
                 //3. Lock Auction validate xong xuôi rồi mới lock user
