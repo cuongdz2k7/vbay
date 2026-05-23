@@ -6,6 +6,7 @@ import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.PaymentRepository;
 import com.vbay.server.repository.UserRepository;
+import com.vbay.server.repository.DepositRequestRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
@@ -49,5 +50,10 @@ public class JdbcRepositoryFactory implements RepositoryFactory {
     @Override
     public PaymentRepository createPaymentRepository(Connection connection) {
         return new JdbcPaymentRepository(connection);
+    }
+
+    @Override
+    public DepositRequestRepository createDepositRequestRepository(Connection connection) {
+        return new JdbcDepositRequestRepository(connection);
     }
 }
