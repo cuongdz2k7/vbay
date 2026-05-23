@@ -33,7 +33,7 @@
                         <Label fx:id="balanceLabel" text="\$0.00" styleClass="deposit-balance-value"/>
                         <HBox alignment="CENTER_LEFT" spacing="9">
                             <SVGPath content="M3 13L8 8L11 11L16 5M12 5H16V9" styleClass="deposit-trend-icon"/>
-                            <Label text="+2.4% VS LAST MONTH" styleClass="deposit-trend-label"/>
+                            <Label text="+3.6% VS LAST MONTH" styleClass="deposit-trend-label"/>
                         </HBox>
                     </HBox>
                 </VBox>
@@ -69,6 +69,7 @@
                             </HBox>
                         </graphic>
                     </Button>
+                    <Label fx:id="statusLabel" text="" styleClass="deposit-status-label" alignment="CENTER" maxWidth="Infinity" wrapText="true" style="-fx-text-fill: #e5a93b; -fx-font-size: 14px; -fx-font-weight: bold;"/>
                 </VBox>
             </HBox>
         </VBox>
