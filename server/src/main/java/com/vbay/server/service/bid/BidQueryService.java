@@ -19,8 +19,10 @@ import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
+import com.vbay.server.repository.UserRepository;
 import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 
@@ -86,5 +88,38 @@ public class BidQueryService {
             .findByAuctionIdAndUserId(bid.getAuctionId(), bid.getBidderId())
             .map(Autobid::getMaxBidAmount)
             .orElse(null);
+    }
+
+    public List<BidHistoryItemPayload> getBidHistory(long auctionId) throws SQLException {
+        try (Connection connection = connectionProvider.getConnection()) {
+            BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+
+            Auction auction = auctionRepository.findById(auctionId)
+                .orElseThrow(() -> new ValidationException("Auction not found"));
+
+            List<BidHistoryItemPayload> items = new ArrayList<>();
+            List<Bid> bids = bidRepository.findBidsByAuctionId(auctionId);
+            for (Bid bid : bids) {
+                String displayName = userRepository.findById(bid.getBidderId())
+                    .map(com.vbay.server.model.User::getUserName)
+                    .orElse("Anonymous");
+
+                BidHistoryItemPayload payload = new BidHistoryItemPayload(
+                    bid.getAuctionId(),
+                    auction.getVersion(),
+                    bid.getId(),
+                    bid.getBidderId(),
+                    displayName,
+                    bid.getBidAmount(),
+                    bid.getStatus().name(),
+                    bid.getBidSource().name(),
+                    bid.getBidTime()
+                );
+                items.add(payload);
+            }
+            return items;
+        }
     }
 }

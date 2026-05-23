@@ -21,6 +21,7 @@ public enum RequestType {
     FILTER_AUCTION,
     SUBSCRIBE_ROOM,
     UNSUBSCRIBE_ROOM,
+    GET_BID_HISTORY,
 
     // Bidder
     GET_MY_BID_LIST,
@@ -45,6 +46,4 @@ public enum RequestType {
     UPLOAD_IMAGE,
     CREATE_AUCTION,
     CANCEL_AUCTION,
-    
-
 }

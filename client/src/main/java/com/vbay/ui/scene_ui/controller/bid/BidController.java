@@ -35,9 +35,25 @@ import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneDataReceiver;
 import com.vbay.ui.util.MoneyInput;
 import com.vbay.ui.util.ProductImageLoader;
+import com.vbay.ui.util.BidPriceChart;
+import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
+import com.vbay.shared.Utils.JsonUtils;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
+import javafx.animation.FadeTransition;
+import javafx.animation.TranslateTransition;
+import javafx.animation.ParallelTransition;
+import javafx.animation.ScaleTransition;
+import javafx.animation.Animation;
+import javafx.scene.shape.Circle;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.Priority;
+import javafx.scene.Node;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -195,6 +211,20 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Button proxyConfirmButton;
 
+    @FXML
+    private GridPane analyticsPanel;
+    @FXML
+    private Circle pulseCircle;
+    @FXML
+    private StackPane chartCanvasContainer;
+    @FXML
+    private ScrollPane historyScrollPane;
+    @FXML
+    private VBox historyListContainer;
+
+    private BidPriceChart priceChart;
+    private boolean isWatching = false;
+
     private Auction currentAuction;
     private BigDecimal nextMinimumBid = BigDecimal.ZERO;
     private List<String> currentImageUrls = List.of();
@@ -232,6 +262,13 @@ public class BidController implements SceneDataReceiver<Auction> {
         selectTab(productInfoTabButton, true);
         setNodeVisibility(bidInfoPanel, false);
         setNodeVisibility(proxyBidOverlay, false);
+
+        // Initialize priceChart and add to container
+        priceChart = new BidPriceChart();
+        chartCanvasContainer.getChildren().add(priceChart);
+
+        // Start pulsing status animation
+        startPulseAnimation();
     }
 
     private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
@@ -251,6 +288,10 @@ public class BidController implements SceneDataReceiver<Auction> {
         currentAuction = data;
         applyViewerBidState(data);
         renderAuction(data);
+
+        // Fetch bid history from server first
+        fetchBidHistory(data.getId());
+
         subscribeAuctionRoom(data.getId());
         subscribeAuctionRealtimeListeners();
     }
@@ -314,6 +355,13 @@ public class BidController implements SceneDataReceiver<Auction> {
         nextMinimumBid = BigDecimal.ZERO;
         clearViewerBidState();
         setNodeVisibility(proxyBidOverlay, false);
+
+        isWatching = false;
+        if (analyticsPanel != null) {
+            analyticsPanel.setVisible(false);
+            analyticsPanel.setManaged(false);
+        }
+
         onBack = null;
     }
 
@@ -416,7 +464,183 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     @FXML
     private void handleWatchAsset(ActionEvent event) {
-        NotificationManager.show(NotificationManager.NotificationType.INFO, "Watch asset", "Watchlist flow is not connected yet.");
+        if (currentAuction == null) {
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "No auction", "No active auction to watch.");
+            return;
+        }
+
+        isWatching = !isWatching;
+        if (isWatching) {
+            fetchBidHistory(currentAuction.getId());
+            priceChart.setBids(recentBidHistory);
+            renderAnalyticsBidHistory();
+
+            analyticsPanel.setVisible(true);
+            analyticsPanel.setManaged(true);
+            analyticsPanel.setOpacity(0.0);
+            analyticsPanel.setTranslateY(-30);
+
+            FadeTransition fade = new FadeTransition(javafx.util.Duration.millis(500), analyticsPanel);
+            fade.setToValue(1.0);
+
+            TranslateTransition slide = new TranslateTransition(javafx.util.Duration.millis(500), analyticsPanel);
+            slide.setToY(0);
+
+            ParallelTransition pt = new ParallelTransition(fade, slide);
+            pt.play();
+        } else {
+            FadeTransition fade = new FadeTransition(javafx.util.Duration.millis(350), analyticsPanel);
+            fade.setToValue(0.0);
+
+            TranslateTransition slide = new TranslateTransition(javafx.util.Duration.millis(350), analyticsPanel);
+            slide.setToY(-30);
+
+            ParallelTransition pt = new ParallelTransition(fade, slide);
+            pt.setOnFinished(e -> {
+                analyticsPanel.setVisible(false);
+                analyticsPanel.setManaged(false);
+            });
+            pt.play();
+        }
+    }
+
+    private void startPulseAnimation() {
+        if (pulseCircle == null) return;
+
+        ScaleTransition scale = new ScaleTransition(javafx.util.Duration.seconds(1), pulseCircle);
+        scale.setFromX(1.0);
+        scale.setFromY(1.0);
+        scale.setToX(1.4);
+        scale.setToY(1.4);
+        scale.setCycleCount(Animation.INDEFINITE);
+        scale.setAutoReverse(true);
+
+        FadeTransition fade = new FadeTransition(javafx.util.Duration.seconds(1), pulseCircle);
+        fade.setFromValue(1.0);
+        fade.setToValue(0.4);
+        fade.setCycleCount(Animation.INDEFINITE);
+        fade.setAutoReverse(true);
+
+        ParallelTransition pt = new ParallelTransition(scale, fade);
+        pt.play();
+    }
+
+    private void renderAnalyticsBidHistory() {
+        historyListContainer.getChildren().clear();
+        for (int i = 0; i < recentBidHistory.size(); i++) {
+            BidHistoryItemPayload bid = recentBidHistory.get(i);
+            boolean isTop = (i == 0);
+            historyListContainer.getChildren().add(createBidHistoryRowNode(bid, isTop));
+        }
+    }
+
+    private Node createBidHistoryRowNode(BidHistoryItemPayload bid, boolean isTop) {
+        HBox row = new HBox();
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setSpacing(10);
+
+        row.getStyleClass().add("history-row-item");
+        if (isTop) {
+            row.getStyleClass().add("top-bid-row");
+        }
+
+        VBox userBox = new VBox();
+        userBox.setSpacing(2);
+
+        HBox nameBox = new HBox();
+        nameBox.setAlignment(Pos.CENTER_LEFT);
+        nameBox.setSpacing(6);
+
+        Label nameLabel = new Label(maskUsername(bid.getBidderDisplayName() != null ? bid.getBidderDisplayName() : (bid.getBidderId() != null ? "User #" + bid.getBidderId() : "Bidder")));
+        nameLabel.getStyleClass().add("bid-history-username");
+        if (isTop) {
+            nameLabel.getStyleClass().add("bid-history-username-top");
+        }
+        nameBox.getChildren().add(nameLabel);
+
+        if (isTop) {
+            Label topBadge = new Label("TOP");
+            topBadge.getStyleClass().add("top-badge-label");
+            nameBox.getChildren().add(topBadge);
+        }
+
+        Label timeLabel = new Label(formatBidTime(bid.getBidTime()));
+        timeLabel.getStyleClass().add("bid-history-time");
+
+        userBox.getChildren().addAll(nameBox, timeLabel);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox amountBox = new HBox();
+        amountBox.setAlignment(Pos.CENTER_LEFT);
+        amountBox.setSpacing(6);
+
+        Label amountLabel = new Label(formatCurrency(valueOrZero(bid.getBidAmount())));
+        amountLabel.getStyleClass().add("bid-history-amount");
+        if (isTop) {
+            amountLabel.getStyleClass().add("bid-history-amount-top");
+        }
+        amountBox.getChildren().add(amountLabel);
+
+        if ("AUTO_BID".equals(bid.getBidSource())) {
+            Label autoTag = new Label("(Auto)");
+            autoTag.getStyleClass().add("autobid-tag-label");
+            amountBox.getChildren().add(autoTag);
+        }
+
+        row.getChildren().addAll(userBox, spacer, amountBox);
+        return row;
+    }
+
+    private String maskUsername(String name) {
+        if (name == null || name.isBlank()) return "Anonymous";
+        if (name.length() <= 2) return name.charAt(0) + "***";
+        return name.charAt(0) + "***" + name.charAt(name.length() - 1);
+    }
+
+    private String formatBidTime(LocalDateTime bidTime) {
+        if (bidTime == null) return "Just now";
+        Duration duration = Duration.between(bidTime, utcNow());
+        long seconds = Math.max(0, duration.getSeconds());
+        if (seconds < 60) {
+            return "Just now";
+        } else if (seconds < 3600) {
+            return (seconds / 60) + "m ago";
+        } else if (seconds < 86400) {
+            return (seconds / 3600) + "h ago";
+        } else {
+            return bidTime.format(DateTimeFormatter.ofPattern("HH:mm, MMM d", Locale.US));
+        }
+    }
+
+    private void fetchBidHistory(long auctionId) {
+        try {
+            Respond<?> response = SocketClient.getClient().sendMessage(
+                new Request<>(RequestType.GET_BID_HISTORY, new AuctionDetailRequest(auctionId))
+            );
+            if (response != null && response.isStatus()) {
+                BidHistoryItemPayload[] bids = JsonUtils.fromJson(
+                    JsonUtils.toJson(response.getData()),
+                    BidHistoryItemPayload[].class
+                );
+                recentBidHistory.clear();
+                if (bids != null) {
+                    for (BidHistoryItemPayload bid : bids) {
+                        recentBidHistory.add(bid);
+                    }
+                }
+
+                renderRecentBidHistory();
+
+                if (isWatching) {
+                    priceChart.setBids(recentBidHistory);
+                    renderAnalyticsBidHistory();
+                }
+            }
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
     }
 
     @FXML
@@ -560,10 +784,17 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
         recentBidHistory.add(0, payload);
-        while (recentBidHistory.size() > 10) {
+        while (recentBidHistory.size() > 15) {
             recentBidHistory.remove(recentBidHistory.size() - 1);
         }
         renderRecentBidHistory();
+
+        // Sync with Watch Asset Analytics Panel
+        if (isWatching) {
+            priceChart.addBid(payload);
+            renderAnalyticsBidHistory();
+            Platform.runLater(() -> historyScrollPane.setVvalue(0.0));
+        }
     }
 
     private void handleBidHistoryEvent(RealtimeEvent<BidHistoryItemPayload> event) {

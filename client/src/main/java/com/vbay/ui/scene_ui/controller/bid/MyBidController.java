@@ -42,6 +42,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
@@ -83,7 +84,7 @@ public class MyBidController {
         subscribeRealtime();
         startTimeUpdater();
     }
-    ///lúc select acution mới bắt đầu có auctionId....
+
     public void setOnAuctionSelected(LongConsumer onAuctionSelected) {
         this.onAuctionSelected = onAuctionSelected;
     }
@@ -269,7 +270,7 @@ public class MyBidController {
     }
 
     private Node createRow(MyBidListItemPayload item) {
-        HBox row = new HBox();
+        HBox row = new HBox(12);
         row.setAlignment(Pos.CENTER_LEFT);
         row.getStyleClass().add("my-bid-row");
         row.setFillHeight(true);
@@ -282,6 +283,14 @@ public class MyBidController {
                 event.consume();
             }
         });
+
+        Region accentBar = new Region();
+        if ("ACTIVE".equals(item.getAuctionStatus())) {
+            accentBar.getStyleClass().add("my-bid-row-accent-live");
+        } else {
+            accentBar.getStyleClass().add("my-bid-row-accent-ended");
+        }
+        row.getChildren().add(accentBar);
 
         row.getChildren().add(productCell(item));
         row.getChildren().add(priceLabel(formatCurrency(item.getCurrentPrice()), "my-bid-price", "my-bid-col-price"));

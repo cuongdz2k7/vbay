@@ -43,7 +43,8 @@
             </HBox>
 
             <VBox styleClass="my-bid-table">
-                <HBox alignment="CENTER_LEFT" styleClass="my-bid-table-header">
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="my-bid-table-header">
+                    <Region styleClass="my-bid-row-accent-ended"/>
                     <Label text="AUCTION TITLE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-product"/>
                     <Label text="CURRENT PRICE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>
                     <Label text="YOUR MAX BID" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>

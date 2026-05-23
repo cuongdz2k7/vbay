@@ -126,6 +126,7 @@ public class RequestDistributor {
                 case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
                 case GET_AUCTION_DETAIL -> handleGetAuctionDetail(requestId, payload, session);
+                case GET_BID_HISTORY -> handleGetBidHistory(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -339,6 +340,22 @@ public class RequestDistributor {
         }
         buyNowService.buyNow(buyNowRequest, session);
         return new Respond<>(requestId, true, "Buy now completed successfully", null);
+    }
+
+    private Respond<java.util.List<com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload>> handleGetBidHistory(
+        String requestId,
+        JsonElement payload,
+        ClientSession session) throws SQLException {
+
+        com.vbay.shared.dto.auctionDTO.AuctionDetailRequest request =
+            JsonUtils.fromJson(payload, com.vbay.shared.dto.auctionDTO.AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid request payload", null);
+        }
+
+        java.util.List<com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload> history =
+            bidQueryService.getBidHistory(request.getAuctionId());
+        return new Respond<>(requestId, true, "Bid history loaded", history);
     }
     
 }

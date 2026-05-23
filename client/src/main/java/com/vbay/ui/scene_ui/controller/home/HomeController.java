@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -1125,7 +1126,7 @@ public class HomeController {
         HBox.setHgrow(metaRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
         metaRow.getChildren().add(status);
 
-        Label bidTime = new Label("BID TIME: " + formatBidTime(item.getBidTime()));
+        Label bidTime = new Label("BID PLACED: " + formatBidTime(item.getBidTime()));
         bidTime.getStyleClass().add("bid-item-time");
 
         content.getChildren().addAll(title, metaRow, bidTime);
@@ -1137,17 +1138,28 @@ public class HomeController {
         if (bidTime == null) {
             return "-";
         }
+        Duration elapsed = Duration.between(bidTime, LocalDateTime.now(UTC_ZONE));
+        if (elapsed.isNegative()) {
+            elapsed = Duration.ZERO;
+        }
+        long seconds = elapsed.getSeconds();
+        if (seconds < 60) {
+            return "Just now";
+        }
+        if (seconds < 3600) {
+            long minutes = seconds / 60;
+            long remainingSeconds = seconds % 60;
+            return String.format("%02dm %02ds", minutes, remainingSeconds);
+        }
+        if (seconds < 86400) {
+            long hours = seconds / 3600;
+            long minutes = (seconds % 3600) / 60;
+            return String.format("%02dh %02dm", hours, minutes);
+        }
         LocalDateTime displayTime = bidTime
             .atZone(UTC_ZONE)
             .withZoneSameInstant(VIETNAM_ZONE)
             .toLocalDateTime();
-        LocalDateTime now = LocalDateTime.now(VIETNAM_ZONE);
-        if (displayTime.toLocalDate().equals(now.toLocalDate())) {
-            return displayTime.format(SAME_DAY_BID_TIME_FORMATTER);
-        }
-        if (displayTime.getYear() == now.getYear()) {
-            return displayTime.format(SAME_YEAR_BID_TIME_FORMATTER);
-        }
         return displayTime.format(OTHER_YEAR_BID_TIME_FORMATTER);
     }
 
