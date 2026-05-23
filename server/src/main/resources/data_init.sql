@@ -162,3 +162,17 @@ CREATE TABLE IF NOT EXISTS admin_actions_log (
         ON DELETE SET NULL
         ON UPDATE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS deposit_requests (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    admin_id BIGINT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP NULL,
+    CONSTRAINT fk_deposit_requests_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
+);
