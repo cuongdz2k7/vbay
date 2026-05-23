@@ -18,6 +18,7 @@ import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene_ui.NotificationManager;
 import com.vbay.ui.scene_ui.SceneManager;
+import com.vbay.ui.scene_ui.NotificationManager.NotificationType;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -56,6 +57,15 @@ public class LoginController {
 
     @FXML
     private void handleLogin(ActionEvent event) {
+        if (UserData.isKicked()) {
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
+                "Login failed",
+                "You have just been kicked, please relaunch the app again"
+            );
+            return;
+        }
+
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
@@ -74,8 +84,14 @@ public class LoginController {
             loginUser(username, password);
             if (UserData.getWarningCount() > 0) {
                 NotificationManager.show(NotificationManager.NotificationType.WARNING, "Warning", "You have " + UserData.getWarningCount() + " warning(s). 3 warnings will result in a permanent ban.");
-            } else {
-                NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+            } 
+            else {
+                if(Position.ADMIN.equals(UserData.getPosition())){
+                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Entering the ADMIN Dashboard");
+                }
+                else{
+                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+                }
             }
         } catch (Exception exception) {
             NotificationManager.show(
