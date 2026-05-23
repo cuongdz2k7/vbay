@@ -161,7 +161,7 @@ new AppConfig()
         ///realtime
         this.subscriptionRegistry = new InMemorySubscriptionRegistry();
         this.realtimeBroadcaster = new RealtimeBroadcaster(subscriptionRegistry);
-        this.realtimeEventMapper = new RealtimeEventMapper();
+        this.realtimeEventMapper = new RealtimeEventMapper(connectionProvider, repositoryFactory);
         
         this.domainEventPublisher = new InMemoryDomainEventPublisher();
 

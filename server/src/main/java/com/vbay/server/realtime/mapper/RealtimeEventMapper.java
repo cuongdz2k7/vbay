@@ -1,5 +1,9 @@
 package com.vbay.server.realtime.mapper;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
@@ -8,6 +12,7 @@ import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
+import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.AutobidUpdateResult;
@@ -31,6 +36,18 @@ import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
 
 public class RealtimeEventMapper {
+    private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
+
+    public RealtimeEventMapper() {
+        this.connectionProvider = null;
+        this.repositoryFactory = null;
+    }
+
+    public RealtimeEventMapper(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
+        this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
+    }
     public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BidUpdatedDomainEvent event) {
         BidUpdateResult result = event.getResult();
         AuctionStatePayload payload = new AuctionStatePayload();
@@ -57,12 +74,23 @@ public class RealtimeEventMapper {
 
     public RealtimeEvent<BidHistoryItemPayload> toBidHistoryItemAddedEvent(BidUpdatedDomainEvent event) {
         BidUpdateResult result = event.getResult();
+        String bidderDisplayName = null;
+        if (connectionProvider != null && repositoryFactory != null) {
+            try (Connection conn = connectionProvider.getConnection()) {
+                bidderDisplayName = repositoryFactory.createUserRepository(conn)
+                    .findById(result.getBidderId())
+                    .map(com.vbay.server.model.User::getUserName)
+                    .orElse(null);
+            } catch (SQLException e) {
+                throw new RuntimeException("Error occurred while fetching bidder display name", e);
+            }
+        }
         BidHistoryItemPayload payload = new BidHistoryItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
             result.getBidId(),
             result.getBidderId(),
-            null,
+            bidderDisplayName,
             result.getBidAmount(),
             result.getBidStatus().name(),
             result.getBidSource().name(),
@@ -192,12 +220,23 @@ public class RealtimeEventMapper {
 
     public RealtimeEvent<BidHistoryItemPayload> toBuyNowHistoryItemEvent(BuyNowDomainEvent event) {
         BuyNowResult result = event.getResult();
+        String buyerDisplayName = null;
+        if (connectionProvider != null && repositoryFactory != null) {
+            try (Connection conn = connectionProvider.getConnection()) {
+                buyerDisplayName = repositoryFactory.createUserRepository(conn)
+                    .findById(result.getBuyerId())
+                    .map(com.vbay.server.model.User::getUserName)
+                    .orElse(null);
+            } catch (SQLException e) {
+                // Log or handle error, fallback to null
+            }
+        }
         BidHistoryItemPayload payload = new BidHistoryItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
             result.getBidId(),
             result.getBuyerId(),
-            null,
+            buyerDisplayName,
             result.getFinalPrice(),
             BidStatus.WON.name(),
             BidSource.BUY_NOW.name(),

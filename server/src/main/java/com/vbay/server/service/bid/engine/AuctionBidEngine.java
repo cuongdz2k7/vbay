@@ -226,7 +226,7 @@ public class AuctionBidEngine {
         long auctionId = auction.getId();
         long bidderId = command.getBidderUserId();
         BigDecimal manualAmount = command.getAmount();
-        
+
         ///1. User có winning autobid thì không được phép đặt manual bid (đã check ở service)
         
         ///2. Không có winning autobid thì đặt manual bid bthg
@@ -377,6 +377,9 @@ public class AuctionBidEngine {
         1. Nếu không có winning AutoBid
         */
         if (winningAutobid.isEmpty()) {
+            /*
+            1.5. currentWinner chính là requester
+             */
             ///giá autobid sẽ đặt khi đăng kí, không phải là maxbid Amount
             ///service phải đảm bảo trước là maxbid amount phải > current price + min step
             BigDecimal autoBidAmount = currentWinningBid.isEmpty()

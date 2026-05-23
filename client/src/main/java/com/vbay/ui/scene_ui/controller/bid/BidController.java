@@ -551,7 +551,14 @@ public class BidController implements SceneDataReceiver<Auction> {
         nameBox.setAlignment(Pos.CENTER_LEFT);
         nameBox.setSpacing(6);
 
-        Label nameLabel = new Label(maskUsername(bid.getBidderDisplayName() != null ? bid.getBidderDisplayName() : (bid.getBidderId() != null ? "User #" + bid.getBidderId() : "Bidder")));
+        String displayName = bid.getBidderDisplayName();
+        if (bid.getBidderId() != null && bid.getBidderId().equals(UserData.getUserId())) {
+            displayName = UserData.getUsername();
+        }
+        if (displayName == null || displayName.isBlank()) {
+            displayName = bid.getBidderId() != null ? "User #" + bid.getBidderId() : "Bidder";
+        }
+        Label nameLabel = new Label(maskUsername(displayName));
         nameLabel.getStyleClass().add("bid-history-username");
         if (isTop) {
             nameLabel.getStyleClass().add("bid-history-username-top");
