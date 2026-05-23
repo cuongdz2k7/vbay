@@ -29,6 +29,8 @@ import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserWarnedPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
@@ -247,6 +249,9 @@ public class HomeController {
     private RealtimeEventListener<AuctionListItemPayload> auctionListItemListener;
     private RealtimeEventListener<UserBalanceUpdatedPayload> userBalanceListener;
     private RealtimeEventListener<MyBidListItemPayload> myBidListener;
+    private RealtimeEventListener<DepositRequestPayload> depositRequestListener;
+    private RealtimeEventListener<Void> userKickedListener;
+    private RealtimeEventListener<UserWarnedPayload> userWarnedListener;
     private CreateAuctionController activeCreateAuctionController;
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
@@ -396,6 +401,21 @@ public class HomeController {
             RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
             myBidListener
         );
+        depositRequestListener = event -> handleDepositRequestUpdated(event);
+        dispatcher.subscribe(
+            RealtimeEventType.DEPOSIT_REQUEST_UPDATED,
+            depositRequestListener
+        );
+        userKickedListener = event -> handleUserKicked(event);
+        dispatcher.subscribe(
+            RealtimeEventType.ADMIN_USER_KICKED,
+            userKickedListener
+        );
+        userWarnedListener = event -> handleUserWarned(event);
+        dispatcher.subscribe(
+            RealtimeEventType.ADMIN_USER_WARNED,
+            userWarnedListener
+        );
     }
 
     private void unsubscribeRealtimeListener() {
@@ -419,6 +439,27 @@ public class HomeController {
                 myBidListener
             );
             myBidListener = null;
+        }
+        if (depositRequestListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.DEPOSIT_REQUEST_UPDATED,
+                depositRequestListener
+            );
+            depositRequestListener = null;
+        }
+        if (userKickedListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.ADMIN_USER_KICKED,
+                userKickedListener
+            );
+            userKickedListener = null;
+        }
+        if (userWarnedListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.ADMIN_USER_WARNED,
+                userWarnedListener
+            );
+            userWarnedListener = null;
         }
     }
 
@@ -650,6 +691,78 @@ public class HomeController {
             }
             UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
+        });
+    }
+
+    private void handleDepositRequestUpdated(RealtimeEvent<DepositRequestPayload> event) {
+        DepositRequestPayload payload = event.getPayload();
+        if (payload == null || currentUserId == null || payload.getUserId() != currentUserId) {
+            return;
+        }
+        Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
+            if ("APPROVED".equals(payload.getStatus())) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.SUCCESS, 
+                    "Deposit Approved", 
+                    "admin has accepted your deposit request"
+                );
+                if (activeDepositController != null) {
+                    activeDepositController.updateStatusLabel("admin has accepted your deposit request");
+                }
+            } else if ("REJECTED".equals(payload.getStatus())) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.ERROR, 
+                    "Deposit Rejected", 
+                    "admin has rejected your deposit request"
+                );
+                if (activeDepositController != null) {
+                    activeDepositController.updateStatusLabel("admin has rejected your deposit request");
+                }
+            }
+        });
+    }
+
+    private void handleUserKicked(RealtimeEvent<Void> event) {
+        Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR, 
+                "Account Kicked", 
+                "You have been permanently kicked and logged out by the administrator!"
+            );
+            try {
+                disposed = true;
+                disposeActiveChildControllers();
+                clearRealtimeCaches();
+                unsubscribeRealtimeListener();
+                UserData.setKicked(true);
+                UserData.clear();
+                SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Redirect to login after ban failed", e);
+            }
+        });
+    }
+
+    private void handleUserWarned(RealtimeEvent<UserWarnedPayload> event) {
+        UserWarnedPayload payload = event.getPayload();
+        if (payload == null) {
+            return;
+        }
+        Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
+            NotificationManager.show(
+                NotificationManager.NotificationType.WARNING, 
+                "Account Warning", 
+                "You have been warned by the administrator! Reason: " + payload.getReason() + " (Warnings: " + payload.getWarningCount() + "/3)"
+            );
         });
     }
 
