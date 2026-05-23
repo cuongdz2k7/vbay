@@ -17,6 +17,10 @@ import com.vbay.shared.dto.adminDTO.AdminLockUserRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserActionRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserItem;
 import com.vbay.shared.dto.adminDTO.AdminUserListResponse;
+import com.vbay.shared.dto.adminDTO.AdminDepositItem;
+import com.vbay.shared.dto.adminDTO.AdminDepositListResponse;
+import com.vbay.shared.dto.adminDTO.AdminDepositActionRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.auth.UserStatus;
@@ -46,9 +50,11 @@ public class AdminDashboardController {
 
     @FXML private Button userManagementBtn;
     @FXML private Button auctionManagementBtn;
+    @FXML private Button depositManagementBtn;
     @FXML private Label accountNameLabel;
     @FXML private VBox userManagementView;
     @FXML private VBox auctionManagementView;
+    @FXML private VBox depositManagementView;
 
     @FXML private TableView<AdminUserItem> usersTable;
     @FXML private TableColumn<AdminUserItem, Long> userIdCol;
@@ -68,8 +74,20 @@ public class AdminDashboardController {
     @FXML private TableColumn<AdminAuctionItem, String> auctionEndCol;
     @FXML private TableColumn<AdminAuctionItem, Void> auctionActionCol;
 
+    @FXML private TableView<AdminDepositItem> depositsTable;
+    @FXML private TableColumn<AdminDepositItem, Long> depositIdCol;
+    @FXML private TableColumn<AdminDepositItem, Long> depositUserIdCol;
+    @FXML private TableColumn<AdminDepositItem, String> depositUsernameCol;
+    @FXML private TableColumn<AdminDepositItem, java.math.BigDecimal> depositAmountCol;
+    @FXML private TableColumn<AdminDepositItem, com.vbay.shared.enums.payment.DepositRequestStatus> depositStatusCol;
+    @FXML private TableColumn<AdminDepositItem, String> depositTimeCol;
+    @FXML private TableColumn<AdminDepositItem, Void> depositActionCol;
+
     private final ObservableList<AdminUserItem> usersData = FXCollections.observableArrayList();
     private final ObservableList<AdminAuctionItem> auctionsData = FXCollections.observableArrayList();
+    private final ObservableList<AdminDepositItem> depositsData = FXCollections.observableArrayList();
+
+    private com.vbay.network.dispatcher.RealtimeEventListener<DepositRequestPayload> depositRequestedListener;
 
     @FXML
     private void initialize() {
@@ -83,48 +101,80 @@ public class AdminDashboardController {
 
         setupUsersTable();
         setupAuctionsTable();
+        setupDepositsTable();
+        subscribeRealtime();
 
         showUserManagement(null);
     }
 
-    private void switchView(VBox showView, VBox hideView) {
-        showView.setVisible(true);
-        showView.setOpacity(1.0);
-        hideView.setVisible(false);
+    private void setActiveNav(Button activeBtn) {
+        userManagementBtn.getStyleClass().remove("active-nav");
+        auctionManagementBtn.getStyleClass().remove("active-nav");
+        if (depositManagementBtn != null) {
+            depositManagementBtn.getStyleClass().remove("active-nav");
+        }
+        
+        if (activeBtn != null && !activeBtn.getStyleClass().contains("active-nav")) {
+            activeBtn.getStyleClass().add("active-nav");
+        }
+        
+        userManagementBtn.applyCss();
+        auctionManagementBtn.applyCss();
+        if (depositManagementBtn != null) {
+            depositManagementBtn.applyCss();
+        }
     }
 
     @FXML
     private void showUserManagement(ActionEvent event) {
-        switchView(userManagementView, auctionManagementView);
-        if (!userManagementBtn.getStyleClass().contains("active-nav")) {
-            userManagementBtn.getStyleClass().add("active-nav");
+        userManagementView.setVisible(true);
+        userManagementView.setOpacity(1.0);
+        auctionManagementView.setVisible(false);
+        if (depositManagementView != null) {
+            depositManagementView.setVisible(false);
         }
-        auctionManagementBtn.getStyleClass().remove("active-nav");
-        userManagementBtn.applyCss();
-        auctionManagementBtn.applyCss();
+        setActiveNav(userManagementBtn);
         refreshUsers();
     }
 
     @FXML
     private void showAuctionManagement(ActionEvent event) {
-        switchView(auctionManagementView, userManagementView);
-        if (!auctionManagementBtn.getStyleClass().contains("active-nav")) {
-            auctionManagementBtn.getStyleClass().add("active-nav");
+        userManagementView.setVisible(false);
+        auctionManagementView.setVisible(true);
+        auctionManagementView.setOpacity(1.0);
+        if (depositManagementView != null) {
+            depositManagementView.setVisible(false);
         }
-        userManagementBtn.getStyleClass().remove("active-nav");
-        userManagementBtn.applyCss();
-        auctionManagementBtn.applyCss();
+        setActiveNav(auctionManagementBtn);
         refreshAuctions();
     }
 
     @FXML
     private void handleLogout(ActionEvent event) {
         try {
+            unsubscribeRealtime();
             SocketClient.getClient().sendMessage(new Request<>(RequestType.LOGOUT, null));
             UserData.clear();
             SceneManager.switchScene("/jfx/scene/auth/Login.fxml");
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to logout", e);
+        }
+    }
+
+    private void unsubscribeRealtime() {
+        try {
+            com.vbay.shared.dto.realtimeDTO.Room room = new com.vbay.shared.dto.realtimeDTO.Room();
+            room.setType(com.vbay.shared.enums.realtime.RoomType.AUCTION_LIST);
+            SocketClient.getClient().sendMessage(new Request<>(RequestType.UNSUBSCRIBE_ROOM, room));
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to unsubscribe from auction lobby room", e);
+        }
+
+        if (depositRequestedListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+                depositRequestedListener
+            );
         }
     }
 
@@ -202,7 +252,7 @@ public class AdminDashboardController {
                     label.getStyleClass().add("status-badge");
                     switch (item) {
                         case ACTIVE -> label.getStyleClass().add("active");
-                        case BANNED -> label.getStyleClass().add("banned");
+                        case BANNED, DELETED -> label.getStyleClass().add("banned");
                         case LOCKED -> label.getStyleClass().add("locked");
                         default -> label.getStyleClass().add("ended");
                     }
@@ -224,7 +274,7 @@ public class AdminDashboardController {
                 AdminUserItem user = getTableRow().getItem();
                 HBox box = new HBox(5);
                 
-                if (user.getStatus() != UserStatus.BANNED) {
+                if (user.getStatus() != UserStatus.BANNED && user.getStatus() != UserStatus.DELETED) {
                     Button banBtn = new Button("Ban");
                     banBtn.getStyleClass().addAll("table-action-btn", "ban-btn");
                     banBtn.setOnAction(e -> handleUserAction(RequestType.ADMIN_BAN_USER, user.getUserId(), "Ban Reason:"));
@@ -242,20 +292,8 @@ public class AdminDashboardController {
                     lockBtn.setOnAction(e -> handleLockUser(user.getUserId()));
                     
                     box.getChildren().addAll(kickBtn, warnBtn, lockBtn, banBtn);
-                } else {
-                    Button unbanBtn = new Button("Unban");
-                    unbanBtn.getStyleClass().addAll("table-action-btn", "active");
-                    unbanBtn.setOnAction(e -> handleUserAction(RequestType.ADMIN_UNBAN_USER, user.getUserId(), "Unban Reason:"));
-                    box.getChildren().add(unbanBtn);
                 }
                 
-                if (user.getStatus() == UserStatus.LOCKED) {
-                    Button unlockBtn = new Button("Unlock (Unban)");
-                    unlockBtn.getStyleClass().addAll("table-action-btn", "active");
-                    unlockBtn.setOnAction(e -> handleUserAction(RequestType.ADMIN_UNBAN_USER, user.getUserId(), "Unlock Reason:"));
-                    box.getChildren().add(unlockBtn);
-                }
-
                 setGraphic(box);
             }
         });
@@ -473,5 +511,138 @@ public class AdminDashboardController {
                 }
             }).start();
         }
+    }
+
+    private void setupDepositsTable() {
+        depositIdCol.setCellValueFactory(new PropertyValueFactory<>("depositId"));
+        depositUserIdCol.setCellValueFactory(new PropertyValueFactory<>("userId"));
+        depositUsernameCol.setCellValueFactory(new PropertyValueFactory<>("username"));
+        depositAmountCol.setCellValueFactory(new PropertyValueFactory<>("amount"));
+        depositTimeCol.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+        
+        depositStatusCol.setCellValueFactory(new PropertyValueFactory<>("status"));
+        depositStatusCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(com.vbay.shared.enums.payment.DepositRequestStatus status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setGraphic(null);
+                } else {
+                    Label label = new Label(status.name());
+                    label.getStyleClass().add("status-badge");
+                    if (status == com.vbay.shared.enums.payment.DepositRequestStatus.PENDING) {
+                        label.getStyleClass().add("locked");
+                    } else if (status == com.vbay.shared.enums.payment.DepositRequestStatus.APPROVED) {
+                        label.getStyleClass().add("active");
+                    } else {
+                        label.getStyleClass().add("banned");
+                    }
+                    setGraphic(label);
+                }
+            }
+        });
+
+        depositActionCol.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                    setGraphic(null);
+                    return;
+                }
+                AdminDepositItem deposit = getTableRow().getItem();
+                HBox box = new HBox(5);
+
+                if (deposit.getStatus() == com.vbay.shared.enums.payment.DepositRequestStatus.PENDING) {
+                    Button approveBtn = new Button("Approve");
+                    approveBtn.getStyleClass().addAll("table-action-btn", "active");
+                    approveBtn.setOnAction(e -> handleDepositAction(RequestType.ADMIN_APPROVE_DEPOSIT, deposit.getDepositId()));
+
+                    Button rejectBtn = new Button("Reject");
+                    rejectBtn.getStyleClass().addAll("table-action-btn", "ban-btn");
+                    rejectBtn.setOnAction(e -> handleDepositAction(RequestType.ADMIN_REJECT_DEPOSIT, deposit.getDepositId()));
+
+                    box.getChildren().addAll(approveBtn, rejectBtn);
+                }
+
+                setGraphic(box);
+            }
+        });
+
+        depositsTable.setItems(depositsData);
+    }
+
+    @FXML
+    private void showDepositManagement(ActionEvent event) {
+        userManagementView.setVisible(false);
+        auctionManagementView.setVisible(false);
+        if (depositManagementView != null) {
+            depositManagementView.setVisible(true);
+            depositManagementView.setOpacity(1.0);
+        }
+        setActiveNav(depositManagementBtn);
+        refreshDeposits();
+    }
+
+    @FXML
+    private void refreshDeposits() {
+        new Thread(() -> {
+            try {
+                Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(RequestType.ADMIN_GET_PENDING_DEPOSITS, null));
+                if (response.isStatus()) {
+                    AdminDepositListResponse listResp = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), AdminDepositListResponse.class);
+                    Platform.runLater(() -> {
+                        depositsData.setAll(listResp.getDeposits());
+                    });
+                } else {
+                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
+                }
+            } catch (IOException e) {
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch deposit requests"));
+            }
+        }).start();
+    }
+
+    private void handleDepositAction(RequestType actionType, long depositId) {
+        new Thread(() -> {
+            try {
+                Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(actionType, new AdminDepositActionRequest(depositId)));
+                if (response.isStatus()) {
+                    Platform.runLater(() -> {
+                        NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", response.getMessage());
+                        refreshDeposits();
+                    });
+                } else {
+                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
+                }
+            } catch (IOException e) {
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not perform action"));
+            }
+        }).start();
+    }
+
+    private void subscribeRealtime() {
+        try {
+            com.vbay.shared.dto.realtimeDTO.Room room = new com.vbay.shared.dto.realtimeDTO.Room();
+            room.setType(com.vbay.shared.enums.realtime.RoomType.AUCTION_LIST);
+            SocketClient.getClient().sendMessage(new Request<>(RequestType.SUBSCRIBE_ROOM, room));
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Failed to subscribe to auction lobby room", e);
+        }
+
+        depositRequestedListener = event -> {
+            DepositRequestPayload payload = event.getPayload();
+            if (payload == null) return;
+            Platform.runLater(() -> {
+                NotificationManager.show(NotificationManager.NotificationType.INFO, "New Deposit Request", "User " + payload.getUsername() + " requested a deposit of $" + payload.getAmount());
+                if (depositManagementView.isVisible()) {
+                    refreshDeposits();
+                }
+            });
+        };
+        SocketClient.getClient().getRealtimeEventDispatcher().subscribe(
+            com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+            depositRequestedListener
+        );
     }
 }
