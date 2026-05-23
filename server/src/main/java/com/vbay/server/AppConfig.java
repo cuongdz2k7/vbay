@@ -128,7 +128,7 @@ new AppConfig()
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
         this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher, realtimeBroadcaster);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(

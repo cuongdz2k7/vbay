@@ -349,4 +349,33 @@ public class JdbcUserRepository implements UserRepository {
         }
         return Optional.empty();
     }
+
+    @Override
+    public void softDeleteUser(long userId) throws SQLException {
+        String sql = """
+            UPDATE users
+            SET username = CONCAT('deleted_', id, '_', LEFT(username, 50)),
+                email = CONCAT('deleted_', id, '_', LEFT(email, 150)),
+                password_hash = 'DELETED',
+                phone_number = NULL,
+                status = 'DELETED',
+                version = version + 1
+            WHERE id = ?
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public boolean existsBannedUserByUsername(String username) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE status = 'DELETED' AND username LIKE ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, "deleted_%_" + username);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
 }

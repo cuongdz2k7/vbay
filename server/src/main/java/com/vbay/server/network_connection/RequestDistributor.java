@@ -119,13 +119,15 @@ public class RequestDistributor {
                 case ADMIN_GET_ALL_USERS -> adminService.handleAdminGetAllUsers(requestId, session);
                 case ADMIN_GET_ALL_AUCTIONS -> adminService.handleAdminGetAllAuctions(requestId, session);
                 case ADMIN_BAN_USER -> adminService.handleAdminBanUser(requestId, payload, session);
-                case ADMIN_UNBAN_USER -> adminService.handleAdminUnbanUser(requestId, payload, session);
                 case ADMIN_KICK_USER -> adminService.handleAdminKickUser(requestId, payload, session);
                 case ADMIN_WARN_USER -> adminService.handleAdminWarnUser(requestId, payload, session);
                 case ADMIN_LOCK_USER -> adminService.handleAdminLockUser(requestId, payload, session);
                 case ADMIN_DELETE_AUCTION -> adminService.handleAdminDeleteAuction(requestId, payload, session);
                 case ADMIN_STOP_AUCTION -> adminService.handleAdminStopAuction(requestId, payload, session);
                 case ADMIN_CONTINUE_AUCTION -> adminService.handleAdminContinueAuction(requestId, payload, session);
+                case ADMIN_GET_PENDING_DEPOSITS -> adminService.handleAdminGetPendingDeposits(requestId, session);
+                case ADMIN_APPROVE_DEPOSIT -> adminService.handleAdminApproveDeposit(requestId, payload, session);
+                case ADMIN_REJECT_DEPOSIT -> adminService.handleAdminRejectDeposit(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {

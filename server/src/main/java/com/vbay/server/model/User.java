@@ -126,7 +126,7 @@ public class User {
     }
 
     public boolean isBanned() {
-        return status == UserStatus.BANNED;
+        return status == UserStatus.BANNED || status == UserStatus.DELETED;
     }
 
     public boolean isSuspended() {
