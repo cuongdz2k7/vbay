@@ -13,6 +13,7 @@ public final class UserData {
     private static BigDecimal availableBalance;
     private static BigDecimal holdBalance;
     private static int warningCount;
+    private static boolean kicked;
 
     private UserData() {
     }
@@ -68,5 +69,13 @@ public final class UserData {
 
     public static int getWarningCount() {
         return warningCount;
+    }
+
+    public static boolean isKicked() {
+        return kicked;
+    }
+
+    public static void setKicked(boolean isKicked) {
+        kicked = isKicked;
     }
 }
