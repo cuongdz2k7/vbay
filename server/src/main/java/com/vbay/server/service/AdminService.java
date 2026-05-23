@@ -23,6 +23,7 @@ import com.vbay.server.network_connection.ClientConnectionRegistry;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.realtime.transport.RealtimeBroadcaster;
 import com.vbay.server.repository.AuctionRepository;
+import com.vbay.server.repository.DepositRequestRepository;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
 import com.vbay.shared.Utils.LoggingUtils;
@@ -33,6 +34,13 @@ import com.vbay.shared.dto.adminDTO.AdminLockUserRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserActionRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserItem;
 import com.vbay.shared.dto.adminDTO.AdminUserListResponse;
+import com.vbay.shared.dto.adminDTO.AdminDepositItem;
+import com.vbay.shared.dto.adminDTO.AdminDepositListResponse;
+import com.vbay.shared.dto.adminDTO.AdminDepositActionRequest;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserWarnedPayload;
+import com.vbay.shared.enums.payment.DepositRequestStatus;
 import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
@@ -64,6 +72,19 @@ public class AdminService {
         }
         if (session.getPosition() != Position.ADMIN) {
             throw new ValidationException("Permission denied. Admin role required.");
+        }
+    }
+
+    private void validateAdminTarget(UserRepository userRepository, long targetUserId, ClientSession session) throws SQLException {
+        if (targetUserId == session.getUserId()) {
+            throw new ValidationException("You cannot perform administrative actions on yourself.");
+        }
+        Optional<User> targetUserOpt = userRepository.findById(targetUserId);
+        if (targetUserOpt.isPresent()) {
+            User targetUser = targetUserOpt.get();
+            if (targetUser.getPosition() == Position.ADMIN) {
+                throw new ValidationException("You cannot perform administrative actions on another administrator.");
+            }
         }
     }
 
@@ -104,25 +125,20 @@ public class AdminService {
         validateAdmin(session);
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-            userRepository.updateStatus(request.getTargetUserId(), UserStatus.BANNED);
+            validateAdminTarget(userRepository, request.getTargetUserId(), session);
+            userRepository.softDeleteUser(request.getTargetUserId());
             logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "BAN_USER", request.getReason());
             connectionRegistry.disconnectUser(request.getTargetUserId());
             broadcastEvent(RealtimeEventType.ADMIN_USER_KICKED, RoomType.USER, request.getTargetUserId(), null);
-        }
-    }
-
-    public void unbanUser(AdminUserActionRequest request, ClientSession session) throws SQLException {
-        validateAdmin(session);
-        try (Connection connection = connectionProvider.getConnection()) {
-            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-            userRepository.updateStatus(request.getTargetUserId(), UserStatus.ACTIVE);
-            logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "UNBAN_USER", request.getReason());
+            broadcastEvent(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, RoomType.USER, request.getTargetUserId(), null);
         }
     }
 
     public void kickUser(AdminUserActionRequest request, ClientSession session) throws SQLException {
         validateAdmin(session);
         try (Connection connection = connectionProvider.getConnection()) {
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            validateAdminTarget(userRepository, request.getTargetUserId(), session);
             logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "KICK_USER", request.getReason());
             connectionRegistry.disconnectUser(request.getTargetUserId());
             broadcastEvent(RealtimeEventType.ADMIN_USER_KICKED, RoomType.USER, request.getTargetUserId(), null);
@@ -133,17 +149,27 @@ public class AdminService {
         validateAdmin(session);
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            validateAdminTarget(userRepository, request.getTargetUserId(), session);
             Optional<User> userOpt = userRepository.findById(request.getTargetUserId());
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 if (user.getWarningCount() >= 2) { // Will reach 3
-                    userRepository.updateStatus(request.getTargetUserId(), UserStatus.BANNED);
+                    userRepository.softDeleteUser(request.getTargetUserId());
                     userRepository.incrementWarningCount(request.getTargetUserId());
                     logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "BAN_USER", "Auto-banned due to 3 warnings. Reason: " + request.getReason());
                     connectionRegistry.disconnectUser(request.getTargetUserId());
+                    broadcastEvent(RealtimeEventType.ADMIN_USER_KICKED, RoomType.USER, request.getTargetUserId(), null);
+                    broadcastEvent(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, RoomType.USER, request.getTargetUserId(), null);
                 } else {
+                    int newCount = user.getWarningCount() + 1;
                     userRepository.incrementWarningCount(request.getTargetUserId());
                     logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "WARN_USER", request.getReason());
+                    broadcastEvent(
+                        RealtimeEventType.ADMIN_USER_WARNED, 
+                        RoomType.USER, 
+                        request.getTargetUserId(), 
+                        new UserWarnedPayload(request.getTargetUserId(), request.getReason(), newCount)
+                    );
                 }
             }
         }
@@ -153,6 +179,7 @@ public class AdminService {
         validateAdmin(session);
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+            validateAdminTarget(userRepository, request.getTargetUserId(), session);
             userRepository.updateStatus(request.getTargetUserId(), UserStatus.LOCKED);
             LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(request.getLockDurationMinutes());
             userRepository.setLockUntil(request.getTargetUserId(), lockUntil);
@@ -226,11 +253,6 @@ public class AdminService {
         return new Respond<>(requestId, true, "User banned", null);
     }
 
-    public Respond<Void> handleAdminUnbanUser(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        unbanUser(JsonUtils.fromJson(payload, AdminUserActionRequest.class), session);
-        return new Respond<>(requestId, true, "User unbanned", null);
-    }
-
     public Respond<Void> handleAdminKickUser(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         kickUser(JsonUtils.fromJson(payload, AdminUserActionRequest.class), session);
         return new Respond<>(requestId, true, "User kicked", null);
@@ -259,5 +281,115 @@ public class AdminService {
     public Respond<Void> handleAdminContinueAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         continueAuction(JsonUtils.fromJson(payload, AdminAuctionActionRequest.class), session);
         return new Respond<>(requestId, true, "Auction continued", null);
+    }
+
+    public Respond<AdminDepositListResponse> handleAdminGetPendingDeposits(String requestId, ClientSession session) throws SQLException {
+        validateAdmin(session);
+        try (Connection connection = connectionProvider.getConnection()) {
+            DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
+            List<com.vbay.server.model.DepositRequestRow> rows = depositRepo.findAllPending();
+            List<AdminDepositItem> items = new ArrayList<>();
+            for (com.vbay.server.model.DepositRequestRow r : rows) {
+                items.add(new AdminDepositItem(
+                    r.getId(),
+                    r.getUserId(),
+                    r.getUsername(),
+                    r.getAmount(),
+                    DepositRequestStatus.PENDING,
+                    r.getCreatedAt() != null ? r.getCreatedAt().toString() : ""
+                ));
+            }
+            return new Respond<>(requestId, true, "Pending deposits loaded", new AdminDepositListResponse(items));
+        }
+    }
+
+    public Respond<Void> handleAdminApproveDeposit(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        validateAdmin(session);
+        AdminDepositActionRequest request = JsonUtils.fromJson(payload, AdminDepositActionRequest.class);
+        if (request == null) {
+            throw new ValidationException("Invalid approve deposit payload");
+        }
+        try (Connection connection = connectionProvider.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
+                UserRepository userRepo = repositoryFactory.createUserRepository(connection);
+                
+                Optional<com.vbay.server.model.DepositRequestRow> rowOpt = depositRepo.findById(request.getDepositId());
+                if (rowOpt.isEmpty()) {
+                    throw new ValidationException("Deposit request not found");
+                }
+                com.vbay.server.model.DepositRequestRow row = rowOpt.get();
+                if (!"PENDING".equals(row.getStatus())) {
+                    throw new ValidationException("Deposit request is already processed");
+                }
+
+                depositRepo.updateStatus(request.getDepositId(), "APPROVED", session.getUserId());
+                long userVersion = userRepo.depositAvailableBalance(row.getUserId(), row.getAmount());
+
+                Optional<User> userOpt = userRepo.findById(row.getUserId());
+                if (userOpt.isPresent()) {
+                    User updatedUser = userOpt.get();
+                    UserBalanceUpdatedPayload balancePayload = new UserBalanceUpdatedPayload(
+                        updatedUser.getId(),
+                        userVersion,
+                        updatedUser.getAvailableBalance(),
+                        updatedUser.getHoldBalance(),
+                        "Deposit approved by Admin",
+                        LocalDateTime.now()
+                    );
+                    broadcastEvent(RealtimeEventType.USER_BALANCE_UPDATED, RoomType.USER, updatedUser.getId(), balancePayload);
+                }
+
+                DepositRequestPayload depositPayload = new DepositRequestPayload(
+                    row.getId(),
+                    row.getUserId(),
+                    row.getUsername(),
+                    row.getAmount(),
+                    "APPROVED",
+                    "Admin has accepted your deposit request of " + row.getAmount()
+                );
+                broadcastEvent(RealtimeEventType.DEPOSIT_REQUEST_UPDATED, RoomType.USER, row.getUserId(), depositPayload);
+
+                connection.commit();
+                return new Respond<>(requestId, true, "Deposit approved successfully", null);
+            } catch (Exception e) {
+                connection.rollback();
+                throw e;
+            }
+        }
+    }
+
+    public Respond<Void> handleAdminRejectDeposit(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        validateAdmin(session);
+        AdminDepositActionRequest request = JsonUtils.fromJson(payload, AdminDepositActionRequest.class);
+        if (request == null) {
+            throw new ValidationException("Invalid reject deposit payload");
+        }
+        try (Connection connection = connectionProvider.getConnection()) {
+            DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
+            Optional<com.vbay.server.model.DepositRequestRow> rowOpt = depositRepo.findById(request.getDepositId());
+            if (rowOpt.isEmpty()) {
+                throw new ValidationException("Deposit request not found");
+            }
+            com.vbay.server.model.DepositRequestRow row = rowOpt.get();
+            if (!"PENDING".equals(row.getStatus())) {
+                throw new ValidationException("Deposit request is already processed");
+            }
+
+            depositRepo.updateStatus(request.getDepositId(), "REJECTED", session.getUserId());
+
+            DepositRequestPayload depositPayload = new DepositRequestPayload(
+                row.getId(),
+                row.getUserId(),
+                row.getUsername(),
+                row.getAmount(),
+                "REJECTED",
+                "Admin has rejected your deposit request of " + row.getAmount()
+            );
+            broadcastEvent(RealtimeEventType.DEPOSIT_REQUEST_UPDATED, RoomType.USER, row.getUserId(), depositPayload);
+
+            return new Respond<>(requestId, true, "Deposit rejected successfully", null);
+        }
     }
 }

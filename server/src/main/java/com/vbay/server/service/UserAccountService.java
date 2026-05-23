@@ -26,14 +26,17 @@ public class UserAccountService {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final DomainEventPublisher domainEventPublisher;
+    private final com.vbay.server.realtime.transport.RealtimeBroadcaster realtimeBroadcaster;
 
     public UserAccountService(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
-            DomainEventPublisher domainEventPublisher) {
+            DomainEventPublisher domainEventPublisher,
+            com.vbay.server.realtime.transport.RealtimeBroadcaster realtimeBroadcaster) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.domainEventPublisher = domainEventPublisher;
+        this.realtimeBroadcaster = realtimeBroadcaster;
     }
 
     public UserBalanceResult depositBalance(DepositBalanceRequest request, ClientSession session) throws SQLException {
@@ -46,19 +49,53 @@ public class UserAccountService {
             connection.setAutoCommit(false);
             try {
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-                userRepository.depositAvailableBalance(session.getUserId(), request.getAmount());
+                com.vbay.server.repository.DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
+                
                 User user = userRepository.findById(session.getUserId()).orElseThrow(
                     () -> new ValidationException("User not found")
                 );
-                UserBalanceResult result = ResultMapper.toUserBalanceResult(
-                    user,
-                    "DEPOSIT",
-                    LocalDateTime.now()
+
+                // Create a PENDING deposit request in DB
+                com.vbay.server.model.DepositRequestRow row = new com.vbay.server.model.DepositRequestRow(
+                    0L,
+                    user.getId(),
+                    user.getUserName(),
+                    request.getAmount(),
+                    "PENDING",
+                    null,
+                    null,
+                    null
                 );
+                row = depositRepo.save(row);
+                
                 connection.commit();
 
-                domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(result, result.getUpdatedAt()));
-                return result;
+                // Broadcast ADMIN_DEPOSIT_REQUESTED event to the AUCTION_LIST lobby room so admins can receive it
+                com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload adminPayload = new com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload(
+                    row.getId(),
+                    row.getUserId(),
+                    row.getUsername(),
+                    row.getAmount(),
+                    "PENDING",
+                    "New deposit request from " + row.getUsername()
+                );
+                
+                com.vbay.shared.dto.realtimeDTO.Room adminRoom = new com.vbay.shared.dto.realtimeDTO.Room();
+                adminRoom.setType(com.vbay.shared.enums.realtime.RoomType.AUCTION_LIST);
+                adminRoom.setTargetId(0L);
+                
+                realtimeBroadcaster.broadcast(new com.vbay.shared.protocol.RealtimeEvent<>(
+                    com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+                    adminRoom,
+                    adminPayload
+                ));
+
+                // Return current unchanged balance
+                return ResultMapper.toUserBalanceResult(
+                    user,
+                    "DEPOSIT_PENDING",
+                    LocalDateTime.now()
+                );
             } catch (SQLException | RuntimeException exception) {
                 connection.rollback();
                 throw exception;

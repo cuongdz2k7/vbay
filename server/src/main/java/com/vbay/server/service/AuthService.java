@@ -85,7 +85,7 @@ public class AuthService {
         validateLoginRequest(request);
         String username = request.getUsername().trim();
         logInfo("LOGIN_ATTEMPT", "username=" + username);
-
+        //Login as ADMIN
         if (username.equalsIgnoreCase("admin")) {
             String passwordStr = request.getPassword() != null ? new String(request.getPassword()) : "";
             if (!passwordStr.equals("admin")) {
@@ -158,18 +158,27 @@ public class AuthService {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             Optional<User> userOptional = userRepository.findByUsername(username);
             if (userOptional.isEmpty()) {
+                if (userRepository.existsBannedUserByUsername(username)) {
+                    logError("LOGIN_FAILED", "username=" + username + ", reason: user_permanently_banned");
+                    throw new AuthenticationException("Login failed: you are banned from the server");
+                }
                 logError("LOGIN_FAILED", "username=" + username + ", reason: user_not_found");
                 throw new AuthenticationException("Invalid username or password");
             }
             User user = userOptional.get();
             if (user.isBanned()) {
+                String reasonStr = "No reason provided.";
                 Optional<String> banReason = userRepository.findLatestBanReason(user.getId());
-                logError("LOGIN_FAILED", "username=" + username + ", reason: "+ banReason.get());
-                String message = "Your account has been banned.\n";
                 if (banReason.isPresent() && !banReason.get().isBlank()) {
-                    message += "Reason: " + banReason.get();
+                    reasonStr = banReason.get();
+                }
+                logError("LOGIN_FAILED", "username=" + username + ", reason: " + reasonStr);
+                
+                String message;
+                if (user.getUserStatus() == com.vbay.shared.enums.auth.UserStatus.DELETED) {
+                    message = "Your account has been permanently banned and deleted.\nReason: " + reasonStr;
                 } else {
-                    message += "Reason: No reason provided.";
+                    message = "Your account has been banned.\nReason: " + reasonStr;
                 }
                 throw new AuthenticationException(message);
             }
