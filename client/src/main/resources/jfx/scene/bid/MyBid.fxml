@@ -43,13 +43,15 @@
             </HBox>
 
             <VBox styleClass="my-bid-table">
-                <HBox alignment="CENTER_LEFT" styleClass="my-bid-table-header">
-                    <Label text="AUCTION TITLE" styleClass="my-bid-col-product"/>
-                    <Label text="CURRENT PRICE" styleClass="my-bid-col-price"/>
-                    <Label text="YOUR MAX BID" styleClass="my-bid-col-price"/>
-                    <Label text="STATUS" styleClass="my-bid-col-status"/>
-                    <Label text="TIME LEFT" styleClass="my-bid-col-time"/>
-                    <Label text="SOURCE" styleClass="my-bid-col-source"/>
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="my-bid-table-header">
+                    <Region styleClass="my-bid-row-accent-ended"/>
+                    <Label text="AUCTION TITLE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-product"/>
+                    <Label text="CURRENT PRICE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>
+                    <Label text="YOUR MAX BID" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>
+                    <Label text="BID PLACED" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-bid-time"/>
+                    <Label text="TIME LEFT" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-time"/>
+                    <Label text="SOURCE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-source"/>
+                    <Label text="STATUS" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-status"/>
                 </HBox>
                 <VBox fx:id="rowsBox" styleClass="my-bid-rows"/>
             </VBox>

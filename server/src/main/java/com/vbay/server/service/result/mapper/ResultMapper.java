@@ -60,6 +60,7 @@ public class ResultMapper {
             currentBid.getBidAmount(),
             currentBid.getBidAmount(),
             reserveMet(auction, currentBid.getBidAmount()),
+            auction.getAntiSnipeExtensionCount() > 0,
             auction.getStatus().name(),
             previousWinningUserId,
             previousWinningBidId,
@@ -96,13 +97,18 @@ public class ResultMapper {
             currentBid.getId(),
             payment.getId(),
             currentBid.getBidAmount(),
+            auction.getStatus(),
+            reserveMet(auction, auction.getCurrentPrice()),
+            auction.getAntiSnipeExtensionCount() > 0,
             previousWinningUserId,
             previousWinningBidId,
+            auction.getStartingTime(),
+            auction.getEndingTime(),
             boughtAt,
             affectedMyBidItems
         );
     }
-
+    ///userbalance result chỉ có lưu holdbalance và available balance (mới) sau khi đã apply
     public static UserBalanceResult toUserBalanceResult(
             User user,
             String reason,
@@ -154,6 +160,7 @@ public class ResultMapper {
             result.getBuyNowPrice(),
             result.getWinnerUserId(),
             result.getReserveMet(),
+            result.isAntiSnipeExtended(),
             result.getThumbnailUrl(),
             result.getStartingTime(),
             result.getEndingTime(),
@@ -178,6 +185,7 @@ public class ResultMapper {
             result.getBuyNowPrice(),
             result.getWinnerUserId(),
             result.getReserveMet(),
+            result.isAntiSnipeExtended(),
             result.getThumbnailUrl(),
             result.getImageUrls(),
             result.getStartingTime(),
@@ -196,7 +204,9 @@ public class ResultMapper {
             result.getThumbnailUrl(),
             result.getCurrentPrice(),
             result.getAuctionStatus().name(),
+            result.isAntiSnipeExtended(),
             result.getMyBidAmount(),
+            result.getMyMaxBidAmount(),
             result.getBidStatus(),
             result.getBidSource(),
             result.getBidTime(),
@@ -214,6 +224,24 @@ public class ResultMapper {
             BidStatus bidStatus,
             LocalDateTime updatedAt
     ) {
+        return toUserMyBidListItemResult(
+            auction,
+            thumbnailUrl,
+            bid,
+            null,
+            bidStatus,
+            updatedAt
+        );
+    }
+
+    public static UserMyBidListItemResult toUserMyBidListItemResult(
+            Auction auction,
+            String thumbnailUrl,
+            Bid bid,
+            BigDecimal myMaxBidAmount,
+            BidStatus bidStatus,
+            LocalDateTime updatedAt
+    ) {
         return new UserMyBidListItemResult(
             bid.getBidderId(),
             bid.getId(),
@@ -223,7 +251,9 @@ public class ResultMapper {
             thumbnailUrl,
             auction.getCurrentPrice(),
             auction.getStatus(),
+            auction.getAntiSnipeExtensionCount() > 0,
             bid.getBidAmount(),
+            myMaxBidAmount,
             bidStatus,
             bid.getBidSource(),
             bid.getBidTime(),

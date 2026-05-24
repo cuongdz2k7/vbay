@@ -11,6 +11,7 @@ public class AuctionStatePayload {
     private String status;
     private BigDecimal currentPrice;
     private Boolean reserveMet;
+    private boolean antiSnipeExtended;
     private Long winnerUserId;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
@@ -28,6 +29,7 @@ public class AuctionStatePayload {
             BigDecimal currentPrice,
             BigDecimal nextMinimumBid,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             Long winnerUserId,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
@@ -39,6 +41,7 @@ public class AuctionStatePayload {
         this.status = status;
         this.currentPrice = currentPrice;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.winnerUserId = winnerUserId;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
@@ -85,6 +88,14 @@ public class AuctionStatePayload {
 
     public void setReserveMet(Boolean reserveMet) {
         this.reserveMet = reserveMet;
+    }
+
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) {
+        this.antiSnipeExtended = antiSnipeExtended;
     }
 
     public Long getWinningUserId() {

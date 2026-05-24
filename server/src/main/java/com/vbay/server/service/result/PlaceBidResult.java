@@ -7,25 +7,8 @@ import java.util.List;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
 
-public class PlaceBidResult {
-    private final long auctionId;
-    private final long auctionVersion;
-    private final long sellerId;
-    private final long bidderId;
-    private final long bidId;
+public class PlaceBidResult extends BidUpdateResult {
     private final String auctionTitle;
-    private final BigDecimal bidAmount;
-    private final BigDecimal currentPrice;
-    private final Boolean reserveMet;
-    private final String auctionStatus;
-    private final Long previousWinningUserId;
-    private final Long previousWinningBidId;
-    private final BidStatus bidStatus;
-    private final BidSource bidSource;
-    private final LocalDateTime bidTime;
-    private final LocalDateTime startingTime;
-    private final LocalDateTime endingTime;
-    private final List<UserMyBidListItemResult> affectedMyBidItems;
 
     public PlaceBidResult(
             long auctionId,
@@ -37,6 +20,7 @@ public class PlaceBidResult {
             BigDecimal bidAmount,
             BigDecimal currentPrice,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String auctionStatus,
             Long previousWinningUserId,
             Long previousWinningBidId,
@@ -46,94 +30,30 @@ public class PlaceBidResult {
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             List<UserMyBidListItemResult> affectedMyBidItems) {
-        this.auctionId = auctionId;
-        this.auctionVersion = auctionVersion;
-        this.sellerId = sellerId;
-        this.bidderId = bidderId;
-        this.bidId = bidId;
+        super(
+            auctionId,
+            auctionVersion,
+            sellerId,
+            bidderId,
+            bidId,
+            bidAmount,
+            currentPrice,
+            reserveMet,
+            antiSnipeExtended,
+            auctionStatus,
+            previousWinningUserId,
+            previousWinningBidId,
+            bidStatus,
+            bidSource,
+            bidTime,
+            startingTime,
+            endingTime,
+            affectedMyBidItems
+        );
         this.auctionTitle = auctionTitle;
-        this.bidAmount = bidAmount;
-        this.currentPrice = currentPrice;
-        this.reserveMet = reserveMet;
-        this.auctionStatus = auctionStatus;
-        this.previousWinningUserId = previousWinningUserId;
-        this.previousWinningBidId = previousWinningBidId;
-        this.bidStatus = bidStatus;
-        this.bidSource = bidSource;
-        this.bidTime = bidTime;
-        this.startingTime = startingTime;
-        this.endingTime = endingTime;
-        this.affectedMyBidItems = affectedMyBidItems == null ? List.of() : List.copyOf(affectedMyBidItems);
-    }
-
-    public long getAuctionId() {
-        return auctionId;
-    }
-
-    public long getAuctionVersion() {
-        return auctionVersion;
-    }
-
-    public long getSellerId() {
-        return sellerId;
-    }
-
-    public long getBidderId() {
-        return bidderId;
-    }
-
-    public long getBidId() {
-        return bidId;
     }
 
     public String getAuctionTitle() {
         return auctionTitle;
-    }
-
-    public BigDecimal getBidAmount() {
-        return bidAmount;
-    }
-
-    public BigDecimal getCurrentPrice() {
-        return currentPrice;
-    }
-    public Boolean getReserveMet() {
-        return reserveMet;
-    }
-
-    public String getAuctionStatus() {
-        return auctionStatus;
-    }
-
-    public Long getPreviousWinningUserId() {
-        return previousWinningUserId;
-    }
-
-    public Long getPreviousWinningBidId() {
-        return previousWinningBidId;
-    }
-
-    public BidStatus getBidStatus() {
-        return bidStatus;
-    }
-
-    public BidSource getBidSource() {
-        return bidSource;
-    }
-
-    public LocalDateTime getBidTime() {
-        return bidTime;
-    }
-
-    public LocalDateTime getStartingTime() {
-        return startingTime;
-    }
-
-    public LocalDateTime getEndingTime() {
-        return endingTime;
-    }
-
-    public List<UserMyBidListItemResult> getAffectedMyBidItems() {
-        return affectedMyBidItems;
     }
 }

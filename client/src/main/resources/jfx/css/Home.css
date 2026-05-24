@@ -532,7 +532,8 @@
 .time,
 .listing-label,
 .listing-bids,
-.bid-item-meta {
+.bid-item-meta,
+.bid-item-time {
     -fx-text-fill: rgba(255, 181, 160, 0.58);
     -fx-font-size: 11px;
     -fx-font-weight: 800;
@@ -542,6 +543,11 @@
 .listing-bids,
 .bid-item-meta {
     -fx-text-fill: rgba(255, 236, 214, 0.78);
+}
+
+.bid-item-time {
+    -fx-text-fill: rgba(224, 192, 178, 0.62);
+    -fx-font-size: 10px;
 }
 
 .time {
@@ -579,28 +585,35 @@
 }
 
 .portfolio-drawer {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 17, 16, 0.985) 0%, rgba(15, 14, 14, 0.99) 58%, rgba(36, 13, 6, 0.96) 100%);
-    -fx-border-color: rgba(255, 116, 71, 0.28);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 17, 16, 0.78) 0%, rgba(12, 13, 13, 0.74) 64%, rgba(28, 14, 9, 0.42) 100%);
+    -fx-border-color: rgba(255, 255, 255, 0.1);
     -fx-border-width: 1.05;
     -fx-border-radius: 22;
     -fx-background-radius: 22;
     -fx-min-width: 304;
     -fx-pref-width: 304;
     -fx-max-width: 304;
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.08), 16, 0.1, 0, 3);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.24), 14, 0.12, 0, 3);
 }
 
 .portfolio-module-stack {
     -fx-padding: 2 0 0 0;
+    -fx-spacing: 22;
 }
 
 .portfolio-module {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(20, 18, 17, 0.92) 0%, rgba(18, 15, 14, 0.96) 72%, rgba(44, 17, 8, 0.56) 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 18, 19, 0.58) 0%, rgba(13, 14, 14, 0.62) 72%, rgba(26, 17, 13, 0.28) 100%);
     -fx-background-radius: 16;
-    -fx-border-color: rgba(255, 116, 71, 0.22);
+    -fx-border-color: rgba(255, 255, 255, 0.09);
     -fx-border-radius: 16;
     -fx-padding: 13 13 13 13;
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.045), 10, 0.08, 0, 1);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 8, 0.08, 0, 1);
+}
+
+.portfolio-module:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(24, 24, 25, 0.62) 0%, rgba(17, 18, 18, 0.66) 72%, rgba(32, 20, 15, 0.3) 100%);
+    -fx-border-color: rgba(255, 255, 255, 0.15);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.035), 7, 0.05, 0, 1);
 }
 
 .portfolio-module-recessed {
@@ -615,9 +628,9 @@
 }
 
 .portfolio-module-bar {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 116, 71, 0.78) 0%, rgba(217, 95, 26, 0.58) 52%, rgba(255, 116, 71, 0.12) 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, rgba(255, 116, 71, 0.48) 0%, rgba(217, 95, 26, 0.24) 52%, rgba(255, 116, 71, 0.04) 100%);
     -fx-background-radius: 999;
-    -fx-effect: dropshadow(gaussian, rgba(255, 149, 94, 0.08), 8, 0.08, 0, 1);
+    -fx-effect: null;
 }
 
 .portfolio-module-bar-recessed {
@@ -647,25 +660,47 @@
     -fx-font-weight: 800;
 }
 
-.bid-item-title,
 .listing-title {
     -fx-wrap-text: true;
 }
 
+.bid-item-title {
+    -fx-wrap-text: false;
+    -fx-text-overrun: ellipsis;
+    -fx-max-height: 18;
+}
+
 .bid-line-item {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(21, 19, 18, 0.96) 0%, rgba(25, 19, 16, 0.92) 64%, rgba(61, 23, 11, 0.46) 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 18, 19, 0.62) 0%, rgba(13, 14, 14, 0.66) 68%, rgba(31, 20, 15, 0.26) 100%);
     -fx-background-radius: 14;
-    -fx-border-color: rgba(255, 116, 71, 0.22);
+    -fx-border-color: rgba(255, 255, 255, 0.1);
     -fx-border-radius: 14;
-    -fx-padding: 10 10 10 10;
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.045), 8, 0.08, 0, 1);
+    -fx-padding: 11 12 11 10;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.14), 8, 0.08, 0, 1);
+}
+
+.bid-line-item:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(26, 26, 27, 0.68) 0%, rgba(18, 19, 19, 0.72) 68%, rgba(35, 23, 17, 0.28) 100%);
+    -fx-border-color: rgba(255, 255, 255, 0.18);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.035), 7, 0.05, 0, 1);
+}
+
+.bid-line-accent {
+    -fx-background-color: linear-gradient(from 0% 0% to 0% 100%, rgba(255, 95, 46, 0.82) 0%, rgba(255, 138, 87, 0.68) 100%);
+    -fx-background-radius: 999;
+    -fx-min-width: 4;
+    -fx-pref-width: 4;
+    -fx-max-width: 4;
+    -fx-min-height: 42;
+    -fx-effect: null;
 }
 
 .bid-status-danger {
     -fx-text-fill: #ff5454;
     -fx-font-size: 11px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(255, 84, 84, 0.32), 12, 0.2, 0, 0);
+    -fx-effect: null;
 }
 
 .bid-status-accent,
@@ -673,7 +708,7 @@
     -fx-text-fill: #32d978;
     -fx-font-size: 11px;
     -fx-font-weight: 900;
-    -fx-effect: dropshadow(gaussian, rgba(50, 217, 120, 0.3), 12, 0.2, 0, 0);
+    -fx-effect: null;
 }
 
 .bid-status-muted {

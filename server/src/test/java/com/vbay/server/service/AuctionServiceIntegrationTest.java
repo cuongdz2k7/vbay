@@ -41,7 +41,11 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
-import com.vbay.server.service.bid.BidService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.ManualBidService;
+import com.vbay.server.service.bid.engine.AntiSnipePolicy;
+import com.vbay.server.service.bid.engine.AuctionBidEngine;
+import com.vbay.server.service.bid.resolution.BidResolutionApplier;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 
@@ -52,7 +56,8 @@ class AuctionServiceIntegrationTest {
     private String jdbcUrl;
     private Connection keepAliveConnection;
     private AuctionService auctionService;
-    private BidService bidService;
+    private ManualBidService bidService;
+    private BuyNowService buyNowService;
     private ClientSession session;
 
     @BeforeEach
@@ -65,10 +70,17 @@ class AuctionServiceIntegrationTest {
             new JdbcRepositoryFactory(),
             NO_OP_PUBLISHER
         );
-        bidService = new BidService(
+        bidService = new ManualBidService(
             () -> DriverManager.getConnection(jdbcUrl),
             new JdbcRepositoryFactory(),
             NO_OP_PUBLISHER
+        );
+        buyNowService = new BuyNowService(
+            () -> DriverManager.getConnection(jdbcUrl),
+            new JdbcRepositoryFactory(),
+            NO_OP_PUBLISHER,
+            new AuctionBidEngine(new AntiSnipePolicy()),
+            new BidResolutionApplier(new JdbcRepositoryFactory())
         );
         session = new ClientSession();
         session.setSession(SELLER_ID, "seller", Position.USER);
@@ -324,7 +336,7 @@ class AuctionServiceIntegrationTest {
         seedUser(2L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
 
-        bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(2L, "buyer"));
+        buyNowService.buyNow(new BuyNowRequest(auctionId), sessionFor(2L, "buyer"));
 
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE auction_id = " + auctionId));
         assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
@@ -347,7 +359,7 @@ class AuctionServiceIntegrationTest {
         updateAuctionWinner(auctionId, 2L);
         long oldBidId = seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
 
-        bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
+        buyNowService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
 
         assertEquals(BidStatus.LOST.name(), scalarString("SELECT status FROM bids WHERE id = " + oldBidId));
         assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE bidder_id = 3"));
@@ -366,7 +378,7 @@ class AuctionServiceIntegrationTest {
         updateAuctionWinner(auctionId, 2L);
         seedBid(auctionId, 2L, new BigDecimal("120.00"), BidStatus.WINNING);
 
-        BuyNowResult result = bidService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
+        BuyNowResult result = buyNowService.buyNow(new BuyNowRequest(auctionId), sessionFor(3L, "buyer"));
 
         assertEquals(2, result.getAffectedMyBidItems().size());
         UserMyBidListItemResult buyerItem = result.getAffectedMyBidItems().stream()
@@ -653,6 +665,7 @@ class AuctionServiceIntegrationTest {
                     ending_time TIMESTAMP NOT NULL,
                     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
                     winner_user_id BIGINT NULL,
+                    anti_snipe_extension_count INT NOT NULL DEFAULT 0,
                     version BIGINT NOT NULL DEFAULT 0,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

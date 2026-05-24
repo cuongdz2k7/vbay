@@ -28,7 +28,8 @@ public class AuctionRowMapper {
             rs.getTimestamp("starting_time").toLocalDateTime(),
             rs.getTimestamp("ending_time").toLocalDateTime(),
             AuctionStatus.valueOf(rs.getString("status")),
-            (Long) rs.getObject("winner_user_id")
+            (Long) rs.getObject("winner_user_id"),
+            rs.getInt("anti_snipe_extension_count")
         );
         auction.setVersion(rs.getLong("version"));
         return auction;
@@ -57,6 +58,7 @@ public class AuctionRowMapper {
             rs.getBigDecimal("buy_now_price"),
             (Long) rs.getObject("winner_user_id"),
             nullableBoolean(rs, "reserve_met"),
+            rs.getBoolean("anti_snipe_extended"),
             thumbnailUrl,
             imageUrls,
             rs.getTimestamp("starting_time").toLocalDateTime(),
@@ -82,6 +84,7 @@ public class AuctionRowMapper {
             rs.getBigDecimal("buy_now_price"),
             (Long) rs.getObject("winner_user_id"),
             nullableBoolean(rs, "reserve_met"),
+            rs.getBoolean("anti_snipe_extended"),
             thumbnailUrl,
             rs.getTimestamp("starting_time").toLocalDateTime(),
             rs.getTimestamp("ending_time").toLocalDateTime(),

@@ -69,8 +69,18 @@ public class AuctionCardController {
         this.listAuction = listAuction;
         Product product = listAuction.getProduct();
         titleLabel.setText(listAuction.getTitle());
-        priceLabel.setText("Current Bid  " + formatCurrentPrice(listAuction));
-        startingPriceLabel.setText("Current Price  " + formatCurrentPrice(listAuction));
+        
+        boolean isEnded = isClosedStatus(listAuction.getStatus());
+        if (!isEnded) {
+            LocalDateTime endingTime = listAuction.getEndingTime();
+            if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                isEnded = true;
+            }
+        }
+        String pricePrefix = isEnded ? "Final Price  " : "Current Bid  ";
+        priceLabel.setText(pricePrefix + formatCurrentPrice(listAuction));
+        
+        startingPriceLabel.setText("Start  " + formatCurrency(listAuction.getStartingPrice()));
         bidStepLabel.setText("Step  " + formatCurrency(listAuction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
         startTimeUpdater();
@@ -126,6 +136,16 @@ public class AuctionCardController {
         }
         timeLabel.setText(formatAuctionTime(listAuction));
         progressBar.setProgress(calculateProgress(listAuction));
+        
+        boolean isEnded = isClosedStatus(listAuction.getStatus());
+        if (!isEnded) {
+            LocalDateTime endingTime = listAuction.getEndingTime();
+            if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                isEnded = true;
+            }
+        }
+        String pricePrefix = isEnded ? "Final Price  " : "Current Bid  ";
+        priceLabel.setText(pricePrefix + formatCurrentPrice(listAuction));
     }
 
     private static String formatCurrency(BigDecimal value) {
@@ -176,9 +196,10 @@ public class AuctionCardController {
 
         Duration remaining = Duration.between(now, endingTime);
         if (remaining.compareTo(Duration.ofHours(24)) >= 0) {
-            return "Ends: " + formatVietnamTime(endingTime);
+            return (auction.isAntiSnipeExtended() ? "Extended: " : "Ends: ") + formatVietnamTime(endingTime);
         }
-        return formatRemainingDuration(remaining) + " Remaining";
+        String prefix = auction.isAntiSnipeExtended() ? "Extended  " : "";
+        return prefix + formatRemainingDuration(remaining) + " Remaining";
     }
 
     private static String formatRemainingDuration(Duration remaining) {

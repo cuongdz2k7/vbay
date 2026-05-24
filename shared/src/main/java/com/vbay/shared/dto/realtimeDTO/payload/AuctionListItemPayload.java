@@ -19,10 +19,12 @@ public class AuctionListItemPayload {
     private BigDecimal buyNowPrice;
     private Long winnerUserId;
     private Boolean reserveMet;
+    private boolean antiSnipeExtended;
     private String thumbnailUrl;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
+    private ViewerAuctionBidSummaryPayload viewerBidState;
 
     public AuctionListItemPayload() {
     }
@@ -43,6 +45,7 @@ public class AuctionListItemPayload {
             BigDecimal buyNowPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String thumbnailUrl,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
@@ -62,6 +65,7 @@ public class AuctionListItemPayload {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.thumbnailUrl = thumbnailUrl;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
@@ -188,6 +192,14 @@ public class AuctionListItemPayload {
         this.reserveMet = reserveMet;
     }
 
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) {
+        this.antiSnipeExtended = antiSnipeExtended;
+    }
+
     public String getThumbnailUrl() {
         return thumbnailUrl;
     }
@@ -218,5 +230,13 @@ public class AuctionListItemPayload {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public ViewerAuctionBidSummaryPayload getViewerBidState() {
+        return viewerBidState;
+    }
+
+    public void setViewerBidState(ViewerAuctionBidSummaryPayload viewerBidState) {
+        this.viewerBidState = viewerBidState;
     }
 }

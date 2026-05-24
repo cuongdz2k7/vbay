@@ -58,12 +58,12 @@ public class AuctionTaskScheduler {
         try {
             List<Auction> auctions = auctionService.findPendingSchedules();
             for (Auction auction : auctions) {
-                scheduleAuction(auction);
+                rescheduleAuction(auction);
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failed to register pending auction schedules", e);
         }
-
+        ///schedule atfixed rate cứ 30s lại refresh 1 lần để đảm bảo không bị miss auction nào cả
         recoveryFuture = executor.scheduleAtFixedRate(
             this::recoverMissedAuctions,
             0,
@@ -130,8 +130,6 @@ public class AuctionTaskScheduler {
             TimeUnit.MILLISECONDS
         );
         startTasks.put(auction.getId(), future);
-
-    
     }
 
     public void cancelAuction(long auctionId) {
@@ -153,7 +151,7 @@ public class AuctionTaskScheduler {
     }
 
 
-    public void scheduleAuction(Auction auction) {
+    public void rescheduleAuction(Auction auction) {
         cancelAuction(auction);
         try {
             LocalDateTime now = auctionService.getDatabaseTime();
@@ -184,14 +182,14 @@ public class AuctionTaskScheduler {
                     if (auction.getStatus().isClosedForBidding()) {
                         cancelAuction(auctionId);
                     } else {
-                        scheduleAuction(auction);
+                        rescheduleAuction(auction);
                     }
                 }
                 case STATUS_CHANGED -> {
                     if (auction.getStatus().isClosedForBidding()) {
                         cancelAuction(auctionId);
                     } else {
-                        scheduleAuction(auction);
+                        rescheduleAuction(auction);
                     }
                 }
                 case SELLER_UPDATED -> {
@@ -212,7 +210,7 @@ public class AuctionTaskScheduler {
 
                 Auction refreshed = auctionService.findAuctionById(auction.getId());
                 if (refreshed != null && !refreshed.getStatus().isClosedForBidding()) {
-                    scheduleAuction(refreshed);
+                    rescheduleAuction(refreshed);
                 } else {
                     cancelAuction(auction.getId());
                 }

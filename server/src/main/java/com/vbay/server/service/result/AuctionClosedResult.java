@@ -13,12 +13,14 @@ public class AuctionClosedResult {
     private final AuctionStatus auctionStatus;
     private final BigDecimal currentPrice;
     private final Boolean reserveMet;
+    private final boolean antiSnipeExtended;
     private final Long winnerUserId;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
     private final AuctionCloseReason reason;
     private final LocalDateTime closedAt;
     private final List<UserMyBidListItemResult> affectedMyBidItems;
+    private final List<AutobidUpdateResult> affectedAutobids;
 
     public AuctionClosedResult(
             long auctionId,
@@ -26,23 +28,27 @@ public class AuctionClosedResult {
             AuctionStatus auctionStatus,
             BigDecimal currentPrice,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             Long winnerUserId,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             AuctionCloseReason reason,
             LocalDateTime closedAt,
-            List<UserMyBidListItemResult> affectedMyBidItems) {
+            List<UserMyBidListItemResult> affectedMyBidItems,
+            List<AutobidUpdateResult> affectedAutobids) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
         this.auctionStatus = auctionStatus;
         this.currentPrice = currentPrice;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.winnerUserId = winnerUserId;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.reason = reason;
         this.closedAt = closedAt;
         this.affectedMyBidItems = affectedMyBidItems == null ? List.of() : List.copyOf(affectedMyBidItems);
+        this.affectedAutobids = affectedAutobids == null ? List.of() : List.copyOf(affectedAutobids);
     }
 
     public long getAuctionId() {
@@ -63,6 +69,10 @@ public class AuctionClosedResult {
 
     public Boolean getReserveMet() {
         return reserveMet;
+    }
+
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
     }
 
     public Long getWinnerUserId() {
@@ -87,5 +97,9 @@ public class AuctionClosedResult {
 
     public List<UserMyBidListItemResult> getAffectedMyBidItems() {
         return affectedMyBidItems;
+    }
+
+    public List<AutobidUpdateResult> getAffectedAutobids() {
+        return affectedAutobids;
     }
 }

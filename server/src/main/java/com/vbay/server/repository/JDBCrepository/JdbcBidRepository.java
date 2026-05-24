@@ -184,5 +184,24 @@ public class JdbcBidRepository implements BidRepository {
         }
     }
 
-        
+    @Override
+    public List<Bid> findBidsByAuctionId(long auctionId) throws SQLException {
+        String sql = """
+            SELECT id, auction_id, bidder_id, bid_amount, bid_time, bid_source, status
+            FROM bids
+            WHERE auction_id = ?
+            ORDER BY bid_time DESC, id DESC
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            try (ResultSet rs = statement.executeQuery()) {
+                List<Bid> bids = new ArrayList<>();
+                while (rs.next()) {
+                    bids.add(BidRowMapper.mapBid(rs));
+                }
+                return bids;
+            }
+        }
+    }
 }

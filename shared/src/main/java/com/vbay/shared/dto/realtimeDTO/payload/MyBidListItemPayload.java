@@ -15,11 +15,16 @@ public class MyBidListItemPayload {
     private String thumbnailUrl;
     private BigDecimal currentPrice;
     private String auctionStatus;
+    private boolean antiSnipeExtended;
+
     private BigDecimal myBidAmount;
+    private BigDecimal myMaxBidAmount;
+
     private BidStatus bidStatus;
     private BidSource bidSource;
     private LocalDateTime bidTime;
 
+    
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
@@ -35,7 +40,9 @@ public class MyBidListItemPayload {
             String thumbnailUrl,
             BigDecimal currentPrice,
             String auctionStatus,
+            boolean antiSnipeExtended,
             BigDecimal myBidAmount,
+            BigDecimal myMaxBidAmount,
             BidStatus bidStatus,
             BidSource bidSource,
             LocalDateTime bidTime,
@@ -49,7 +56,9 @@ public class MyBidListItemPayload {
         this.thumbnailUrl = thumbnailUrl;
         this.currentPrice = currentPrice;
         this.auctionStatus = auctionStatus;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.myBidAmount = myBidAmount;
+        this.myMaxBidAmount = myMaxBidAmount;
         this.bidStatus = bidStatus;
         this.bidSource = bidSource;
         this.bidTime = bidTime;
@@ -113,12 +122,28 @@ public class MyBidListItemPayload {
         this.auctionStatus = auctionStatus;
     }
 
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) {
+        this.antiSnipeExtended = antiSnipeExtended;
+    }
+
     public BigDecimal getMyBidAmount() {
         return myBidAmount;
     }
 
     public void setMyBidAmount(BigDecimal myBidAmount) {
         this.myBidAmount = myBidAmount;
+    }
+
+    public BigDecimal getMyMaxBidAmount() {
+        return myMaxBidAmount;
+    }
+
+    public void setMyMaxBidAmount(BigDecimal myMaxBidAmount) {
+        this.myMaxBidAmount = myMaxBidAmount;
     }
 
     public BidStatus getBidStatus() {
