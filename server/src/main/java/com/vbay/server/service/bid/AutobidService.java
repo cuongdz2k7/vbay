@@ -51,7 +51,10 @@ winning AutoBid max = 150
 
 User B register max = 120
 
+
+
 */
+
 
 public class AutobidService {
     private final ConnectionProvider connectionProvider;

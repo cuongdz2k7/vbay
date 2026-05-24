@@ -377,15 +377,22 @@ public class AuctionBidEngine {
         1. Nếu không có winning AutoBid
         */
         if (winningAutobid.isEmpty()) {
-            /*
-            1.5. currentWinner chính là requester
-             */
             ///giá autobid sẽ đặt khi đăng kí, không phải là maxbid Amount
             ///service phải đảm bảo trước là maxbid amount phải > current price + min step
-            BigDecimal autoBidAmount = currentWinningBid.isEmpty()
-                ? auction.getStartPrice()
-                : auction.getCurrentPrice().add(auction.getMinimumBidStep());
-
+            BigDecimal autoBidAmount;
+            /*
+            1.5. currentWinningbid bidder chính là requester: autoBidAmount = currentWinningBid.bidAmount (để tránh việc tự động tăng giá lên nữa, vì thực tế người ta sẽ không muốn tự động tăng giá lên nữa nếu họ đã là người đang thắng)
+             */
+            if (currentWinningBid.isEmpty()) {
+                autoBidAmount = auction.getStartPrice();
+            } else {
+                if (currentWinningBid.get().getBidderId() == userId) {
+                    autoBidAmount = currentWinningBid.get().getBidAmount();
+                } else {
+                    autoBidAmount = currentWinningBid.get().getBidAmount().add(auction.getMinimumBidStep());
+                }
+            }
+            
             if (autoBidAmount.compareTo(maxBidAmount) > 0) {
                 autoBidAmount = maxBidAmount;
             }
