@@ -79,7 +79,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             WHERE id = ?
             """;
@@ -102,7 +102,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             WHERE seller_id = ?
             ORDER BY id DESC
@@ -127,7 +127,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             WHERE product_id = ?
             ORDER BY id DESC
@@ -171,7 +171,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
         SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                 starting_price, current_price, reserve_price, buy_now_price,
-                starting_time, ending_time, status, winner_user_id, version
+                starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
         FROM auctions
         WHERE id = ?
         FOR UPDATE
@@ -273,11 +273,11 @@ public class JdbcAuctionRepository implements AuctionRepository {
     }
 
         @Override
-    public long completeByBuyNow(long auctionId, long buyerId) throws SQLException {
+    public long completeByBuyNow(long auctionId, long buyerId, BigDecimal buyNowPrice) throws SQLException {
         String sql = """
             UPDATE auctions
-            SET current_price = buy_now_price,
-                final_price = buy_now_price,
+            SET current_price = ?,
+                final_price = ?,
                 winner_user_id = ?,
                 status = 'ENDED',
                 version = version + 1
@@ -285,8 +285,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
             """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setLong(1, buyerId);
-            statement.setLong(2, auctionId);
+            statement.setBigDecimal(1, buyNowPrice);
+            statement.setBigDecimal(2, buyNowPrice);
+            statement.setLong(3, buyerId);
+            statement.setLong(4, auctionId);
             statement.executeUpdate();
         }
         return findVersionById(auctionId);
@@ -353,7 +355,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             WHERE status IN ('SCHEDULED', 'ACTIVE')
             ORDER BY starting_time ASC, ending_time ASC, id ASC
@@ -370,7 +372,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             WHERE (status = 'SCHEDULED' AND starting_time <= ?)
                OR (status IN ('SCHEDULED', 'ACTIVE') AND ending_time <= ?)
@@ -410,6 +412,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
                     WHEN a.current_price >= a.reserve_price THEN TRUE
                     ELSE FALSE
                 END AS reserve_met,
+                CASE
+                    WHEN a.anti_snipe_extension_count > 0 THEN TRUE
+                    ELSE FALSE
+                END AS anti_snipe_extended,
                 (
                     SELECT image_url
                     FROM product_images
@@ -489,6 +495,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
                     WHEN a.current_price >= a.reserve_price THEN TRUE
                     ELSE FALSE
                 END AS reserve_met,
+                CASE
+                    WHEN a.anti_snipe_extension_count > 0 THEN TRUE
+                    ELSE FALSE
+                END AS anti_snipe_extended,
                 (
                     SELECT image_url
                     FROM product_images
@@ -539,6 +549,10 @@ public class JdbcAuctionRepository implements AuctionRepository {
                     WHEN a.current_price >= a.reserve_price THEN TRUE
                     ELSE FALSE
                 END AS reserve_met,
+                CASE
+                    WHEN a.anti_snipe_extension_count > 0 THEN TRUE
+                    ELSE FALSE
+                END AS anti_snipe_extended,
                 (
                     SELECT image_url
                     FROM product_images
@@ -601,6 +615,27 @@ public class JdbcAuctionRepository implements AuctionRepository {
                 return rs.getLong("version");
             }
         }
+    }
+    @Override
+    public long applyAntiSnipeExtension(long auctionId, LocalDateTime endingTime) throws SQLException {
+        String sql = """
+            UPDATE auctions
+            SET ending_time = ?,
+                anti_snipe_extension_count = anti_snipe_extension_count + 1,
+                version = version + 1
+            WHERE id = ?
+            AND ending_time < ?
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            java.sql.Timestamp timestamp = java.sql.Timestamp.valueOf(endingTime);
+            statement.setTimestamp(1, timestamp);
+            statement.setLong(2, auctionId);
+            statement.setTimestamp(3, timestamp);
+            statement.executeUpdate();
+        }
+
+        return findVersionById(auctionId);
     }
 
     @Override

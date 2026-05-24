@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.Duration;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -27,11 +30,15 @@ import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserWarnedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidSummaryPayload;
 import com.vbay.shared.enums.RequestType;
+import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
@@ -48,6 +55,7 @@ import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
 import com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -59,6 +67,7 @@ import javafx.scene.control.OverrunStyle;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 
@@ -167,9 +176,18 @@ Mỗi màn mở lên:
 4. merge realtime event lên snapshot bằng version/updatedAt
 5. dispose thì unsubscribe + stop timer + bỏ state màn đó
 */
+
 public class HomeController {
     private static final Logger LOGGER = LoggingUtils.getLogger(HomeController.class);
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
+    private static final ZoneId UTC_ZONE = ZoneId.of("UTC");
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+    private static final DateTimeFormatter SAME_DAY_BID_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("HH:mm:ss", Locale.US);
+    private static final DateTimeFormatter SAME_YEAR_BID_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, HH:mm", Locale.US);
+    private static final DateTimeFormatter OTHER_YEAR_BID_TIME_FORMATTER =
+        DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.US);
     private static final String CREATE_AUCTION_VIEW = "/jfx/scene/CreateAuction.fxml";
     private static final String CREATE_AUCTION_CSS = "/jfx/css/CreateAuction.css";
     private static final String BID_VIEW = "/jfx/scene/bid/Bid.fxml";
@@ -252,6 +270,7 @@ public class HomeController {
     private RealtimeEventListener<DepositRequestPayload> depositRequestListener;
     private RealtimeEventListener<Void> userKickedListener;
     private RealtimeEventListener<UserWarnedPayload> userWarnedListener;
+    private RealtimeEventListener<AutobidUpdatedPayload> autobidUpdatedListener;
     private CreateAuctionController activeCreateAuctionController;
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
@@ -283,34 +302,40 @@ public class HomeController {
 
     private void loadMyBidItems() {
         try {
-            Respond<?> response = SocketClient.getClient().sendMessage(
-                new Request<>(RequestType.GET_MY_BID_LIST, null)
-            );
-            if (response == null || !response.isStatus()) {
-                throw new IOException(response != null ? response.getMessage() : "No response");
-            }
-
-            MyBidListResponse myBidResponse = JsonUtils.fromJson(
-                JsonUtils.toJson(response.getData()),
-                MyBidListResponse.class
-            );
-            if (myBidResponse == null || myBidResponse.getItems() == null) {
-                return;
-            }
-            for (MyBidListItemPayload item : myBidResponse.getItems()) {
-                mergeMyBidItem(item);
-            }
+            replaceMyBidItems(fetchMyBidItems());
         } catch (IOException exception) {
             exception.printStackTrace();
         }
     }
 
-    private void loadHomePreviewAuctions() {
-        mergeAuctionSnapshot(livePreviewAuctions, fetchAuctionList("ACTIVE", null, null, 3));
-        trimCache(livePreviewAuctions, 3);
+    private List<MyBidListItemPayload> fetchMyBidItems() throws IOException {
+        Respond<?> response = SocketClient.getClient().sendMessage(
+            new Request<>(RequestType.GET_MY_BID_LIST, null)
+        );
+        if (response == null || !response.isStatus()) {
+            throw new IOException(response != null ? response.getMessage() : "No response");
+        }
 
-        mergeAuctionSnapshot(comingSoonPreviewAuctions, fetchAuctionList("SCHEDULED", null, null, 3));
-        trimCache(comingSoonPreviewAuctions, 3);
+        MyBidListResponse myBidResponse = JsonUtils.fromJson(
+            JsonUtils.toJson(response.getData()),
+            MyBidListResponse.class
+        );
+        if (myBidResponse == null || myBidResponse.getItems() == null) {
+            return List.of();
+        }
+        return myBidResponse.getItems();
+    }
+
+    private void replaceMyBidItems(List<MyBidListItemPayload> items) {
+        myBidItemsByAuctionId.clear();
+        for (MyBidListItemPayload item : items) {
+            mergeMyBidItem(item);
+        }
+    }
+
+    private void loadHomePreviewAuctions() {
+        replaceAuctionSnapshot(livePreviewAuctions, fetchAuctionList("ACTIVE", null, null, 3));
+        replaceAuctionSnapshot(comingSoonPreviewAuctions, fetchAuctionList("SCHEDULED", null, null, 3));
     }
 
     private List<AuctionListItemPayload> auctionsForActiveView() {
@@ -416,6 +441,11 @@ public class HomeController {
             RealtimeEventType.ADMIN_USER_WARNED,
             userWarnedListener
         );
+        autobidUpdatedListener = event -> handleAutobidUpdated(event);
+        dispatcher.subscribe(
+            RealtimeEventType.AUTOBID_UPDATED,
+            autobidUpdatedListener
+        );
     }
 
     private void unsubscribeRealtimeListener() {
@@ -460,6 +490,13 @@ public class HomeController {
                 userWarnedListener
             );
             userWarnedListener = null;
+        }
+        if (autobidUpdatedListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.AUTOBID_UPDATED,
+                autobidUpdatedListener
+            );
+            autobidUpdatedListener = null;
         }
     }
 
@@ -521,28 +558,51 @@ public class HomeController {
     }
 
     private void updateHomePreviewCaches(AuctionListItemPayload item) {
-        if (isStaleAuctionListItem(item, livePreviewAuctions.get(item.getAuctionId()))
-            || isStaleAuctionListItem(item, comingSoonPreviewAuctions.get(item.getAuctionId()))) {
-            return;
-        }
-
         if (matchesPreviewQuery(item, "ACTIVE")) {
-            livePreviewAuctions.put(item.getAuctionId(), item);
-            trimCache(livePreviewAuctions, 3);
+            updatePreviewCache(livePreviewAuctions, item, true);
         } else {
             removeIfNewerOrSameVersion(livePreviewAuctions, item);
         }
 
         if (matchesPreviewQuery(item, "SCHEDULED")) {
-            comingSoonPreviewAuctions.put(item.getAuctionId(), item);
-            trimCache(comingSoonPreviewAuctions, 3);
+            updatePreviewCache(comingSoonPreviewAuctions, item, true);
         } else {
             removeIfNewerOrSameVersion(comingSoonPreviewAuctions, item);
         }
     }
 
     private boolean isStaleAuctionListItem(AuctionListItemPayload incoming, AuctionListItemPayload existing) {
-        return existing != null && incoming.getAuctionVersion() <= existing.getAuctionVersion();
+        if (existing == null) {
+            return false;
+        }
+        if (incoming.getAuctionVersion() != existing.getAuctionVersion()) {
+            return incoming.getAuctionVersion() < existing.getAuctionVersion();
+        }
+        if (incoming.getUpdatedAt() == null || existing.getUpdatedAt() == null) {
+            return false;
+        }
+        return !incoming.getUpdatedAt().isAfter(existing.getUpdatedAt());
+    }
+
+    private void updatePreviewCache(
+            Map<Long, AuctionListItemPayload> cache,
+            AuctionListItemPayload item,
+            boolean trim) {
+        AuctionListItemPayload existing = cache.get(item.getAuctionId());
+        if (!isStaleAuctionListItem(item, existing)) {
+            cache.put(item.getAuctionId(), item);
+            if (trim) {
+                trimCache(cache, 3);
+            }
+        }
+    }
+
+    private void replaceAuctionSnapshot(
+            Map<Long, AuctionListItemPayload> cache,
+            List<AuctionListItemPayload> snapshot) {
+        cache.clear();
+        mergeAuctionSnapshot(cache, snapshot);
+        trimCache(cache, 3);
     }
 
     private void mergeAuctionSnapshot(
@@ -787,6 +847,29 @@ public class HomeController {
         });
     }
 
+    private void handleAutobidUpdated(RealtimeEvent<AutobidUpdatedPayload> event) {
+        AutobidUpdatedPayload payload = event.getPayload();
+        if (payload == null || currentUserId == null || payload.getUserId() != currentUserId) {
+            return;
+        }
+        Platform.runLater(() -> {
+            if (disposed) {
+                return;
+            }
+            boolean changedAuctionSummary = mergeAutobidSummary(payload);
+            boolean changedMyBid = mergeAutobidIntoMyBidItem(payload);
+            if (!changedMyBid && payload.isWinning()) {
+                refreshMyBidItemsAsync();
+            }
+            if (changedMyBid && activeMyBidController != null) {
+                activeMyBidController.setInitialItems(myBidItemsByAuctionId.values());
+            }
+            if (isHomeShellVisible() && (changedAuctionSummary || changedMyBid)) {
+                renderActiveView();
+            }
+        });
+    }
+
     private boolean mergeMyBidItem(MyBidListItemPayload item) {
         if (item == null) {
             return false;
@@ -797,6 +880,76 @@ public class HomeController {
         }
         myBidItemsByAuctionId.put(item.getAuctionId(), item);
         return true;
+    }
+
+    private boolean mergeAutobidSummary(AutobidUpdatedPayload payload) {
+        ViewerAuctionBidSummaryPayload summary = new ViewerAuctionBidSummaryPayload(
+            payload.getAuctionId(),
+            payload.getUserId(),
+            payload.getAutobidStatus() != null,
+            payload.getAutobidStatus(),
+            payload.isWinning(),
+            payload.isShowActiveMaxBid(),
+            payload.getUpdatedAt()
+        );
+        boolean changed = false;
+        changed |= mergeAutobidSummaryIntoCache(livePreviewAuctions, summary);
+        changed |= mergeAutobidSummaryIntoCache(comingSoonPreviewAuctions, summary);
+        changed |= mergeAutobidSummaryIntoCache(activeViewAuctions, summary);
+        return changed;
+    }
+
+    private boolean mergeAutobidSummaryIntoCache(
+            Map<Long, AuctionListItemPayload> cache,
+            ViewerAuctionBidSummaryPayload summary) {
+        AuctionListItemPayload item = cache.get(summary.getAuctionId());
+        if (item == null || isStaleViewerBidSummary(summary, item.getViewerBidState())) {
+            return false;
+        }
+        item.setViewerBidState(summary);
+        return true;
+    }
+
+    private boolean isStaleViewerBidSummary(
+            ViewerAuctionBidSummaryPayload incoming,
+            ViewerAuctionBidSummaryPayload existing) {
+        if (existing == null || incoming.getUpdatedAt() == null || existing.getUpdatedAt() == null) {
+            return false;
+        }
+        return !incoming.getUpdatedAt().isAfter(existing.getUpdatedAt());
+    }
+
+    private boolean mergeAutobidIntoMyBidItem(AutobidUpdatedPayload payload) {
+        MyBidListItemPayload item = myBidItemsByAuctionId.get(payload.getAuctionId());
+        if (item == null || isStaleAutobidForMyBid(payload, item)) {
+            return false;
+        }
+        item.setBidSource(BidSource.AUTO_BID);
+        item.setMyMaxBidAmount(payload.isShowActiveMaxBid() ? payload.getMaxBidAmount() : null);
+        BidStatus bidStatus = bidStatusFromAutobidStatus(payload.getAutobidStatus());
+        if (bidStatus != null) {
+            item.setBidStatus(bidStatus);
+        }
+        item.setUpdatedAt(payload.getUpdatedAt());
+        return true;
+    }
+
+    private boolean isStaleAutobidForMyBid(AutobidUpdatedPayload payload, MyBidListItemPayload item) {
+        return payload.getUpdatedAt() != null
+            && item.getUpdatedAt() != null
+            && !payload.getUpdatedAt().isAfter(item.getUpdatedAt());
+    }
+
+    private BidStatus bidStatusFromAutobidStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return null;
+        }
+        try {
+            return BidStatus.valueOf(status);
+        } catch (IllegalArgumentException exception) {
+            LOGGER.log(Level.FINE, "Unknown AutoBid status for my-bid row: {0}", status);
+            return null;
+        }
     }
 
     private boolean isStaleMyBidItem(MyBidListItemPayload incoming, MyBidListItemPayload existing) {
@@ -929,6 +1082,7 @@ public class HomeController {
         activeView = view;
         if (VIEW_BID_HISTORY.equals(view)) {
             openMyBidHistoryView();
+            refreshMyBidItemsAsync();
             return;
         }
         if (VIEW_HOME.equals(view)) {
@@ -1050,9 +1204,17 @@ public class HomeController {
     }
 
     private Node createMyBidPreviewItem(MyBidListItemPayload item) {
-        VBox row = new VBox(5);
+        HBox row = new HBox(10);
         row.getStyleClass().add("bid-line-item");
+        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         row.setOnMouseClicked(event -> handleMyBidAuctionSelected(item.getAuctionId()));
+
+        Region accentBar = new Region();
+        accentBar.getStyleClass().add("bid-line-accent");
+
+        VBox content = new VBox(5);
+        content.setMinWidth(0);
+        HBox.setHgrow(content, javafx.scene.layout.Priority.ALWAYS);
 
         Label title = new Label(item.getAuctionTitle() == null || item.getAuctionTitle().isBlank()
             ? "Auction #" + item.getAuctionId()
@@ -1062,7 +1224,7 @@ public class HomeController {
         title.setMinWidth(0);
         title.setPrefWidth(0);
         title.setMaxWidth(Double.MAX_VALUE);
-        title.maxWidthProperty().bind(row.widthProperty().subtract(4));
+        title.maxWidthProperty().bind(content.widthProperty().subtract(4));
         title.getStyleClass().add("bid-item-title");
 
         HBox metaRow = new HBox();
@@ -1073,12 +1235,45 @@ public class HomeController {
         status.getStyleClass().add(previewBidStatusStyle(status.getText()));
 
         metaRow.getChildren().add(price);
-        metaRow.getChildren().add(new javafx.scene.layout.Region());
+        metaRow.getChildren().add(new Region());
         HBox.setHgrow(metaRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
         metaRow.getChildren().add(status);
 
-        row.getChildren().addAll(title, metaRow);
+        Label bidTime = new Label("BID PLACED: " + formatBidTime(item.getBidTime()));
+        bidTime.getStyleClass().add("bid-item-time");
+
+        content.getChildren().addAll(title, metaRow, bidTime);
+        row.getChildren().addAll(accentBar, content);
         return row;
+    }
+
+    private String formatBidTime(LocalDateTime bidTime) {
+        if (bidTime == null) {
+            return "-";
+        }
+        Duration elapsed = Duration.between(bidTime, LocalDateTime.now(UTC_ZONE));
+        if (elapsed.isNegative()) {
+            elapsed = Duration.ZERO;
+        }
+        long seconds = elapsed.getSeconds();
+        if (seconds < 60) {
+            return "Just now";
+        }
+        if (seconds < 3600) {
+            long minutes = seconds / 60;
+            long remainingSeconds = seconds % 60;
+            return String.format("%02dm %02ds", minutes, remainingSeconds);
+        }
+        if (seconds < 86400) {
+            long hours = seconds / 3600;
+            long minutes = (seconds % 3600) / 60;
+            return String.format("%02dh %02dm", hours, minutes);
+        }
+        LocalDateTime displayTime = bidTime
+            .atZone(UTC_ZONE)
+            .withZoneSameInstant(VIETNAM_ZONE)
+            .toLocalDateTime();
+        return displayTime.format(OTHER_YEAR_BID_TIME_FORMATTER);
     }
 
     private String previewBidStatusStyle(String status) {
@@ -1112,6 +1307,7 @@ public class HomeController {
             imagePath,
             List.of(imagePath)
         );
+        ViewerAuctionBidSummaryPayload viewerBidState = payload.getViewerBidState();
 
         return new Auction(
             payload.getAuctionId(),
@@ -1126,9 +1322,16 @@ public class HomeController {
             payload.getBuyNowPrice(),
             payload.getWinnerUserId(),
             payload.getReserveMet(),
+            payload.isAntiSnipeExtended(),
             payload.getStartingTime(),
             payload.getEndingTime(),
-            product
+            product,
+            null,
+            null,
+            viewerBidState == null ? null : viewerBidState.getAutobidStatus(),
+            viewerBidState != null && viewerBidState.isWinning(),
+            viewerBidState != null && viewerBidState.isShowActiveMaxBid(),
+            viewerBidState == null ? null : viewerBidState.getUpdatedAt()
         );
     }
 
@@ -1151,6 +1354,7 @@ public class HomeController {
             imagePath,
             imageUrls
         );
+        var viewerBidState = payload.getViewerBidState();
 
         return new Auction(
             payload.getAuctionId(),
@@ -1165,9 +1369,16 @@ public class HomeController {
             payload.getBuyNowPrice(),
             payload.getWinnerUserId(),
             payload.getReserveMet(),
+            payload.isAntiSnipeExtended(),
             payload.getStartingTime(),
             payload.getEndingTime(),
-            product
+            product,
+            viewerBidState == null ? null : viewerBidState.getAutobidId(),
+            viewerBidState == null ? null : viewerBidState.getMaxBidAmount(),
+            viewerBidState == null ? null : viewerBidState.getAutobidStatus(),
+            viewerBidState != null && viewerBidState.isWinning(),
+            viewerBidState != null && viewerBidState.isShowActiveMaxBid(),
+            viewerBidState == null ? null : viewerBidState.getUpdatedAt()
         );
     }
 
@@ -1326,6 +1537,32 @@ public class HomeController {
             "Could not open the personal bid screen."
         );
     }
+    }
+
+    private void refreshMyBidItemsAsync() {
+        Task<List<MyBidListItemPayload>> task = new Task<>() {
+            @Override
+            protected List<MyBidListItemPayload> call() throws Exception {
+                return fetchMyBidItems();
+            }
+        };
+        task.setOnSucceeded(event -> {
+            if (disposed) {
+                return;
+            }
+            replaceMyBidItems(task.getValue());
+            if (activeMyBidController != null) {
+                activeMyBidController.setInitialItems(myBidItemsByAuctionId.values());
+            }
+            if (VIEW_HOME.equals(activeView) && isHomeShellVisible()) {
+                renderMyBidPreview();
+            }
+        });
+        task.setOnFailed(event -> LOGGER.log(Level.WARNING, "Refresh my-bid items failed", task.getException()));
+
+        Thread thread = new Thread(task, "vbay-my-bid-refresh");
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private Node createAuctionCard(Auction listAuction) {

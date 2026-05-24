@@ -21,6 +21,7 @@ public enum RequestType {
     FILTER_AUCTION,
     SUBSCRIBE_ROOM,
     UNSUBSCRIBE_ROOM,
+    GET_BID_HISTORY,
 
     // Bidder
     GET_MY_BID_LIST,
@@ -28,6 +29,7 @@ public enum RequestType {
     PLACE_BID,
     BUY_NOW,
     AUTO_BID,
+    INCREASE_AUTOBID_MAX,
     CANCEL_BID,
     WATCH_AUCTION,
     QUIT_AUCTION,
@@ -44,7 +46,6 @@ public enum RequestType {
     UPLOAD_IMAGE,
     CREATE_AUCTION,
     CANCEL_AUCTION,
-
     // Admin
     ADMIN_GET_ALL_USERS,
     ADMIN_BAN_USER,
@@ -58,5 +59,4 @@ public enum RequestType {
     ADMIN_GET_PENDING_DEPOSITS,
     ADMIN_APPROVE_DEPOSIT,
     ADMIN_REJECT_DEPOSIT
-
 }

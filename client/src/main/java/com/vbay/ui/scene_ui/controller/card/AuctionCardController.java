@@ -176,9 +176,10 @@ public class AuctionCardController {
 
         Duration remaining = Duration.between(now, endingTime);
         if (remaining.compareTo(Duration.ofHours(24)) >= 0) {
-            return "Ends: " + formatVietnamTime(endingTime);
+            return (auction.isAntiSnipeExtended() ? "Extended: " : "Ends: ") + formatVietnamTime(endingTime);
         }
-        return formatRemainingDuration(remaining) + " Remaining";
+        String prefix = auction.isAntiSnipeExtended() ? "Extended  " : "";
+        return prefix + formatRemainingDuration(remaining) + " Remaining";
     }
 
     private static String formatRemainingDuration(Duration remaining) {

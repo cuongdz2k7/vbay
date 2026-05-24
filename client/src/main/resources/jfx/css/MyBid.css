@@ -23,37 +23,41 @@
 }
 
 .my-bid-heading-row {
-    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.45) transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 0 0 16 0;
+    -fx-background-color: rgba(18, 16, 16, 0.9);
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(255, 181, 160, 0.12);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-padding: 20 22 20 22;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.28), 14, 0.14, 0, 5);
 }
 
 .my-bid-title {
-    -fx-text-fill: #fff2de;
+    -fx-text-fill: #fff7f2;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", Arial, sans-serif;
-    -fx-font-size: 18px;
-    -fx-font-weight: 800;
+    -fx-font-size: 20px;
+    -fx-font-weight: 700;
 }
 
 .my-bid-subtitle {
-    -fx-text-fill: rgba(224, 192, 178, 0.58);
-    -fx-font-size: 11px;
+    -fx-text-fill: rgba(255, 181, 160, 0.58);
+    -fx-font-size: 12px;
     -fx-font-weight: 700;
 }
 
 .my-bid-table-header .label {
-    -fx-text-fill: rgba(224, 192, 178, 0.72);
-    -fx-font-size: 10px;
+    -fx-text-fill: rgba(245, 225, 216, 0.9);
+    -fx-font-size: 12.5px;
     -fx-font-weight: 900;
 }
 
 .my-bid-filter-combo {
-    -fx-background-color: rgba(255, 95, 46, 0.1);
+    -fx-background-color: rgba(255, 95, 46, 0.12);
     -fx-background-insets: 0;
-    -fx-background-radius: 8;
-    -fx-border-color: rgba(217, 95, 26, 0.42);
-    -fx-border-radius: 8;
-    -fx-padding: 5 10 5 10;
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 145, 110, 0.46);
+    -fx-border-radius: 14;
+    -fx-padding: 9 14 9 14;
     -fx-cursor: hand;
     -fx-effect: null;
     -fx-focus-color: transparent;
@@ -62,21 +66,21 @@
 
 .my-bid-filter-combo:focused,
 .my-bid-filter-combo:showing {
-    -fx-background-color: rgba(255, 95, 46, 0.16);
+    -fx-background-color: rgba(255, 95, 46, 0.18);
     -fx-background-insets: 0;
-    -fx-border-color: rgba(217, 95, 26, 0.68);
-    -fx-effect: null;
+    -fx-border-color: rgba(255, 134, 91, 0.82);
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.16), 14, 0.12, 0, 3);
 }
 
 .my-bid-filter-combo .list-cell {
     -fx-background-color: transparent;
-    -fx-text-fill: #e3e2e2;
-    -fx-font-size: 11px;
-    -fx-font-weight: 800;
+    -fx-text-fill: #fff7f2;
+    -fx-font-size: 13px;
+    -fx-font-weight: 900;
 }
 
 .my-bid-filter-combo .arrow {
-    -fx-background-color: #d95f1a;
+    -fx-background-color: #ff8e63;
 }
 
 .my-bid-filter-combo .combo-box-popup .list-view {
@@ -100,33 +104,49 @@
 }
 
 .my-bid-table {
-    -fx-background-color: rgba(13, 14, 15, 0.86);
-    -fx-background-radius: 14;
-    -fx-border-color: rgba(255, 181, 160, 0.16);
-    -fx-border-radius: 14;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(18, 18, 19, 0.66) 0%, rgba(11, 12, 12, 0.72) 64%, rgba(31, 17, 12, 0.2) 100%);
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(255, 181, 160, 0.11);
+    -fx-border-radius: 20;
     -fx-border-width: 1;
-    -fx-max-width: 1120;
-    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.055), 12, 0.08, 0, 2);
+    -fx-max-width: 1210;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 14, 0.1, 0, 4);
+    -fx-padding: 0 0 10 0;
 }
 
 .my-bid-table-header {
-    -fx-background-color: rgba(255, 255, 255, 0.015);
-    -fx-border-color: transparent transparent rgba(89, 66, 56, 0.62) transparent;
+    -fx-background-color: rgba(10, 10, 11, 0.65);
+    -fx-background-radius: 18 18 12 12;
+    -fx-border-color: transparent transparent rgba(255, 181, 160, 0.08) transparent;
+    -fx-border-radius: 18 18 12 12;
     -fx-border-width: 0 0 1 0;
-    -fx-padding: 11 16 11 16;
+    -fx-padding: 22 24 22 24;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+}
+
+.my-bid-rows {
+    -fx-spacing: 7;
+    -fx-padding: 10 8 0 8;
 }
 
 .my-bid-row {
-    -fx-background-color: rgba(13, 14, 15, 0.88);
-    -fx-border-color: transparent transparent #262626 transparent;
-    -fx-border-width: 0 0 1 0;
-    -fx-padding: 11 16 11 16;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.018) 100%);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255, 255, 255, 0.065);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 8 12 8 12;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
     -fx-cursor: hand;
+    -fx-effect: null;
 }
 
 .my-bid-row:hover {
-    -fx-background-color: rgba(255, 95, 46, 0.055);
-    -fx-border-color: transparent transparent #3a2c25 transparent;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.032) 100%);
+    -fx-border-color: rgba(255, 255, 255, 0.14);
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.025), 8, 0.05, 0, 1);
 }
 
 .my-bid-product-image-frame {
@@ -138,12 +158,12 @@
     -fx-background-insets: 0;
     -fx-border-insets: 0;
     -fx-alignment: center;
-    -fx-min-width: 42;
-    -fx-min-height: 42;
-    -fx-pref-width: 42;
-    -fx-pref-height: 42;
-    -fx-max-width: 42;
-    -fx-max-height: 42;
+    -fx-min-width: 40;
+    -fx-min-height: 40;
+    -fx-pref-width: 40;
+    -fx-pref-height: 40;
+    -fx-max-width: 40;
+    -fx-max-height: 40;
 }
 
 .my-bid-product-title {
@@ -161,15 +181,28 @@
 
 .my-bid-price {
     -fx-text-fill: #fff2de;
-    -fx-font-size: 13px;
+    -fx-font-size: 14px;
     -fx-font-weight: 700;
 }
 
 .my-bid-muted-price,
-.my-bid-source {
+.my-bid-source,
+.my-bid-source-auto,
+.my-bid-bid-time {
     -fx-text-fill: rgba(224, 192, 178, 0.68);
     -fx-font-size: 13px;
     -fx-font-weight: 600;
+}
+
+.my-bid-source-auto {
+    -fx-text-fill: #48b7ff;
+    -fx-font-weight: 800;
+}
+
+.my-bid-bid-time {
+    -fx-text-fill: rgba(255, 226, 210, 0.76);
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
 }
 
 .my-bid-time {
@@ -191,27 +224,26 @@
     -fx-background-color: rgba(38, 213, 105, 0.11);
     -fx-border-color: rgba(38, 213, 105, 0.38);
     -fx-border-width: 1;
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 4 10 4 10;
     -fx-text-fill: #4ce083;
     -fx-font-size: 10px;
     -fx-font-weight: 900;
-    -fx-background-radius: 2;
-    -fx-border-radius: 2;
-    -fx-effect: dropshadow(gaussian, rgba(38, 213, 105, 0.28), 12, 0.2, 0, 0);
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-effect: null;
 }
 
 .my-bid-status-won {
-    -fx-background-color: rgba(4, 75, 35, 0.38);
-    -fx-border-color: rgba(18, 138, 67, 0.7);
-    -fx-text-fill: #1fb15d;
-    -fx-effect: dropshadow(gaussian, rgba(31, 177, 93, 0.34), 14, 0.22, 0, 0);
+    -fx-background-color: rgba(20, 122, 67, 0.18);
+    -fx-border-color: rgba(56, 190, 112, 0.42);
+    -fx-text-fill: #39d67d;
 }
 
 .my-bid-status-outbid {
     -fx-background-color: rgba(146, 28, 28, 0.18);
     -fx-border-color: rgba(255, 84, 84, 0.45);
     -fx-text-fill: #ff5454;
-    -fx-effect: dropshadow(gaussian, rgba(255, 84, 84, 0.32), 14, 0.2, 0, 0);
+    -fx-effect: null;
 }
 
 .my-bid-status-lost {
@@ -245,26 +277,37 @@
 }
 
 .my-bid-col-product {
-    -fx-min-width: 300;
-    -fx-pref-width: 300;
+    -fx-min-width: 250;
+    -fx-pref-width: 360;
+    -fx-alignment: CENTER_LEFT;
 }
 
 .my-bid-col-price {
-    -fx-min-width: 145;
-    -fx-pref-width: 145;
+    -fx-min-width: 120;
+    -fx-pref-width: 170;
+    -fx-alignment: CENTER;
 }
 
 .my-bid-col-status {
-    -fx-min-width: 125;
-    -fx-pref-width: 125;
+    -fx-min-width: 100;
+    -fx-pref-width: 140;
+    -fx-alignment: CENTER;
+}
+
+.my-bid-col-bid-time {
+    -fx-min-width: 110;
+    -fx-pref-width: 160;
+    -fx-alignment: CENTER;
 }
 
 .my-bid-col-time {
-    -fx-min-width: 110;
-    -fx-pref-width: 110;
+    -fx-min-width: 100;
+    -fx-pref-width: 140;
+    -fx-alignment: CENTER;
 }
 
 .my-bid-col-source {
     -fx-min-width: 95;
-    -fx-pref-width: 95;
+    -fx-pref-width: 140;
+    -fx-alignment: CENTER;
 }

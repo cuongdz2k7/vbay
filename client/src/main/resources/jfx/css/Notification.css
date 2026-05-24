@@ -1,13 +1,13 @@
 .notification-container {
     -fx-background-color: rgba(16, 15, 16, 0.97);
-    -fx-background-radius: 18;
-    -fx-padding: 18;
+    -fx-background-radius: 14;
+    -fx-padding: 14 14 12 14;
     -fx-min-width: 350;
     -fx-max-width: 420;
     -fx-cursor: hand;
     -fx-border-width: 1;
-    -fx-border-radius: 18;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 24, 0.18, 0, 8);
+    -fx-border-radius: 14;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.34), 18, 0.14, 0, 6);
 }
 
 .notification-container:hover {
@@ -16,17 +16,25 @@
 }
 
 .notification-title {
-    -fx-font-size: 19px;
+    -fx-font-size: 15px;
     -fx-font-weight: 800;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-text-fill: #f3e8e3;
 }
 
 .notification-message {
-    -fx-font-size: 15px;
+    -fx-font-size: 12px;
     -fx-font-family: "Inter", "Segoe UI Variable", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-wrap-text: true;
     -fx-text-fill: rgba(243, 232, 227, 0.78);
+}
+
+.notification-progress-track {
+    -fx-min-height: 5;
+    -fx-max-height: 5;
+    -fx-pref-height: 5;
+    -fx-background-color: rgba(255, 255, 255, 0.08);
+    -fx-background-radius: 999;
 }
 
 .notification-progress {

@@ -12,6 +12,8 @@ import javafx.scene.layout.*;
 import javafx.util.Duration;
 
 public class NotificationManager {
+    private static final double NOTIFICATION_WIDTH = 390;
+    private static final Duration DISPLAY_DURATION = Duration.seconds(4);
 
     public enum NotificationType {
         SUCCESS("notification-success"),
@@ -60,8 +62,10 @@ public class NotificationManager {
         Platform.runLater(() -> {
             ensureContainer();
 
-            VBox notification = new VBox(5);
+            VBox notification = new VBox(7);
             notification.getStyleClass().addAll("notification-container", type.getStyleClass());
+            notification.setMinWidth(NOTIFICATION_WIDTH);
+            notification.setMaxWidth(NOTIFICATION_WIDTH);
             
             Label titleLabel = new Label(title);
             titleLabel.getStyleClass().add("notification-title");
@@ -73,9 +77,15 @@ public class NotificationManager {
             Region progress = new Region();
             progress.getStyleClass().add("notification-progress");
             progress.setMinWidth(0);
-            progress.setPrefWidth(400); // Max width of container
+            progress.setPrefWidth(NOTIFICATION_WIDTH - 28);
+            progress.setMaxWidth(NOTIFICATION_WIDTH - 28);
 
-            notification.getChildren().addAll(titleLabel, messageLabel, progress);
+            StackPane progressTrack = new StackPane(progress);
+            progressTrack.getStyleClass().add("notification-progress-track");
+            progressTrack.setAlignment(Pos.CENTER_LEFT);
+            progressTrack.setMaxWidth(Double.MAX_VALUE);
+
+            notification.getChildren().addAll(titleLabel, messageLabel, progressTrack);
 
             notificationContainer.getChildren().add(0, notification);
 
@@ -86,28 +96,28 @@ public class NotificationManager {
             );
             slideIn.play();
 
-            // Animation for progress bar
-            Timeline timeline = new Timeline();
-            // Start from full width and go to 0
-            KeyValue keyValue = new KeyValue(progress.prefWidthProperty(), 0);
-            KeyFrame keyFrame = new KeyFrame(Duration.seconds(3), keyValue);
-            timeline.getKeyFrames().add(keyFrame);
+            Timeline timeline = new Timeline(
+                new KeyFrame(DISPLAY_DURATION, new KeyValue(progress.maxWidthProperty(), 0))
+            );
 
-            timeline.setOnFinished(event -> {
-                Timeline fadeOut = new Timeline();
-                fadeOut.getKeyFrames().add(new KeyFrame(Duration.millis(300), 
-                    new KeyValue(notification.opacityProperty(), 0)));
-                fadeOut.setOnFinished(e -> notificationContainer.getChildren().remove(notification));
-                fadeOut.play();
-            });
+            timeline.setOnFinished(event -> dismiss(notification));
 
             timeline.play();
             
-            // Allow clicking to dismiss
             notification.setOnMouseClicked(event -> {
                 timeline.stop();
-                notificationContainer.getChildren().remove(notification);
+                dismiss(notification);
             });
         });
+    }
+
+    private static void dismiss(VBox notification) {
+        Timeline fadeOut = new Timeline(
+            new KeyFrame(Duration.millis(160),
+                new KeyValue(notification.opacityProperty(), 0),
+                new KeyValue(notification.translateXProperty(), 40))
+        );
+        fadeOut.setOnFinished(event -> notificationContainer.getChildren().remove(notification));
+        fadeOut.play();
     }
 }

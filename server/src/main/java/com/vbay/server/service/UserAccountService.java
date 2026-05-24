@@ -31,6 +31,13 @@ public class UserAccountService {
     public UserAccountService(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
+            DomainEventPublisher domainEventPublisher) {
+        this(connectionProvider, repositoryFactory, domainEventPublisher, null);
+    }
+
+    public UserAccountService(
+            ConnectionProvider connectionProvider,
+            RepositoryFactory repositoryFactory,
             DomainEventPublisher domainEventPublisher,
             com.vbay.server.realtime.transport.RealtimeBroadcaster realtimeBroadcaster) {
         this.connectionProvider = connectionProvider;
@@ -84,11 +91,13 @@ public class UserAccountService {
                 adminRoom.setType(com.vbay.shared.enums.realtime.RoomType.AUCTION_LIST);
                 adminRoom.setTargetId(0L);
                 
-                realtimeBroadcaster.broadcast(new com.vbay.shared.protocol.RealtimeEvent<>(
-                    com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
-                    adminRoom,
-                    adminPayload
-                ));
+                if (realtimeBroadcaster != null) {
+                    realtimeBroadcaster.broadcast(new com.vbay.shared.protocol.RealtimeEvent<>(
+                        com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+                        adminRoom,
+                        adminPayload
+                    ));
+                }
 
                 // Return current unchanged balance
                 return ResultMapper.toUserBalanceResult(

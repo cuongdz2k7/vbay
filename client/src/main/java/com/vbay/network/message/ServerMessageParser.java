@@ -10,6 +10,7 @@ import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.NotificationPayload;
@@ -128,6 +129,7 @@ public class ServerMessageParser {
         types.put(RealtimeEventType.ADMIN_USER_KICKED, Void.class);
         types.put(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, Void.class);
         types.put(RealtimeEventType.ADMIN_USER_WARNED, UserWarnedPayload.class);
+        types.put(RealtimeEventType.AUTOBID_UPDATED, AutobidUpdatedPayload.class);
         return types;
     }
 }

@@ -20,11 +20,13 @@ public class AuctionItemPayload {
     private BigDecimal buyNowPrice;
     private Long winnerUserId;
     private Boolean reserveMet;
+    private boolean antiSnipeExtended;
     private String thumbnailUrl;
     private List<String> imageUrls;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
+    private ViewerAuctionBidStatePayload viewerBidState;
 
     public AuctionItemPayload() {
     }
@@ -45,6 +47,7 @@ public class AuctionItemPayload {
             BigDecimal buyNowPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String thumbnailUrl,
             List<String> imageUrls,
             LocalDateTime startingTime,
@@ -65,6 +68,7 @@ public class AuctionItemPayload {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.thumbnailUrl = thumbnailUrl;
         this.imageUrls = imageUrls;
         this.startingTime = startingTime;
@@ -102,6 +106,8 @@ public class AuctionItemPayload {
     public void setWinnerUserId(Long winnerUserId) { this.winnerUserId = winnerUserId; }
     public Boolean getReserveMet() { return reserveMet; }
     public void setReserveMet(Boolean reserveMet) { this.reserveMet = reserveMet; }
+    public boolean isAntiSnipeExtended() { return antiSnipeExtended; }
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) { this.antiSnipeExtended = antiSnipeExtended; }
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
     public List<String> getImageUrls() { return imageUrls; }
@@ -112,4 +118,6 @@ public class AuctionItemPayload {
     public void setEndingTime(LocalDateTime endingTime) { this.endingTime = endingTime; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    public ViewerAuctionBidStatePayload getViewerBidState() { return viewerBidState; }
+    public void setViewerBidState(ViewerAuctionBidStatePayload viewerBidState) { this.viewerBidState = viewerBidState; }
 }

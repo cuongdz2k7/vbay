@@ -19,6 +19,7 @@ public class AuctionListItemResult {
     private final BigDecimal buyNowPrice;
     private final Long winnerUserId;
     private final Boolean reserveMet;
+    private final boolean antiSnipeExtended;
     private final String thumbnailUrl;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
@@ -40,6 +41,7 @@ public class AuctionListItemResult {
             BigDecimal buyNowPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String thumbnailUrl,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
@@ -59,6 +61,7 @@ public class AuctionListItemResult {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.thumbnailUrl = thumbnailUrl;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
@@ -80,6 +83,7 @@ public class AuctionListItemResult {
     public BigDecimal getBuyNowPrice() { return buyNowPrice; }
     public Long getWinnerUserId() { return winnerUserId; }
     public Boolean getReserveMet() { return reserveMet; }
+    public boolean isAntiSnipeExtended() { return antiSnipeExtended; }
     public String getThumbnailUrl() { return thumbnailUrl; }
     public LocalDateTime getStartingTime() { return startingTime; }
     public LocalDateTime getEndingTime() { return endingTime; }

@@ -1,6 +1,7 @@
 package com.vbay.server.network_connection;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,8 +14,12 @@ import com.vbay.server.realtime.subscription.SubscriptionService;
 import com.vbay.server.service.AdminService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
-import com.vbay.server.service.BidService;
 import com.vbay.server.service.UserAccountService;
+import com.vbay.server.service.bid.AutobidService;
+import com.vbay.server.service.bid.BidQueryService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.ManualBidService;
+import com.vbay.server.service.result.AutobidRegistrationResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.upload.ImageStorageService;
@@ -40,7 +45,10 @@ public class RequestDistributor {
     private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
     private final AuctionService auctionService;
-    private final BidService bidService;
+    private final ManualBidService bidService;
+    private final AutobidService autobidService;
+    private final BuyNowService buyNowService;
+    private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
@@ -49,7 +57,10 @@ public class RequestDistributor {
 
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
-                                BidService bidService, 
+                                ManualBidService bidService, 
+                                AutobidService autobidService,
+                                BuyNowService buyNowService,
+                                BidQueryService bidQueryService,
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
                                 ImageStorageService imageStorageService,
@@ -58,6 +69,9 @@ public class RequestDistributor {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.autobidService = autobidService;
+        this.buyNowService = buyNowService;
+        this.bidQueryService = bidQueryService;
         this.userAccountService = userAccountService;
         this.subscriptionService = subscriptionService;
         this.imageStorageService = imageStorageService;
@@ -104,18 +118,24 @@ public class RequestDistributor {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
                 case LOGIN -> authService.handleLogin(requestId, payload, session);
-                case LOGOUT -> authService.handleLogout(requestId, session);
+                case LOGOUT -> {
+                    subscriptionService.disconnect(connection);
+                    yield authService.handleLogout(requestId, session);
+                }
                 case REGISTER -> authService.handleRegister(requestId, payload);
                 case UPLOAD_IMAGE -> imageStorageService.handleUploadImage(requestId, payload, session);
                 case CREATE_AUCTION -> auctionService.handleCreateAuction(requestId, payload, session);
-                case GET_MY_BID_LIST -> bidService.handleGetMyBidList(requestId, session);
+                case GET_MY_BID_LIST -> bidQueryService.handleGetMyBidList(requestId, session);
                 case PLACE_BID -> bidService.handlePlaceBid(requestId, payload, session);
-                case BUY_NOW -> bidService.handleBuyNow(requestId, payload, session);
+                case AUTO_BID -> autobidService.handleAutoBid(requestId, payload, session);
+                case INCREASE_AUTOBID_MAX -> autobidService.handleIncreaseAutobidMax(requestId, payload, session);
+                case BUY_NOW -> buyNowService.handleBuyNow(requestId, payload, session);
                 case DEPOSIT_BALANCE -> userAccountService.handleDepositBalance(requestId, payload, session);
                 case SUBSCRIBE_ROOM -> subscriptionService.handleSubscribeRoom(requestId, payload, session, connection);
                 case UNSUBSCRIBE_ROOM -> subscriptionService.handleUnsubscribeRoom(requestId, payload, session, connection);
                 case GET_AUCTION_LIST -> auctionService.handleGetAuctionList(requestId, payload, session);
                 case GET_AUCTION_DETAIL -> auctionService.handleGetAuctionDetail(requestId, payload, session);
+                case GET_BID_HISTORY -> bidQueryService.handleGetBidHistory(requestId, payload, session);
                 case ADMIN_GET_ALL_USERS -> adminService.handleAdminGetAllUsers(requestId, session);
                 case ADMIN_GET_ALL_AUCTIONS -> adminService.handleAdminGetAllAuctions(requestId, session);
                 case ADMIN_BAN_USER -> adminService.handleAdminBanUser(requestId, payload, session);
