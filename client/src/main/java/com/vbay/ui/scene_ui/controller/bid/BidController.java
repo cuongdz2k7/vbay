@@ -121,6 +121,8 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private Label currentBidLabel;
     @FXML
+    private Label currentBidTitleLabel;
+    @FXML
     private Label buyNowLabel;
     @FXML
     private Label startingPriceLabel;
@@ -192,6 +194,10 @@ public class BidController implements SceneDataReceiver<Auction> {
     private VBox historySection;
     @FXML
     private StackPane proxyBidOverlay;
+    @FXML
+    private Label sellerUsernameLabel;
+    @FXML
+    private Label sellerEmailLabel;
     @FXML
     private Label proxyBidTitleLabel;
     @FXML
@@ -305,6 +311,15 @@ public class BidController implements SceneDataReceiver<Auction> {
         nextMinimumBid = calculateNextMinimumBid(currentPrice, bidStep, buyNowPrice, data.getWinnerUserId());
 
         titleLabel.setText(data.getTitle());
+        titleLabel.setWrapText(true);
+        if (sellerUsernameLabel != null) {
+            String sellerUser = data.getSellerUsername();
+            sellerUsernameLabel.setText("Seller: " + (sellerUser == null || sellerUser.isBlank() ? "Seller" : sellerUser));
+        }
+        if (sellerEmailLabel != null) {
+            String sellerMail = data.getSellerEmail();
+            sellerEmailLabel.setText(sellerMail == null || sellerMail.isBlank() ? "Email not available" : sellerMail);
+        }
         descriptionLabel.setText(categoryName(product.getCategoryId()));
         longDescriptionLabel.setText(descriptionFor(data));
         updateCurrentBidLabel(data.getWinnerUserId(), currentPrice);
@@ -919,6 +934,24 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private void updateCurrentBidLabel(Long winnerUserId, BigDecimal currentPrice) {
         currentBidLabel.setText(winnerUserId == null ? "-" : formatCurrency(currentPrice));
+        if (currentBidTitleLabel != null) {
+            boolean isEnded = false;
+            if (currentAuction != null) {
+                if (isClosedStatus(currentAuction.getStatus())) {
+                    isEnded = true;
+                } else {
+                    LocalDateTime endingTime = currentAuction.getEndingTime();
+                    if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                        isEnded = true;
+                    }
+                }
+            }
+            if (isEnded) {
+                currentBidTitleLabel.setText("FINAL PRICE");
+            } else {
+                currentBidTitleLabel.setText("CURRENT BID");
+            }
+        }
     }
 
     private void updateBidInfo(Auction auction) {
@@ -1028,6 +1061,20 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
         updateAuctionTimeLabels(currentAuction);
         progressBar.setProgress(calculateProgress(currentAuction));
+        if (currentBidTitleLabel != null) {
+            boolean isEnded = isClosedStatus(currentAuction.getStatus());
+            if (!isEnded) {
+                LocalDateTime endingTime = currentAuction.getEndingTime();
+                if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                    isEnded = true;
+                }
+            }
+            if (isEnded) {
+                currentBidTitleLabel.setText("FINAL PRICE");
+            } else {
+                currentBidTitleLabel.setText("CURRENT BID");
+            }
+        }
     }
 
     private void updateAuctionTimeLabels(Auction auction) {

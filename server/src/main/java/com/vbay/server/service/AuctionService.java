@@ -31,6 +31,7 @@ import com.vbay.server.repository.BidRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
+import com.vbay.server.repository.UserRepository;
 import com.vbay.server.repository.enums.AuctionTransition;
 import com.vbay.server.service.bid.enums.AutobidStatus;
 import com.vbay.server.service.result.AuctionClosedResult;
@@ -210,9 +211,16 @@ public class AuctionService {
         try (Connection connection = connectionProvider.getConnection()) {
             AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
             AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
+            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             AuctionItemPayload payload = auctionRepository.findAuctionItemById(request.getAuctionId())
                 .map(ResultMapper::toAuctionItemPayload)
                 .orElseThrow(() -> new ValidationException("Auction not found"));
+
+            userRepository.findById(payload.getSellerId()).ifPresent(user -> {
+                payload.setSellerUsername(user.getUserName());
+                payload.setSellerEmail(user.getEmail());
+            });
+
             payload.setViewerBidState(buildViewerAuctionBidState(
                 payload.getAuctionId(),
                 payload.getWinnerUserId(),

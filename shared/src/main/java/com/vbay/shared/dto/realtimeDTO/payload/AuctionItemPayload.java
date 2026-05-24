@@ -27,6 +27,8 @@ public class AuctionItemPayload {
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
     private ViewerAuctionBidStatePayload viewerBidState;
+    private String sellerUsername;
+    private String sellerEmail;
 
     public AuctionItemPayload() {
     }
@@ -120,4 +122,8 @@ public class AuctionItemPayload {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public ViewerAuctionBidStatePayload getViewerBidState() { return viewerBidState; }
     public void setViewerBidState(ViewerAuctionBidStatePayload viewerBidState) { this.viewerBidState = viewerBidState; }
+    public String getSellerUsername() { return sellerUsername; }
+    public void setSellerUsername(String sellerUsername) { this.sellerUsername = sellerUsername; }
+    public String getSellerEmail() { return sellerEmail; }
+    public void setSellerEmail(String sellerEmail) { this.sellerEmail = sellerEmail; }
 }
