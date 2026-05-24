@@ -35,8 +35,8 @@
                 <Button fx:id="tabFailed" text="Cancelled/Failed" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
             </HBox>
 
-            <!-- Dynamic grid of standard auction cards centered and restricted to 4 per row -->
-            <FlowPane fx:id="productFlow" alignment="CENTER" hgap="20" vgap="20" prefWrapLength="980" maxWidth="980" styleClass="auction-grid" VBox.vgrow="ALWAYS"/>
+            <!-- Dynamic grid of standard auction cards left-aligned and restricted to 4 per row -->
+            <FlowPane fx:id="productFlow" alignment="TOP_LEFT" hgap="20" vgap="20" prefWrapLength="980" maxWidth="980" styleClass="auction-grid" VBox.vgrow="ALWAYS"/>
 
             <Label fx:id="emptyStateLabel" text="No auctions found." managed="false" visible="false" styleClass="my-auction-empty"/>
         </VBox>

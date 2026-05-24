@@ -34,6 +34,7 @@ import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidSummaryPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
@@ -247,6 +248,8 @@ public class HomeController {
     @FXML
     private VBox myBidPreviewBox;
     @FXML
+    private VBox myAuctionsPreviewBox;
+    @FXML
     private Label emptyStateLabel;
     @FXML
     private HBox paginationBar;
@@ -293,6 +296,7 @@ public class HomeController {
         subscribeRealtimeListener();
         subscribeServerRooms();
         loadMyBidItems();
+        loadMyAuctionsPreview();
 
         paginationBar.setVisible(false);
         paginationBar.setManaged(false);
@@ -1100,16 +1104,141 @@ public class HomeController {
             Label empty = new Label("No recent bids.");
             empty.getStyleClass().add("bid-item-meta");
             myBidPreviewBox.getChildren().add(empty);
+            loadMyAuctionsPreview();
             return;
         }
 
         for (MyBidListItemPayload item : items) {
             myBidPreviewBox.getChildren().add(createMyBidPreviewItem(item));
         }
+        loadMyAuctionsPreview();
     }
 
     private LocalDateTime myBidSortTime(MyBidListItemPayload item) {
         return item.getUpdatedAt() == null ? item.getBidTime() : item.getUpdatedAt();
+    }
+
+    private void loadMyAuctionsPreview() {
+        if (myAuctionsPreviewBox == null) {
+            return;
+        }
+
+        Long userId = currentUserId;
+        if (userId == null) {
+            myAuctionsPreviewBox.getChildren().clear();
+            Label empty = new Label("No recent auctions.");
+            empty.getStyleClass().add("bid-item-meta");
+            myAuctionsPreviewBox.getChildren().add(empty);
+            return;
+        }
+
+        new Thread(() -> {
+            try {
+                List<AuctionListItemPayload> items = fetchAuctionList(null, null, userId, 2);
+
+                javafx.application.Platform.runLater(() -> {
+                    myAuctionsPreviewBox.getChildren().clear();
+                    if (items.isEmpty()) {
+                        Label empty = new Label("No recent auctions.");
+                        empty.getStyleClass().add("bid-item-meta");
+                        myAuctionsPreviewBox.getChildren().add(empty);
+                        return;
+                    }
+
+                    for (AuctionListItemPayload item : items) {
+                        myAuctionsPreviewBox.getChildren().add(createMyAuctionPreviewItem(item));
+                    }
+                });
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    private Node createMyAuctionPreviewItem(AuctionListItemPayload item) {
+        VBox card = new VBox(8);
+        card.getStyleClass().add("bid-line-item");
+        card.setOnMouseClicked(event -> handleMyBidAuctionSelected(item.getAuctionId()));
+
+        HBox statusRow = new HBox();
+        statusRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label statusLabel = new Label("LISTING STATUS");
+        statusLabel.getStyleClass().add("bid-item-time");
+
+        String statusStr = item.getStatus() == null ? "ACTIVE" : item.getStatus().toUpperCase();
+        Label statusValue = new Label(statusStr);
+        statusValue.getStyleClass().add(previewListingStatusStyle(statusStr));
+
+        statusRow.getChildren().add(statusLabel);
+        statusRow.getChildren().add(new Region());
+        HBox.setHgrow(statusRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        statusRow.getChildren().add(statusValue);
+
+        Label title = new Label(item.getTitle() == null || item.getTitle().isBlank()
+            ? "Auction #" + item.getAuctionId()
+            : item.getTitle());
+        title.getStyleClass().add("bid-item-title");
+        title.setWrapText(false);
+        title.setTextOverrun(OverrunStyle.ELLIPSIS);
+        title.setMinWidth(0);
+        title.setPrefWidth(0);
+        title.setMaxWidth(Double.MAX_VALUE);
+        title.maxWidthProperty().bind(card.widthProperty().subtract(24));
+
+        HBox priceBidsRow = new HBox();
+        priceBidsRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        BigDecimal currentPrice = item.getCurrentPrice() == null ? item.getStartingPrice() : item.getCurrentPrice();
+        Label price = new Label(CURRENCY_FORMAT.format(currentPrice == null ? BigDecimal.ZERO : currentPrice));
+        price.getStyleClass().add("bid-item-title");
+
+        Label bidsCountLabel = new Label("... BIDS");
+        bidsCountLabel.getStyleClass().add("bid-item-meta");
+
+        priceBidsRow.getChildren().add(price);
+        priceBidsRow.getChildren().add(new Region());
+        HBox.setHgrow(priceBidsRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        priceBidsRow.getChildren().add(bidsCountLabel);
+
+        card.getChildren().addAll(statusRow, title, priceBidsRow);
+
+        // Fetch bid count asynchronously
+        new Thread(() -> {
+            try {
+                Respond<?> response = SocketClient.getClient().sendMessage(
+                    new Request<>(RequestType.GET_BID_HISTORY, new AuctionDetailRequest(item.getAuctionId()))
+                );
+                if (response != null && response.isStatus()) {
+                    BidHistoryItemPayload[] bids = JsonUtils.fromJson(
+                        JsonUtils.toJson(response.getData()),
+                        BidHistoryItemPayload[].class
+                    );
+                    int count = bids != null ? bids.length : 0;
+                    javafx.application.Platform.runLater(() -> {
+                        bidsCountLabel.setText(count + (count == 1 ? " BID" : " BIDS"));
+                    });
+                } else {
+                    javafx.application.Platform.runLater(() -> {
+                        bidsCountLabel.setText("0 BIDS");
+                    });
+                }
+            } catch (Exception e) {
+                javafx.application.Platform.runLater(() -> {
+                    bidsCountLabel.setText("0 BIDS");
+                });
+            }
+        }).start();
+
+        return card;
+    }
+
+    private String previewListingStatusStyle(String status) {
+        return switch (status) {
+            case "ACTIVE", "SOLD", "WON" -> "bid-status-accent";
+            case "SCHEDULED" -> "price";
+            default -> "bid-status-muted";
+        };
     }
 
     private Node createMyBidPreviewItem(MyBidListItemPayload item) {

@@ -41,6 +41,7 @@ import com.vbay.shared.enums.payment.PaymentStatus;
 import com.vbay.shared.enums.payment.PaymentType;
 import com.vbay.shared.enums.product.ProductStatus;
 import com.vbay.server.model.Auction;
+import com.vbay.server.service.bid.enums.AutobidStatus;
 import com.vbay.server.service.bid.BuyNowService;
 import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.service.bid.engine.AntiSnipePolicy;
@@ -397,6 +398,35 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
+    void syncAuctionStatus_whenWinningAutobidEnds_releasesMaxAndChargesFinalPrice() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "autowinner", UserStatus.ACTIVE, new BigDecimal("700.00"), new BigDecimal("300.00"));
+        long auctionId = seedAuction(
+            AuctionStatus.ACTIVE,
+            new BigDecimal("150.00"),
+            new BigDecimal("10.00"),
+            new BigDecimal("500.00"),
+            LocalDateTime.now().minusHours(2),
+            LocalDateTime.now().minusMinutes(1)
+        );
+        updateAuctionWinner(auctionId, 2L);
+        long bidId = seedBid(auctionId, 2L, new BigDecimal("150.00"), BidStatus.WINNING, BidSource.AUTO_BID);
+        seedAutobid(auctionId, 2L, new BigDecimal("300.00"), AutobidStatus.WINNING);
+
+        auctionService.syncAuctionStatus(auctionId);
+
+        assertEquals(AuctionStatus.ENDED.name(), scalarString("SELECT status FROM auctions WHERE id = " + auctionId));
+        assertDecimal("150.00", scalarDecimal("SELECT final_price FROM auctions WHERE id = " + auctionId));
+        assertEquals(BidStatus.WON.name(), scalarString("SELECT status FROM bids WHERE id = " + bidId));
+        assertEquals(AutobidStatus.WON.name(), scalarString("SELECT status FROM autobids WHERE auction_id = " + auctionId));
+        assertDecimal("850.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        assertEquals(PaymentStatus.HELD.name(), scalarString("SELECT status FROM payments WHERE auction_id = " + auctionId));
+        assertEquals(PaymentType.AUCTION_WIN.name(), scalarString("SELECT type FROM payments WHERE auction_id = " + auctionId));
+        assertDecimal("150.00", scalarDecimal("SELECT amount FROM payments WHERE auction_id = " + auctionId));
+    }
+
+    @Test
     void placeBid_withoutAuthenticatedSession_rejectsBeforeTransaction() {
         assertThrows(AuthenticationException.class,
             () -> bidService.placeBid(new PlaceBidRequest(1L, new BigDecimal("120.00")), new ClientSession()));
@@ -527,6 +557,10 @@ class AuctionServiceIntegrationTest {
     }
 
     private long seedBid(long auctionId, long bidderId, BigDecimal amount, BidStatus status) throws SQLException {
+        return seedBid(auctionId, bidderId, amount, status, BidSource.USER_BID);
+    }
+
+    private long seedBid(long auctionId, long bidderId, BigDecimal amount, BidStatus status, BidSource source) throws SQLException {
         String sql = """
             INSERT INTO bids (auction_id, bidder_id, bid_amount, bid_source, status)
             VALUES (?, ?, ?, ?, ?)
@@ -535,13 +569,27 @@ class AuctionServiceIntegrationTest {
             statement.setLong(1, auctionId);
             statement.setLong(2, bidderId);
             statement.setBigDecimal(3, amount);
-            statement.setString(4, BidSource.USER_BID.name());
+            statement.setString(4, source.name());
             statement.setString(5, status.name());
             statement.executeUpdate();
             try (ResultSet rs = statement.getGeneratedKeys()) {
                 rs.next();
                 return rs.getLong(1);
             }
+        }
+    }
+
+    private void seedAutobid(long auctionId, long userId, BigDecimal maxBidAmount, AutobidStatus status) throws SQLException {
+        String sql = """
+            INSERT INTO autobids (auction_id, user_id, max_bid_amount, status)
+            VALUES (?, ?, ?, ?)
+            """;
+        try (PreparedStatement statement = keepAliveConnection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            statement.setLong(2, userId);
+            statement.setBigDecimal(3, maxBidAmount);
+            statement.setString(4, status.name());
+            statement.executeUpdate();
         }
     }
 
@@ -693,7 +741,6 @@ class AuctionServiceIntegrationTest {
                     auction_id BIGINT NOT NULL,
                     user_id BIGINT NOT NULL,
                     max_bid_amount DECIMAL(15,2) NOT NULL,
-                    hold_amount DECIMAL(15,2) NOT NULL,
                     status VARCHAR(20) NOT NULL,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

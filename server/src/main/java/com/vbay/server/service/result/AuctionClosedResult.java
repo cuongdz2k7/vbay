@@ -21,6 +21,7 @@ public class AuctionClosedResult {
     private final LocalDateTime closedAt;
     private final List<UserMyBidListItemResult> affectedMyBidItems;
     private final List<AutobidUpdateResult> affectedAutobids;
+    private final List<UserBalanceResult> affectedBalanceResults;
 
     public AuctionClosedResult(
             long auctionId,
@@ -35,7 +36,8 @@ public class AuctionClosedResult {
             AuctionCloseReason reason,
             LocalDateTime closedAt,
             List<UserMyBidListItemResult> affectedMyBidItems,
-            List<AutobidUpdateResult> affectedAutobids) {
+            List<AutobidUpdateResult> affectedAutobids,
+            List<UserBalanceResult> affectedBalanceResults) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
         this.auctionStatus = auctionStatus;
@@ -49,6 +51,7 @@ public class AuctionClosedResult {
         this.closedAt = closedAt;
         this.affectedMyBidItems = affectedMyBidItems == null ? List.of() : List.copyOf(affectedMyBidItems);
         this.affectedAutobids = affectedAutobids == null ? List.of() : List.copyOf(affectedAutobids);
+        this.affectedBalanceResults = affectedBalanceResults == null ? List.of() : List.copyOf(affectedBalanceResults);
     }
 
     public long getAuctionId() {
@@ -101,5 +104,9 @@ public class AuctionClosedResult {
 
     public List<AutobidUpdateResult> getAffectedAutobids() {
         return affectedAutobids;
+    }
+
+    public List<UserBalanceResult> getAffectedBalanceResults() {
+        return affectedBalanceResults;
     }
 }
