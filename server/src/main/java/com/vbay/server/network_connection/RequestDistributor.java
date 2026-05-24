@@ -1,11 +1,9 @@
 package com.vbay.server.network_connection;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
@@ -40,7 +38,6 @@ import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
-
 public class RequestDistributor {
     private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
@@ -54,7 +51,6 @@ public class RequestDistributor {
     private final ImageStorageService imageStorageService;
     private final AdminService adminService;
     private final ClientConnectionRegistry connectionRegistry;
-
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
                                 ManualBidService bidService, 
@@ -78,7 +74,6 @@ public class RequestDistributor {
         this.adminService = adminService;
         this.connectionRegistry = connectionRegistry;
     }
-
     public Respond<?> dispatch (String rawRequest, ClientSession session, ClientConnection connection) {
         JsonObject root;
         try {
@@ -95,25 +90,19 @@ public class RequestDistributor {
         if (typeElement == null || typeElement.isJsonNull()) {
             typeElement = root.get("type");
         }
-
         String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
                             ? requestIdElement.getAsString() : null;
-
         String typeRaw = (typeElement != null && !typeElement.isJsonNull()) ? typeElement.getAsString() : null;
-
         if (typeRaw == null || typeRaw.isBlank()) {
             return new Respond<>(requestId, false, "Invalid request type", null);
         }
-
         JsonElement payload = root.get("payload");
-
         RequestType type;
         try {
             type = RequestType.valueOf(typeRaw);
         } catch (IllegalArgumentException e) {
             return new Respond<>(requestId, false, "Unsupported request type: " + typeRaw, null);
         }
-
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);

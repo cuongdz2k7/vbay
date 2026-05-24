@@ -333,10 +333,10 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<String> findLatestBanReason(long userId) throws SQLException {
         String sql = """
-            SELECT reason 
-            FROM admin_actions_log 
-            WHERE target_user_id = ? AND action_type = 'BAN_USER' 
-            ORDER BY created_at DESC 
+            SELECT reason
+            FROM admin_actions_log
+            WHERE target_user_id = ? AND action_type = 'BAN_USER'
+            ORDER BY created_at DESC
             LIMIT 1
             """;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {

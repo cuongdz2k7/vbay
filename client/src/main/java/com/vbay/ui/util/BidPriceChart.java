@@ -23,7 +23,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 
-public class BidPriceChart extends Pane {
+public final class BidPriceChart extends Pane {
     private final List<BidHistoryItemPayload> bids = new ArrayList<>();
     
     public BidPriceChart() {
