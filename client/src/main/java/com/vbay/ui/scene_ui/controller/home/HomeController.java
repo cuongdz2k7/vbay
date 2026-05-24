@@ -51,6 +51,7 @@ import com.vbay.ui.scene_ui.SceneManager;
 import com.vbay.ui.scene_ui.controller.auction.CreateAuctionController;
 import com.vbay.ui.scene_ui.controller.bid.BidController;
 import com.vbay.ui.scene_ui.controller.bid.MyBidController;
+import com.vbay.ui.scene_ui.controller.bid.MyAuctionController;
 import com.vbay.ui.scene_ui.controller.card.AuctionCardController;
 import com.vbay.ui.scene_ui.controller.deposit.DepositBalanceController;
 
@@ -194,6 +195,8 @@ public class HomeController {
     private static final String BID_CSS = "/jfx/css/Bid.css";
     private static final String MY_BID_VIEW = "/jfx/scene/bid/MyBid.fxml";
     private static final String MY_BID_CSS = "/jfx/css/MyBid.css";
+    private static final String MY_AUCTION_VIEW = "/jfx/scene/bid/MyAuction.fxml";
+    private static final String MY_AUCTION_CSS = "/jfx/css/MyAuction.css";
     private static final String DEPOSIT_BALANCE_VIEW = "/jfx/scene/DepositBalance.fxml";
 
     private static final String VIEW_HOME = "Home";
@@ -275,6 +278,7 @@ public class HomeController {
     private DepositBalanceController activeDepositController;
     private BidController activeBidController;
     private MyBidController activeMyBidController;
+    private MyAuctionController activeMyAuctionController;
     private Long currentUserId;
     private boolean disposed;
 
@@ -518,6 +522,11 @@ public class HomeController {
 
             if (isHomeShellVisible()) {
                 renderActiveView();
+            } else if (VIEW_MY_AUCTION.equals(activeView) && activeMyAuctionController != null) {
+                List<Auction> myAuctions = auctionsForActiveView().stream()
+                    .map(this::toAuction)
+                    .toList();
+                activeMyAuctionController.setInitialItems(myAuctions);
             }
         });
     }
@@ -1103,6 +1112,19 @@ public class HomeController {
             }
             return;
         }
+        if (VIEW_MY_AUCTION.equals(activeView)) {
+            sidebarSubtitle.setText(subtitleForSidebar());
+            setActiveNavigationState();
+            if (activeMyAuctionController == null) {
+                openMyAuctionView();
+            } else {
+                List<Auction> myAuctions = auctionsForActiveView().stream()
+                    .map(this::toAuction)
+                    .toList();
+                activeMyAuctionController.setInitialItems(myAuctions);
+            }
+            return;
+        }
         List<AuctionListItemPayload> auctions = auctionsForActiveView();
         sidebarSubtitle.setText(subtitleForSidebar());
         homeRoot.setRight(VIEW_HOME.equals(activeView) ? homeRight : null);
@@ -1356,7 +1378,7 @@ public class HomeController {
         );
         var viewerBidState = payload.getViewerBidState();
 
-        return new Auction(
+        Auction auction = new Auction(
             payload.getAuctionId(),
             payload.getAuctionVersion(),
             payload.getSellerId(),
@@ -1380,6 +1402,9 @@ public class HomeController {
             viewerBidState != null && viewerBidState.isShowActiveMaxBid(),
             viewerBidState == null ? null : viewerBidState.getUpdatedAt()
         );
+        auction.setSellerUsername(payload.getSellerUsername());
+        auction.setSellerEmail(payload.getSellerEmail());
+        return auction;
     }
 
     private int compareAuction(AuctionListItemPayload left, AuctionListItemPayload right) {
@@ -1483,6 +1508,10 @@ public class HomeController {
             activeMyBidController.dispose();
             activeMyBidController = null;
         }
+        if (activeMyAuctionController != null) {
+            activeMyAuctionController.dispose();
+            activeMyAuctionController = null;
+        }
         if (activeBidController != null) {
             activeBidController.dispose();
             activeBidController = null;
@@ -1507,6 +1536,46 @@ public class HomeController {
         String stylesheet = getClass().getResource(MY_BID_CSS).toExternalForm();
         if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
             homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
+    }
+
+    private void attachMyAuctionStylesheet() {
+        String stylesheet = getClass().getResource(MY_AUCTION_CSS).toExternalForm();
+        if (!homeRoot.getScene().getStylesheets().contains(stylesheet)) {
+            homeRoot.getScene().getStylesheets().add(stylesheet);
+        }
+    }
+
+    private void openMyAuctionView() {
+        try {
+            if (activeMyAuctionController != null) {
+                activeMyAuctionController.dispose();
+            }
+            FXMLLoader loader = new FXMLLoader(getClass().getResource(MY_AUCTION_VIEW));
+            Node myAuctionCenter = loader.load();
+            MyAuctionController controller = loader.getController();
+            controller.setOnAuctionSelected(auction -> openAuctionById(auction.getId()));
+
+            List<Auction> myAuctions = auctionsForActiveView().stream()
+                .map(this::toAuction)
+                .toList();
+            controller.setInitialItems(myAuctions);
+            activeMyAuctionController = controller;
+            attachMyAuctionStylesheet();
+
+            homeRoot.setLeft(homeLeft);
+            homeRoot.setRight(null);
+            homeRoot.setCenter(myAuctionCenter);
+            homeRoot.setBottom(null);
+            sidebarSubtitle.setText(subtitleForSidebar());
+            setActiveNavigationState();
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            NotificationManager.show(
+                NotificationManager.NotificationType.ERROR,
+                "Navigation failed",
+                "Could not open the my auction screen."
+            );
         }
     }
 

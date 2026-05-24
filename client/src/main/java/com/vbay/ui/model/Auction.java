@@ -205,4 +205,23 @@ public class Auction {
     public LocalDateTime getViewerBidStateUpdatedAt() {
         return viewerBidStateUpdatedAt;
     }
+
+    private String sellerUsername;
+    private String sellerEmail;
+
+    public String getSellerUsername() {
+        return sellerUsername;
+    }
+
+    public void setSellerUsername(String sellerUsername) {
+        this.sellerUsername = sellerUsername;
+    }
+
+    public String getSellerEmail() {
+        return sellerEmail;
+    }
+
+    public void setSellerEmail(String sellerEmail) {
+        this.sellerEmail = sellerEmail;
+    }
 }

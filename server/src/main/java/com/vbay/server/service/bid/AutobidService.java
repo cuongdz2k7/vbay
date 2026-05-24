@@ -40,6 +40,7 @@ import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.AutobidRegistrationResult;
 import com.vbay.server.service.result.AutobidUpdateResult;
 import com.vbay.server.service.result.BidUpdateResult;
+import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.google.gson.JsonElement;
@@ -363,11 +364,12 @@ public class AutobidService {
 
                 User user = userRepository.lockUserForUpdate(session.getUserId())
                     .orElseThrow(() -> new ValidationException("User not found"));
-
+                
                 validateIncreaseAutobidBuyingPower(user, delta);
 
                 BidResolution resolution = auctionBidEngine.resolveIncreaseMaxAutobidAmount(
                     auction,
+                    currentWinningBid,
                     existingAutobid,
                     new IncreaseAutobidCommand(
                         auctionId,
@@ -382,6 +384,31 @@ public class AutobidService {
                     dbNow,
                     connection
                 );
+                ///anti sniping: nếu có autobid resolution mà bị reject, cũng gửi event để UI hiện message
+                boolean auctionExtendedByAntiSnipe = applied.getRefreshedAuction()
+                .getEndingTime()
+                .isAfter(auction.getEndingTime());
+                boolean priceChanged = !resolution.getBidCreates().isEmpty();
+                PlaceBidResult result = null;
+                AuctionListItemUpdateReason listReason = null;
+                AuctionListItemResult listItem = null;
+                
+                if (priceChanged) {
+                    Long previousWinningBidId = currentWinningBid.map(Bid::getId).orElse(null);
+                    Long previousWinningUserId = currentWinningBid.map(Bid::getBidderId).orElse(null);
+                
+                    result = AppliedBidResultMapper.toPlaceBidResult(
+                        applied,
+                        previousWinningUserId,
+                        previousWinningBidId,
+                        dbNow
+                    );
+                    listReason = auctionExtendedByAntiSnipe
+                    ? AuctionListItemUpdateReason.TIME_CHANGED
+                        : AuctionListItemUpdateReason.BID_UPDATED;
+                    listItem = auctionRepository.findAuctionListItemById(auctionId)
+                        .orElseThrow(() -> new ValidationException("Auction list item not found"));
+                }
 
                 List<DomainEvent> events = buildIncreaseMaxAutobidEvents(
                     applied,
@@ -392,6 +419,14 @@ public class AutobidService {
 
                 connection.commit();
                 committed = true;
+                if (priceChanged) {
+                    domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
+                        listItem,
+                        listReason,
+                        dbNow
+                    ));
+                    domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
+                }
 
                 publishEvents(events);
 
@@ -486,6 +521,8 @@ public class AutobidService {
             BigDecimal newMaxBidAmount,
             LocalDateTime occurredAt) {
         List<DomainEvent> events = new ArrayList<>();
+
+
 
         events.add(new AutobidUpdatedDomainEvent(
             toAutobidUpdateResult(

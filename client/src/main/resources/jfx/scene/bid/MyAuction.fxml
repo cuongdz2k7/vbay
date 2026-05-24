@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.FlowPane?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            styleClass="my-auction-scroll"
+            fx:controller="com.vbay.ui.scene_ui.controller.bid.MyAuctionController">
+    <content>
+        <VBox alignment="TOP_CENTER" spacing="20" styleClass="my-auction-page">
+            <padding>
+                <Insets top="34" right="34" bottom="40" left="34"/>
+            </padding>
+
+            <VBox spacing="4" maxWidth="980" alignment="CENTER_LEFT" styleClass="my-auction-heading-row" VBox.vgrow="NEVER">
+                <Label text="My Auction" styleClass="my-auction-title"/>
+                <Label text="Auctions you created, filtered by status." styleClass="my-auction-subtitle"/>
+            </VBox>
+
+            <!-- Centered Sticky Top Navigation Tabs Stretches to 980 -->
+            <HBox fx:id="tabsContainer" alignment="CENTER" maxWidth="980" styleClass="my-auction-tabs-container" VBox.vgrow="NEVER">
+                <Button fx:id="tabAll" text="All" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button fx:id="tabOngoing" text="Ongoing" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button fx:id="tabScheduled" text="Scheduled" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button fx:id="tabCompleted" text="Completed" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                <Button fx:id="tabFailed" text="Cancelled/Failed" onAction="#handleTabSelection" styleClass="my-auction-tab" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+            </HBox>
+
+            <!-- Dynamic grid of standard auction cards centered and restricted to 4 per row -->
+            <FlowPane fx:id="productFlow" alignment="CENTER" hgap="20" vgap="20" prefWrapLength="980" maxWidth="980" styleClass="auction-grid" VBox.vgrow="ALWAYS"/>
+
+            <Label fx:id="emptyStateLabel" text="No auctions found." managed="false" visible="false" styleClass="my-auction-empty"/>
+        </VBox>
+    </content>
+</ScrollPane>
