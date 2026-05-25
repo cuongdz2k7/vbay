@@ -19,6 +19,15 @@ public class SceneManager {
         SceneManager.class.getResource("/jfx/css/Notification.css")
     ).toExternalForm();
 
+    // Persistent Floating Background Music Overlay Fields
+    private static javafx.scene.layout.HBox floatingMusicPill;
+    private static javafx.scene.control.Button musicMuteBtn;
+    private static javafx.scene.shape.SVGPath musicMuteIcon;
+    private static javafx.scene.control.Label musicStatusLabel;
+
+    private static final String SVG_SPEAKER_ON = "M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z";
+    private static final String SVG_SPEAKER_MUTED = "M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.21.05-.42.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z";
+
     public static void setStage(Stage newStage) {
         currentStage = newStage;
         if (currentStage != null) {
@@ -45,8 +54,10 @@ public class SceneManager {
 
     public static Scene createStyledScene(String fxmlPath, Object sceneData) throws Exception {
         LoadedView view = loadView(fxmlPath, sceneData);
-        Scene scene = new Scene(view.root);
+        StackPane root = new StackPane(view.root);
+        Scene scene = new Scene(root);
         scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
+        ensureMusicOverlay(root);
         installGlobalShortcuts(scene);
         return scene;
     }
@@ -74,16 +85,19 @@ public class SceneManager {
             StackPane root = new StackPane(view.root);
             scene = new Scene(root);
             scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
+            ensureMusicOverlay(root);
             installGlobalShortcuts(scene);
             currentStage.setScene(scene);
         } else {
             if (scene.getRoot() instanceof StackPane root) {
                 // The first child is the scene content
                 root.getChildren().set(0, view.root);
+                ensureMusicOverlay(root);
                 // Keep other children (like notifications)
             } else {
                 StackPane root = new StackPane(view.root);
                 scene.setRoot(root);
+                ensureMusicOverlay(root);
             }
             
             scene.getStylesheets().setAll(THEME_CSS, view.stylesheetPath, NOTIFICATION_CSS);
@@ -169,4 +183,58 @@ public class SceneManager {
     }
 
     private record LoadedView(Parent root, String stylesheetPath) { }
+
+    private static void ensureMusicOverlay(StackPane root) {
+        if (floatingMusicPill == null) {
+            createFloatingMusicPill();
+        }
+        if (!root.getChildren().contains(floatingMusicPill)) {
+            root.getChildren().add(floatingMusicPill);
+        }
+    }
+
+    private static void createFloatingMusicPill() {
+        floatingMusicPill = new javafx.scene.layout.HBox();
+        floatingMusicPill.setAlignment(javafx.geometry.Pos.CENTER);
+        floatingMusicPill.setSpacing(8);
+        floatingMusicPill.getStyleClass().add("floating-music-chip");
+        floatingMusicPill.setMaxWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
+        floatingMusicPill.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        
+        musicMuteIcon = new javafx.scene.shape.SVGPath();
+        musicMuteIcon.getStyleClass().add("music-icon-shape");
+        
+        musicMuteBtn = new javafx.scene.control.Button();
+        musicMuteBtn.setGraphic(musicMuteIcon);
+        musicMuteBtn.getStyleClass().add("music-mute-btn-mini");
+        
+        musicStatusLabel = new javafx.scene.control.Label();
+        musicStatusLabel.getStyleClass().add("music-status-mini");
+        
+        floatingMusicPill.getChildren().addAll(musicMuteBtn, musicStatusLabel);
+        
+        StackPane.setAlignment(floatingMusicPill, javafx.geometry.Pos.BOTTOM_RIGHT);
+        StackPane.setMargin(floatingMusicPill, new javafx.geometry.Insets(0, 24, 24, 0));
+        
+        // Update initially
+        updateMusicUI();
+        
+        musicMuteBtn.setOnAction(event -> {
+            boolean nextMuteState = !com.vbay.ui.util.MusicManager.isMuted();
+            com.vbay.ui.util.MusicManager.setMuted(nextMuteState);
+            updateMusicUI();
+        });
+    }
+    
+    private static void updateMusicUI() {
+        if (musicMuteIcon == null || musicStatusLabel == null) return;
+        boolean muted = com.vbay.ui.util.MusicManager.isMuted();
+        musicMuteIcon.setContent(muted ? SVG_SPEAKER_MUTED : SVG_SPEAKER_ON);
+        if (muted) {
+            musicStatusLabel.setText("OFF");
+        } else {
+            int percentage = (int) Math.round(com.vbay.ui.util.MusicManager.getVolume() * 100);
+            musicStatusLabel.setText(percentage + "%");
+        }
+    }
 }
