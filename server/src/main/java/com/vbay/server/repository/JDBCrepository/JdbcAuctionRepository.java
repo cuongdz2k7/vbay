@@ -662,7 +662,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
         String sql = """
             SELECT id, product_id, seller_id, title, description, minimum_bid_step,
                    starting_price, current_price, reserve_price, buy_now_price,
-                   starting_time, ending_time, status, winner_user_id, version
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
             FROM auctions
             ORDER BY id DESC
             """;
