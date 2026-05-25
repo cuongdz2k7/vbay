@@ -26,11 +26,11 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. Thiết lập môi trường Java JDK 21 (Phù hợp với Maven modules)
-    - name: Set up JDK 21
+    # 2. Thiết lập môi trường Java JDK 25 (Khớp với cấu hình pom.xml của dự án)
+    - name: Set up JDK 25
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
+        java-version: '25'
         distribution: 'temurin'
         cache: 'maven'
 
