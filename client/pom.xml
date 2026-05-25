@@ -81,7 +81,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.vbay.MainApp</mainClass>
+                            <mainClass>com.vbay.Launcher</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
