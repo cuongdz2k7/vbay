@@ -332,7 +332,7 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
-    void buyNow_completesAuctionAndCreatesHeldPayment() throws SQLException {
+    void buyNow_completesAuctionAndTransfersFundsDirectly() throws SQLException {
         seedUser(SELLER_ID);
         seedUser(2L, "buyer", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
         long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
@@ -346,9 +346,9 @@ class AuctionServiceIntegrationTest {
         assertEquals(2L, scalarLong("SELECT winner_user_id FROM auctions WHERE id = " + auctionId));
         assertDecimal("800.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
-        assertEquals(PaymentStatus.HELD.name(), scalarString("SELECT status FROM payments WHERE auction_id = " + auctionId));
-        assertEquals(PaymentType.BUY_NOW.name(), scalarString("SELECT type FROM payments WHERE auction_id = " + auctionId));
-        assertDecimal("200.00", scalarDecimal("SELECT amount FROM payments WHERE auction_id = " + auctionId));
+        assertDecimal("200.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + SELLER_ID));
+        assertEquals(0, countRows(keepAliveConnection, "payments"));
+        // Payments table bypassed
     }
 
     @Test
@@ -367,7 +367,8 @@ class AuctionServiceIntegrationTest {
         assertDecimal("620.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
         assertDecimal("800.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 3"));
-        assertEquals(1, countRows(keepAliveConnection, "payments"));
+        assertDecimal("200.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + SELLER_ID));
+        assertEquals(0, countRows(keepAliveConnection, "payments"));
     }
 
     @Test
@@ -398,7 +399,7 @@ class AuctionServiceIntegrationTest {
     }
 
     @Test
-    void syncAuctionStatus_whenWinningAutobidEnds_releasesMaxAndChargesFinalPrice() throws SQLException {
+    void syncAuctionStatus_whenWinningAutobidEnds_releasesMaxAndTransfersFundsDirectly() throws SQLException {
         seedUser(SELLER_ID);
         seedUser(2L, "autowinner", UserStatus.ACTIVE, new BigDecimal("700.00"), new BigDecimal("300.00"));
         long auctionId = seedAuction(
@@ -421,9 +422,9 @@ class AuctionServiceIntegrationTest {
         assertEquals(AutobidStatus.WON.name(), scalarString("SELECT status FROM autobids WHERE auction_id = " + auctionId));
         assertDecimal("850.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
-        assertEquals(PaymentStatus.HELD.name(), scalarString("SELECT status FROM payments WHERE auction_id = " + auctionId));
-        assertEquals(PaymentType.AUCTION_WIN.name(), scalarString("SELECT type FROM payments WHERE auction_id = " + auctionId));
-        assertDecimal("150.00", scalarDecimal("SELECT amount FROM payments WHERE auction_id = " + auctionId));
+        assertDecimal("150.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + SELLER_ID));
+        assertEquals(0, countRows(keepAliveConnection, "payments"));
+        // Payments table bypassed
     }
 
     @Test

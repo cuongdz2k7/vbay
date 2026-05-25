@@ -24,7 +24,17 @@ public final class AppliedBidResultMapper {
             Long previousWinningBidId,
             LocalDateTime boughtAt) {
         Bid buyNowBid = findRequiredBuyNowBid(applied);
-        Payment payment = findRequiredPaymentForBid(applied, buyNowBid.getId());
+        
+        Payment payment = new Payment(
+            applied.getRefreshedAuction().getId(),
+            buyNowBid.getBidderId(),
+            applied.getRefreshedAuction().getSellerId(),
+            buyNowBid.getId(),
+            buyNowBid.getBidAmount(),
+            com.vbay.shared.enums.payment.PaymentType.BUY_NOW,
+            com.vbay.shared.enums.payment.PaymentStatus.RELEASED
+        );
+        payment.setId(0L);
 
         return ResultMapper.toBuyNowResult(
             applied.getRefreshedAuction(),

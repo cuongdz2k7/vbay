@@ -122,6 +122,13 @@ public class AuctionBidEngine {
             "BUY_NOW_PAYMENT"
         ));
 
+        resolution.addBalanceChange(new BalanceChange(
+            auction.getSellerId(),
+            buyNowPrice,
+            BalanceChangeType.DEPOSIT_AVAILABLE,
+            "BUY_NOW_SELLER_RECEIPT"
+        ));
+
         /*
         * 4. Tạo bid Buy Now.
         *    Bid này sau applier.save sẽ có id.
@@ -149,21 +156,6 @@ public class AuctionBidEngine {
             auctionId,
             buyerId,
             buyNowPrice
-        ));
-
-        /*
-        * 7. Tạo payment HELD, tham chiếu tới bid source BUY_NOW.
-        *    Applier sẽ save bid trước, lấy id của BidCreate source BUY_NOW,
-        *    rồi tạo Payment với bidId đó.
-        */
-        resolution.addPaymentCreate(new PaymentCreate(
-            BidSource.BUY_NOW,
-            auctionId,
-            buyerId,
-            auction.getSellerId(),
-            buyNowPrice,
-            PaymentType.BUY_NOW,
-            PaymentStatus.HELD
         ));
 
         return resolution.build();

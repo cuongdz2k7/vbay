@@ -79,6 +79,7 @@ public class BidResolutionApplier {
                 case HOLD -> userRepository.holdBalance(change.getUserId(), change.getAmount());
                 case RELEASE -> userRepository.releaseHoldBalance(change.getUserId(), change.getAmount());
                 case DECREASE_AVAILABLE -> userRepository.decreaseAvailableBalance(change.getUserId(), change.getAmount());
+                case DEPOSIT_AVAILABLE -> userRepository.depositAvailableBalance(change.getUserId(), change.getAmount());
                 default -> throw new ValidationException("Unknown balance change type");
             }
 

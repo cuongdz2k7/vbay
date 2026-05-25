@@ -491,19 +491,20 @@ public class AuctionService {
 
         BigDecimal finalPrice = auction.getCurrentPrice();
         userRepository.decreaseAvailableBalance(winningBid.getBidderId(), finalPrice);
-        paymentRepository.save(new Payment(
-            auction.getId(),
-            winningBid.getBidderId(),
-            auction.getSellerId(),
-            winningBid.getId(),
-            finalPrice,
-            PaymentType.AUCTION_WIN,
-            PaymentStatus.HELD
-        ));
+        
+        userRepository.depositAvailableBalance(auction.getSellerId(), finalPrice);
+
         results.add(readUserBalanceResult(
             userRepository,
             winningBid.getBidderId(),
             "AUCTION_WIN_PAYMENT",
+            closedAt
+        ));
+
+        results.add(readUserBalanceResult(
+            userRepository,
+            auction.getSellerId(),
+            "AUCTION_SOLD_RECEIPT",
             closedAt
         ));
         return results;
