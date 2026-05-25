@@ -233,8 +233,7 @@ public class SceneManager {
         if (muted) {
             musicStatusLabel.setText("OFF");
         } else {
-            int percentage = (int) Math.round(com.vbay.ui.util.MusicManager.getVolume() * 100);
-            musicStatusLabel.setText(percentage + "%");
+            musicStatusLabel.setText("MTP");
         }
     }
 }
