@@ -49,12 +49,35 @@ jobs:
           mvn clean package -pl client -am -DskipTests
         fi
 
+        # Tạo thư mục release phẳng cực kỳ chuyên nghiệp
+        echo "Creating a flat release directory..."
+        mkdir -p release
+        mkdir -p release/music
+        mkdir -p release/uploads/products/thumbnails
+        mkdir -p release/log
+
+        # Copy các file JAR và đổi tên cho ngắn gọn, dễ chạy
+        if [ -f client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar release/client.jar
+        fi
+        if [ -f server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar release/server.jar
+        fi
+
+        # Copy nhạc nền vào release/music
+        if [ -d "music" ]; then
+          cp -r music/* release/music/
+        fi
+
+        # Tạo file giữ chỗ trong log và uploads để không bị bỏ qua khi nén zip
+        echo "placeholder" > release/log/.gitkeep
+        echo "placeholder" > release/uploads/products/.gitkeep
+        echo "placeholder" > release/uploads/products/thumbnails/.gitkeep
+
     # 4. Lưu trữ các file JAR thực thi gộp dependencies làm Artifacts
     - name: Upload Packaged JARs
       uses: actions/upload-artifact@v4
       with:
         name: vbay-executable-jars-${{ github.event.inputs.build_type || 'all' }}
-        path: |
-          server/target/*-jar-with-dependencies.jar
-          client/target/*-jar-with-dependencies.jar
+        path: release/
         if-no-files-found: warn

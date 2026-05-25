@@ -21,7 +21,7 @@ public class MusicManager {
                 file = new File("../music/Noi_Nay_Co_Anh_Audio.mp3");
             }
             if (!file.exists()) {
-                LOGGER.warning("Could not find Dung_Lam_Trai_Tim_Anh_Dau.mp3 inside music/ folder.");
+                LOGGER.warning("Could not find Noi_Nay_Co_Anh_Audio.mp3 inside music/ folder.");
                 return;
             }
 
