@@ -1,0 +1,56 @@
+name: Manual Build & Package vBay
+
+on:
+  workflow_dispatch: # Cho phép kích hoạt thủ công trực tiếp từ giao diện GitHub
+    inputs:
+      build_type:
+        description: 'Chọn thành phần muốn build và đóng gói'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - server
+          - client
+
+jobs:
+  build-and-package:
+    name: Build & Package Application
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Checkout mã nguồn
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Thiết lập môi trường Java JDK 21 (Phù hợp với Maven modules)
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    # 3. Biên dịch và đóng gói ứng dụng bằng Maven
+    - name: Build and Package with Maven
+      run: |
+        if [ "${{ github.event.inputs.build_type }}" = "all" ]; then
+          echo "Building and packaging the entire project..."
+          mvn clean package -DskipTests
+        elif [ "${{ github.event.inputs.build_type }}" = "server" ]; then
+          echo "Building and packaging only the Server module..."
+          mvn clean package -pl server -am -DskipTests
+        elif [ "${{ github.event.inputs.build_type }}" = "client" ]; then
+          echo "Building and packaging only the Client module..."
+          mvn clean package -pl client -am -DskipTests
+        fi
+
+    # 4. Lưu trữ các file JAR thực thi gộp dependencies làm Artifacts
+    - name: Upload Packaged JARs
+      uses: actions/upload-artifact@v4
+      with:
+        name: vbay-executable-jars-${{ github.event.inputs.build_type }}
+        path: |
+          server/target/*-jar-with-dependencies.jar
+          client/target/*-jar-with-dependencies.jar
+        if-no-files-found: warn
