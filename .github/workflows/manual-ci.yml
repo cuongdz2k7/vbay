@@ -12,6 +12,9 @@ on:
           - all
           - server
           - client
+  push: # Kích hoạt tự động khi push lên nhánh Dhung_Branch để workflow được ghi nhận và hiển thị trên giao diện Actions
+    branches:
+      - Dhung_Branch
 
 jobs:
   build-and-package:
@@ -34,7 +37,7 @@ jobs:
     # 3. Biên dịch và đóng gói ứng dụng bằng Maven
     - name: Build and Package with Maven
       run: |
-        if [ "${{ github.event.inputs.build_type }}" = "all" ]; then
+        if [ "${{ github.event.inputs.build_type }}" = "all" ] || [ "${{ github.event_name }}" = "push" ]; then
           echo "Building and packaging the entire project..."
           mvn clean package -DskipTests
         elif [ "${{ github.event.inputs.build_type }}" = "server" ]; then
@@ -49,7 +52,7 @@ jobs:
     - name: Upload Packaged JARs
       uses: actions/upload-artifact@v4
       with:
-        name: vbay-executable-jars-${{ github.event.inputs.build_type }}
+        name: vbay-executable-jars-${{ github.event.inputs.build_type || 'all' }}
         path: |
           server/target/*-jar-with-dependencies.jar
           client/target/*-jar-with-dependencies.jar
