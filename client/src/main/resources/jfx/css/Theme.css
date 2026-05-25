@@ -125,3 +125,46 @@
 .separator .line {
     -fx-border-color: rgba(255, 181, 160, 0.12);
 }
+
+/* Floating Glassmorphic Music Pill at Bottom Right */
+.floating-music-chip {
+    -fx-background-color: rgba(25, 25, 28, 0.82);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-border-radius: 999;
+    -fx-border-width: 1.2;
+    -fx-padding: 7 14 7 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.32), 16, 0.12, 0, 5);
+}
+
+.floating-music-chip:hover {
+    -fx-border-color: rgba(255, 95, 46, 0.34);
+    -fx-background-color: rgba(32, 30, 32, 0.9);
+}
+
+.music-mute-btn-mini {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-min-width: 18;
+    -fx-min-height: 18;
+    -fx-max-width: 18;
+    -fx-max-height: 18;
+}
+
+.music-icon-shape {
+    -fx-fill: -app-accent-soft;
+    -fx-stroke: transparent;
+}
+
+.music-mute-btn-mini:hover .music-icon-shape {
+    -fx-fill: -app-accent-strong;
+}
+
+.music-status-mini {
+    -fx-text-fill: rgba(255, 181, 160, 0.78);
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-min-width: 26;
+    -fx-alignment: CENTER_LEFT;
+}
