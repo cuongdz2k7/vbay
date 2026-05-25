@@ -19,7 +19,7 @@ on:
 jobs:
   build-and-package:
     name: Build & Package Application
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     # 1. Checkout mã nguồn
@@ -36,6 +36,7 @@ jobs:
 
     # 3. Biên dịch và đóng gói ứng dụng bằng Maven
     - name: Build and Package with Maven
+      shell: bash
       run: |
         if [ "${{ github.event.inputs.build_type }}" = "all" ] || [ "${{ github.event_name }}" = "push" ]; then
           echo "Building and packaging the entire project..."
