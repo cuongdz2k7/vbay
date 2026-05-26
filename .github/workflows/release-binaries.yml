@@ -9,8 +9,12 @@ permissions:
 
 jobs:
   build-and-upload-assets:
-    name: Build & Upload Binaries to Release
-    runs-on: ubuntu-latest
+    name: Build & Upload Binaries to Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
 
     steps:
     # 1. Checkout mã nguồn
@@ -29,12 +33,20 @@ jobs:
     - name: Build and Package with Maven
       run: mvn clean package -DskipTests
 
-    # 4. Tự động đính kèm các file JAR vào trang Release
+    # 3.5 Đổi tên các file JAR theo hệ điều hành để tránh bị trùng đè khi upload
+    - name: Rename JARs for Platform
+      shell: bash
+      run: |
+        mv server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar server/target/server-1.0-SNAPSHOT-${{ matrix.os }}.jar
+        mv client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar client/target/client-1.0-SNAPSHOT-${{ matrix.os }}.jar
+
+    # 4. Tự động đính kèm các file JAR đã đổi tên vào trang Release
     - name: Upload Executable JARs to Release
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          server/target/*-jar-with-dependencies.jar
-          client/target/*-jar-with-dependencies.jar
+          server/target/server-1.0-SNAPSHOT-${{ matrix.os }}.jar
+          client/target/client-1.0-SNAPSHOT-${{ matrix.os }}.jar
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

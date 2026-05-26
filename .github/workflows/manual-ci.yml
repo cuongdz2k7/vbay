@@ -18,8 +18,12 @@ on:
 
 jobs:
   build-and-package:
-    name: Build & Package Application
-    runs-on: windows-latest
+    name: Build & Package Application (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
 
     steps:
     # 1. Checkout mã nguồn
@@ -78,6 +82,6 @@ jobs:
     - name: Upload Packaged JARs
       uses: actions/upload-artifact@v4
       with:
-        name: vbay-executable-jars-${{ github.event.inputs.build_type || 'all' }}
+        name: vbay-executable-jars-${{ matrix.os }}-${{ github.event.inputs.build_type || 'all' }}
         path: release/
         if-no-files-found: warn
