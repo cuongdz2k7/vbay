@@ -107,7 +107,41 @@ auctionVersion = auctionChange.apply(auctionRepository);
 
 Nếu sau này cần thêm một loại thay đổi auction, ví dụ seller đổi thời gian hoặc admin chỉnh trạng thái theo một rule mới, có thể thêm class implement `AuctionChange` mà không phải sửa vòng apply chung.
 
-## 6. Applied Result Và Realtime
+## 6. Anti-snipe Policy
+
+Anti-snipe là policy chống đặt giá sát giờ kết thúc. Mục tiêu là nếu một bid hợp lệ xuất hiện trong khoảng thời gian cuối của auction, hệ thống kéo dài `ending_time` để các user khác vẫn có cơ hội phản ứng, thay vì auction kết thúc ngay sau một bid vào giây cuối.
+
+Trong code, anti-snipe không nằm trong scheduler. Scheduler chỉ chạy theo thời gian đã được lưu. Quyết định có cần kéo dài auction hay không nằm trong bidding pipeline:
+
+1. `AuctionBidEngine` xác định bid mới có trở thành winning bid hay không.
+2. Sau khi có winning bid, engine gọi `AntiSnipePolicy.resolveExtendedEndingTime(auction, bidTime)`.
+3. Nếu policy trả về thời gian kết thúc mới, engine thêm `AntiSnipeAuctionExtensionChange` vào `BidResolution`.
+4. `BidResolutionApplier` apply change này qua interface `AuctionChange`, giống các thay đổi auction khác.
+5. Repository cập nhật `ending_time` và tăng version của auction.
+
+Rule hiện tại của `AntiSnipePolicy`:
+
+- Nếu `auction.anti_snipe_extension_count >= maxExtensions` thì không extend nữa.
+- Tính `windowStart = ending_time - window`; nếu `bidTime` trước `windowStart` thì bid chưa nằm trong vùng anti-snipe.
+- Tính `extendedEndingTime = bidTime + extension`.
+- Chỉ extend nếu `extendedEndingTime` lớn hơn `ending_time` hiện tại.
+- Nếu tất cả điều kiện hợp lệ, policy trả về `extendedEndingTime`.
+
+Các thông số policy được cấu hình tập trung ở `AppConfig.DEFAULT_ANTI_SNIPE_SETTINGS`:
+
+| Thông số | Giá trị hiện tại | Ý nghĩa |
+| :--- | :--- | :--- |
+| `window` | 30 seconds | Khoảng thời gian trước `ending_time` được xem là vùng anti-snipe |
+| `extension` | 5 minutes | Thời gian kéo dài thêm, tính từ thời điểm bid |
+| `maxExtensions` | 5 | Số lần extend tối đa của một auction |
+
+`AppConfig.AntiSnipeSettings` validate cấu hình trước khi tạo policy: `window` và `extension` phải là duration dương, `maxExtensions` không được âm. Khi khởi tạo app, `AppConfig` gọi `antiSnipeSettings.toPolicy()` để tạo `AntiSnipePolicy`, sau đó inject policy đó vào `AuctionBidEngine`.
+
+Constructor default của `AntiSnipePolicy` chỉ là fallback khi cần tạo policy trực tiếp, ví dụ trong test hoặc code cũ. Runtime chính của server dùng settings từ `AppConfig`, nên nếu muốn chỉnh window, extension hoặc giới hạn số lần extend thì nên chỉnh ở composition root thay vì rải cấu hình trong engine/service.
+
+Khi anti-snipe làm đổi `ending_time`, service publish event list item với reason `TIME_CHANGED`. `AuctionScheduleDomainEventHandler` nhận reason này và yêu cầu scheduler reschedule end task. Nhờ vậy engine chỉ quan tâm quyết định nghiệp vụ, còn scheduler chỉ quan tâm lịch chạy.
+
+## 7. Applied Result Và Realtime
 
 Sau khi apply DB, `AppliedBidResolution` giữ dữ liệu đã được commit hoặc sẵn sàng commit trong transaction:
 
@@ -120,7 +154,7 @@ Sau khi apply DB, `AppliedBidResolution` giữ dữ liệu đã được commit 
 
 `AppliedBidResultMapper` chuyển dữ liệu này thành result nghiệp vụ như `PlaceBidResult`, `BuyNowResult` hoặc `AutobidRegistrationResult`. Service dùng result đó để publish domain event và tạo response cho client. Nhờ vậy realtime không đọc trực tiếp các change nội bộ của engine, mà chỉ nhận dữ liệu đầu ra đã được chuẩn hóa.
 
-## 7. Auto-bid Decision Model
+## 8. Auto-bid Decision Model
 
 Auto-bid trong vBay là proxy bidding: user đặt một mức trần `maxBidAmount`, còn hệ thống chỉ tạo các bid thực tế cần thiết để giữ user thắng trong giới hạn đó. `Autobid` là hợp đồng chiến lược của user, còn `Bid` là lịch sử giá thực tế đã được tạo.
 

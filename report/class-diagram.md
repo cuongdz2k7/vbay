@@ -76,7 +76,24 @@ Các điểm chính:
 - Bidding dùng pipeline riêng: service orchestration, `AuctionBidEngine` quyết định nghiệp vụ, `BidResolutionApplier` ghi DB.
 - Realtime tách domain event, mapper, handler và broadcaster để service không ghi socket trực tiếp.
 
-## 3. Client Packages
+## 3. AppConfig As Composition Root
+
+`AppConfig` là Composition Root của server. Đây là nơi khởi tạo dependency graph chính của ứng dụng thay vì để từng service tự tạo dependency nội bộ.
+
+Các nhóm object được nối tại `AppConfig`:
+
+- Hạ tầng: `ConnectionProvider`, `RepositoryFactory`, `ImageStorageService`, `PasswordHasher`.
+- Business service: `AuthService`, `AuctionService`, `UserAccountService`, `AdminService`, `ManualBidService`, `AutobidService`, `BuyNowService`, `BidQueryService`.
+- Bidding pipeline: `AuctionBidEngine`, `AntiSnipePolicy`, `BidResolutionApplier`.
+- Realtime: `SubscriptionRegistry`, `RealtimeBroadcaster`, `RealtimeEventMapper`, `InMemoryDomainEventPublisher`, các `DomainEventHandler`.
+- Scheduler: `AuctionTaskScheduler` và `AuctionScheduleDomainEventHandler`.
+- Network entrypoint: `RequestDistributor` nhận các service đã được inject và phân phối request từ `ClientHandler`.
+
+Cách tổ chức này giữ dependency injection theo constructor: service nhận dependency cần dùng, nhưng không tự quyết định cách khởi tạo dependency đó. Nhờ vậy cấu hình runtime được tập trung hơn, test có thể truyền `ConnectionProvider`, `RepositoryFactory`, `PasswordHasher` hoặc `AntiSnipeSettings` khác, và việc thêm service/handler mới có một điểm wiring rõ ràng.
+
+Ví dụ với anti-snipe, `AppConfig.DEFAULT_ANTI_SNIPE_SETTINGS` giữ cấu hình mặc định, `AntiSnipeSettings` validate thông số, sau đó `AppConfig` chuyển settings thành `AntiSnipePolicy` và inject vào `AuctionBidEngine`. Engine chỉ dùng policy đã nhận, không tự đọc cấu hình và không tự tạo policy mặc định cho runtime chính.
+
+## 4. Client Packages
 
 ```text
 com.vbay/
@@ -107,7 +124,7 @@ Client controller thường theo vòng đời:
 4. Merge realtime event bằng `auctionVersion`, `version` hoặc `updatedAt`.
 5. Dispose thì unsubscribe, stop timer và bỏ state màn.
 
-## 4. Bid Flow Sequence
+## 5. Bid Flow Sequence
 
 ```mermaid
 sequenceDiagram
@@ -145,7 +162,7 @@ sequenceDiagram
     S-->>C: dispatch response/event
 ```
 
-## 5. AuctionChange Polymorphism
+## 6. AuctionChange Polymorphism
 
 ```mermaid
 classDiagram
