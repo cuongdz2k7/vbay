@@ -1,11 +1,9 @@
 package com.vbay.ui.scene_ui.controller.admin;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import com.vbay.network.SocketClient;
 import com.vbay.network.UserData;
 import com.vbay.shared.Utils.JsonUtils;
@@ -13,7 +11,6 @@ import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.adminDTO.AdminAuctionActionRequest;
 import com.vbay.shared.dto.adminDTO.AdminAuctionItem;
 import com.vbay.shared.dto.adminDTO.AdminAuctionListResponse;
-import com.vbay.shared.dto.adminDTO.AdminLockUserRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserActionRequest;
 import com.vbay.shared.dto.adminDTO.AdminUserItem;
 import com.vbay.shared.dto.adminDTO.AdminUserListResponse;
@@ -467,8 +464,8 @@ public class AdminDashboardController {
         durationField.setPromptText("Duration");
 
         ComboBox<String> unitBox = new ComboBox<>();
-        unitBox.getItems().addAll("PHÚT", "GIỜ", "NGÀY", "NĂM");
-        unitBox.setValue("PHÚT");
+        unitBox.getItems().addAll("MINUTE", "HOUR", "DAY", "YEAR");
+        unitBox.setValue("MINUTE");
 
         TextField reasonField = new TextField();
         reasonField.setPromptText("Ban reason");
@@ -479,11 +476,11 @@ public class AdminDashboardController {
         unitBox.getStyleClass().add("combo-box");
 
         Label durationLabel = new Label("Duration:");
-        durationLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+        durationLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
         Label unitLabel = new Label("Unit:");
-        unitLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+        unitLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
         Label reasonLabel = new Label("Reason:");
-        reasonLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+        reasonLabel.setStyle("-fx-text-fill: white; -fx-font-weight: bold;");
 
         grid.add(durationLabel, 0, 0);
         grid.add(durationField, 1, 0);
@@ -520,12 +517,12 @@ public class AdminDashboardController {
                 return;
             }
 
-            String vietnameseUnit = unitBox.getValue();
-            String englishUnit = switch (vietnameseUnit) {
-                case "PHÚT" -> "MINUTE";
-                case "GIỜ" -> "HOUR";
-                case "NGÀY" -> "DAY";
-                case "NĂM" -> "YEAR";
+            String lowerUnit = unitBox.getValue();
+            String upperUnit = switch (lowerUnit) {
+                case "Minute" -> "MINUTE";
+                case "Hour" -> "HOUR";
+                case "Day" -> "DAY";
+                case "Year" -> "YEAR";
                 default -> "MINUTE";
             };
 
@@ -535,7 +532,7 @@ public class AdminDashboardController {
             }
 
             final int finalDuration = duration;
-            final String finalUnit = englishUnit;
+            final String finalUnit = upperUnit;
             final String finalReason = reason;
 
             new Thread(() -> {

@@ -33,12 +33,12 @@ import com.vbay.server.security.Argon2PasswordHasher;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
+import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.service.AdminService;
 import com.vbay.server.service.UserAccountService;
 import com.vbay.server.service.bid.AutobidService;
 import com.vbay.server.service.bid.BidQueryService;
 import com.vbay.server.service.bid.BuyNowService;
-import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.service.bid.engine.AntiSnipePolicy;
 import com.vbay.server.service.bid.engine.AuctionBidEngine;
 import com.vbay.server.service.bid.resolution.BidResolutionApplier;
@@ -204,7 +204,7 @@ new AppConfig()
             bidResolutionApplier
         );
         this.bidQueryService = new BidQueryService(connectionProvider, repositoryFactory);
-        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher, realtimeBroadcaster);
+        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher,realtimeBroadcaster);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(

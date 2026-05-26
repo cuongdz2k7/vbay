@@ -9,42 +9,39 @@ import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.User;
-import com.vbay.server.model.DepositRequestRow;
 import com.vbay.server.network_connection.ClientSession;
-import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
-import com.vbay.server.realtime.transport.RealtimeBroadcaster;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
-import com.vbay.server.repository.DepositRequestRepository;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.google.gson.JsonElement;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
+import com.vbay.shared.protocol.Respond;
+import com.vbay.server.realtime.transport.RealtimeBroadcaster;
+import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.server.model.DepositRequestRow ;
 import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
+import com.vbay.server.repository.DepositRequestRepository;
 import com.vbay.shared.dto.realtimeDTO.Room;
 import com.vbay.shared.enums.realtime.RoomType;
-import com.vbay.shared.enums.realtime.RealtimeEventType;
-import com.vbay.shared.protocol.Respond;
-import com.vbay.shared.protocol.RealtimeEvent;
-
+import com.vbay.shared.protocol.*;
 public class UserAccountService {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final DomainEventPublisher domainEventPublisher;
     private final RealtimeBroadcaster realtimeBroadcaster;
-
     public UserAccountService(
-            ConnectionProvider connectionProvider,
-            RepositoryFactory repositoryFactory,
-            DomainEventPublisher domainEventPublisher) {
-        this(connectionProvider, 
-             repositoryFactory, 
-             domainEventPublisher, 
-             new RealtimeBroadcaster(null));
-    }
+        ConnectionProvider connectionProvider,
+        RepositoryFactory repositoryFactory,
+        DomainEventPublisher domainEventPublisher){
+            this(connectionProvider, 
+                repositoryFactory, 
+                domainEventPublisher, 
+                null);
+        }
 
     public UserAccountService(
             ConnectionProvider connectionProvider,
@@ -102,13 +99,11 @@ public class UserAccountService {
                 adminRoom.setType(RoomType.AUCTION_LIST);
                 adminRoom.setTargetId(0L);
                 
-                if (realtimeBroadcaster != null) {
-                    realtimeBroadcaster.broadcast(new RealtimeEvent<>(
-                        RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
-                        adminRoom,
-                        adminPayload
-                    ));
-                }
+                realtimeBroadcaster.broadcast(new RealtimeEvent<>(
+                    RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+                    adminRoom,
+                    adminPayload
+                ));
 
                 // Return current unchanged balance
                 return ResultMapper.toUserBalanceResult(
