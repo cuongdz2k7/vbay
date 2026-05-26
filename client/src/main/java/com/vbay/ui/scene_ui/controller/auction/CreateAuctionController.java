@@ -30,6 +30,7 @@ import com.vbay.ui.util.MoneyInput;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
@@ -337,7 +338,7 @@ public class CreateAuctionController {
             viewportY = (imageHeight - viewportHeight) / 2;
         }
 
-        imageView.setViewport(new javafx.geometry.Rectangle2D(viewportX, viewportY, viewportWidth, viewportHeight));
+        imageView.setViewport(new Rectangle2D(viewportX, viewportY, viewportWidth, viewportHeight));
     }
 
     private List<ProductImageDTO> uploadSelectedImages() throws IOException {

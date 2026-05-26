@@ -130,7 +130,6 @@ public class RequestDistributor {
                 case ADMIN_BAN_USER -> adminService.handleAdminBanUser(requestId, payload, session);
                 case ADMIN_KICK_USER -> adminService.handleAdminKickUser(requestId, payload, session);
                 case ADMIN_WARN_USER -> adminService.handleAdminWarnUser(requestId, payload, session);
-                case ADMIN_LOCK_USER -> adminService.handleAdminLockUser(requestId, payload, session);
                 case ADMIN_DELETE_AUCTION -> adminService.handleAdminDeleteAuction(requestId, payload, session);
                 case ADMIN_STOP_AUCTION -> adminService.handleAdminStopAuction(requestId, payload, session);
                 case ADMIN_CONTINUE_AUCTION -> adminService.handleAdminContinueAuction(requestId, payload, session);

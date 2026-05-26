@@ -61,6 +61,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -69,6 +70,7 @@ import javafx.scene.control.OverrunStyle;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -1249,7 +1251,7 @@ public class HomeController {
             try {
                 List<AuctionListItemPayload> items = fetchAuctionList(null, null, userId, 2);
 
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     myAuctionsPreviewBox.getChildren().clear();
                     if (items.isEmpty()) {
                         Label empty = new Label("No recent auctions.");
@@ -1274,7 +1276,7 @@ public class HomeController {
         card.setOnMouseClicked(event -> handleMyBidAuctionSelected(item.getAuctionId()));
 
         HBox statusRow = new HBox();
-        statusRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        statusRow.setAlignment(Pos.CENTER_LEFT);
 
         Label statusLabel = new Label("LISTING STATUS");
         statusLabel.getStyleClass().add("bid-item-time");
@@ -1285,7 +1287,7 @@ public class HomeController {
 
         statusRow.getChildren().add(statusLabel);
         statusRow.getChildren().add(new Region());
-        HBox.setHgrow(statusRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(statusRow.getChildren().get(1), Priority.ALWAYS);
         statusRow.getChildren().add(statusValue);
 
         Label title = new Label(item.getTitle() == null || item.getTitle().isBlank()
@@ -1300,7 +1302,7 @@ public class HomeController {
         title.maxWidthProperty().bind(card.widthProperty().subtract(24));
 
         HBox priceBidsRow = new HBox();
-        priceBidsRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        priceBidsRow.setAlignment(Pos.CENTER_LEFT);
 
         BigDecimal currentPrice = item.getCurrentPrice() == null ? item.getStartingPrice() : item.getCurrentPrice();
         Label price = new Label(CURRENCY_FORMAT.format(currentPrice == null ? BigDecimal.ZERO : currentPrice));
@@ -1311,7 +1313,7 @@ public class HomeController {
 
         priceBidsRow.getChildren().add(price);
         priceBidsRow.getChildren().add(new Region());
-        HBox.setHgrow(priceBidsRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(priceBidsRow.getChildren().get(1), Priority.ALWAYS);
         priceBidsRow.getChildren().add(bidsCountLabel);
 
         card.getChildren().addAll(statusRow, title, priceBidsRow);
@@ -1328,16 +1330,16 @@ public class HomeController {
                         BidHistoryItemPayload[].class
                     );
                     int count = bids != null ? bids.length : 0;
-                    javafx.application.Platform.runLater(() -> {
+                    Platform.runLater(() -> {
                         bidsCountLabel.setText(count + (count == 1 ? " BID" : " BIDS"));
                     });
                 } else {
-                    javafx.application.Platform.runLater(() -> {
+                    Platform.runLater(() -> {
                         bidsCountLabel.setText("0 BIDS");
                     });
                 }
             } catch (Exception e) {
-                javafx.application.Platform.runLater(() -> {
+                Platform.runLater(() -> {
                     bidsCountLabel.setText("0 BIDS");
                 });
             }
@@ -1357,7 +1359,7 @@ public class HomeController {
     private Node createMyBidPreviewItem(MyBidListItemPayload item) {
         HBox row = new HBox(10);
         row.getStyleClass().add("bid-line-item");
-        row.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        row.setAlignment(Pos.CENTER_LEFT);
         row.setOnMouseClicked(event -> handleMyBidAuctionSelected(item.getAuctionId()));
 
         Region accentBar = new Region();
@@ -1365,7 +1367,7 @@ public class HomeController {
 
         VBox content = new VBox(5);
         content.setMinWidth(0);
-        HBox.setHgrow(content, javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(content, Priority.ALWAYS);
 
         Label title = new Label(item.getAuctionTitle() == null || item.getAuctionTitle().isBlank()
             ? "Auction #" + item.getAuctionId()
@@ -1379,7 +1381,7 @@ public class HomeController {
         title.getStyleClass().add("bid-item-title");
 
         HBox metaRow = new HBox();
-        metaRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        metaRow.setAlignment(Pos.CENTER_LEFT);
         Label price = new Label("CURRENT: " + CURRENCY_FORMAT.format(item.getCurrentPrice() == null ? BigDecimal.ZERO : item.getCurrentPrice()));
         price.getStyleClass().add("bid-item-meta");
         Label status = new Label(item.getBidStatus() == null ? "-" : item.getBidStatus().name());
@@ -1387,7 +1389,7 @@ public class HomeController {
 
         metaRow.getChildren().add(price);
         metaRow.getChildren().add(new Region());
-        HBox.setHgrow(metaRow.getChildren().get(1), javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(metaRow.getChildren().get(1), Priority.ALWAYS);
         metaRow.getChildren().add(status);
 
         Label bidTime = new Label("BID PLACED: " + formatBidTime(item.getBidTime()));

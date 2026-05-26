@@ -3,7 +3,7 @@ package com.vbay.ui.scene_ui.controller.bid;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.Duration;
+import javafx.util.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -495,19 +495,19 @@ public class BidController implements SceneDataReceiver<Auction> {
             analyticsPanel.setOpacity(0.0);
             analyticsPanel.setTranslateY(-30);
 
-            FadeTransition fade = new FadeTransition(javafx.util.Duration.millis(500), analyticsPanel);
+            FadeTransition fade = new FadeTransition(Duration.millis(500), analyticsPanel);
             fade.setToValue(1.0);
 
-            TranslateTransition slide = new TranslateTransition(javafx.util.Duration.millis(500), analyticsPanel);
+            TranslateTransition slide = new TranslateTransition(Duration.millis(500), analyticsPanel);
             slide.setToY(0);
 
             ParallelTransition pt = new ParallelTransition(fade, slide);
             pt.play();
         } else {
-            FadeTransition fade = new FadeTransition(javafx.util.Duration.millis(350), analyticsPanel);
+            FadeTransition fade = new FadeTransition(Duration.millis(350), analyticsPanel);
             fade.setToValue(0.0);
 
-            TranslateTransition slide = new TranslateTransition(javafx.util.Duration.millis(350), analyticsPanel);
+            TranslateTransition slide = new TranslateTransition(Duration.millis(350), analyticsPanel);
             slide.setToY(-30);
 
             ParallelTransition pt = new ParallelTransition(fade, slide);
@@ -522,7 +522,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     private void startPulseAnimation() {
         if (pulseCircle == null) return;
 
-        ScaleTransition scale = new ScaleTransition(javafx.util.Duration.seconds(1), pulseCircle);
+        ScaleTransition scale = new ScaleTransition(Duration.seconds(1), pulseCircle);
         scale.setFromX(1.0);
         scale.setFromY(1.0);
         scale.setToX(1.4);
@@ -530,7 +530,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         scale.setCycleCount(Animation.INDEFINITE);
         scale.setAutoReverse(true);
 
-        FadeTransition fade = new FadeTransition(javafx.util.Duration.seconds(1), pulseCircle);
+        FadeTransition fade = new FadeTransition(Duration.seconds(1), pulseCircle);
         fade.setFromValue(1.0);
         fade.setToValue(0.4);
         fade.setCycleCount(Animation.INDEFINITE);
@@ -623,7 +623,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private String formatBidTime(LocalDateTime bidTime) {
         if (bidTime == null) return "Just now";
-        Duration duration = Duration.between(bidTime, utcNow());
+        java.time.Duration duration = java.time.Duration.between(bidTime, utcNow());
         long seconds = Math.max(0, duration.getSeconds());
         if (seconds < 60) {
             return "Just now";
@@ -1043,7 +1043,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     private void startTimeUpdater() {
         stopTimeUpdater();
         updateTimeState();
-        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeState()));
+        timeUpdater = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTimeState()));
         timeUpdater.setCycleCount(Timeline.INDEFINITE);
         timeUpdater.play();
     }
@@ -1100,8 +1100,8 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
         if ("SCHEDULED".equals(status) && startingTime != null && now.isBefore(startingTime)) {
-            Duration remainingUntilStart = Duration.between(now, startingTime);
-            if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {
+            java.time.Duration remainingUntilStart = java.time.Duration.between(now, startingTime);
+            if (remainingUntilStart.compareTo(java.time.Duration.ofHours(24)) >= 0) {
                 setTimeLabels("Starts:", formatVietnamTime(startingTime));
             } else {
                 setTimeLabels("Starts in", formatRemainingDuration(remainingUntilStart));
@@ -1109,8 +1109,8 @@ public class BidController implements SceneDataReceiver<Auction> {
             return;
         }
 
-        Duration remainingUntilEnd = Duration.between(now, endingTime);
-        if (remainingUntilEnd.compareTo(Duration.ofHours(24)) >= 0) {
+        java.time.Duration remainingUntilEnd = java.time.Duration.between(now, endingTime);
+        if (remainingUntilEnd.compareTo(java.time.Duration.ofHours(24)) >= 0) {
             setTimeLabels(auction.isAntiSnipeExtended() ? "Extended:" : "Ends:", formatVietnamTime(endingTime));
         } else {
             setTimeLabels(auction.isAntiSnipeExtended() ? "Extended" : "Ends in", formatRemainingDuration(remainingUntilEnd));
@@ -1125,7 +1125,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         timeLabel.setText(value);
     }
 
-    private String formatRemainingDuration(Duration remaining) {
+    private String formatRemainingDuration(java.time.Duration remaining) {
         long seconds = Math.max(0, remaining.getSeconds());
         long hours = seconds / 3600;
         long minutes = (seconds % 3600) / 60;
@@ -1156,12 +1156,12 @@ public class BidController implements SceneDataReceiver<Auction> {
             return 0.0;
         }
 
-        long totalMillis = Duration.between(startingTime, endingTime).toMillis();
+        long totalMillis = java.time.Duration.between(startingTime, endingTime).toMillis();
         if (totalMillis <= 0) {
             return 1.0;
         }
 
-        long remainingMillis = Duration.between(now, endingTime).toMillis();
+        long remainingMillis = java.time.Duration.between(now, endingTime).toMillis();
         double progress = (double) remainingMillis / totalMillis;
         return Math.max(0.0, Math.min(1.0, progress));
     }
@@ -1301,7 +1301,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         }
     }
 
-    private void setNodeVisibility(javafx.scene.Node node, boolean visible) {
+    private void setNodeVisibility(Node node, boolean visible) {
         if (node == null) {
             return;
         }
@@ -1634,7 +1634,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         var dialogPane = alert.getDialogPane();
         dialogPane.getStyleClass().add("buy-now-confirm-dialog");
         dialogPane.setPrefWidth(480);
-        dialogPane.setMinHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        dialogPane.setMinHeight(Region.USE_PREF_SIZE);
         var stylesheet = getClass().getResource("/jfx/css/Bid.css");
         if (stylesheet != null) {
             dialogPane.getStylesheets().add(stylesheet.toExternalForm());
