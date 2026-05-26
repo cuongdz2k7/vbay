@@ -1,85 +1,124 @@
-# Hướng Dẫn Xử Lý Sự Cố & Đóng Gói Phát Hành vBay
+# Troubleshooting Và Release vBay
 
-Tài liệu này tổng hợp các lỗi vận hành phổ biến nhất và giải pháp xử lý nhanh, đồng thời hướng dẫn chi tiết quy trình đóng gói dự án thành các tệp tin thực thi độc lập (FAT Executable JARs) phục vụ quá trình chuyển giao và vận hành production.
+Tài liệu này tổng hợp lỗi thường gặp khi chạy vBay và cách đóng gói JAR phân phối.
 
----
+## 1. Lỗi Cổng Mạng
 
-## 1. Hướng Dẫn Xử Lý Sự Cố Thường Gặp (Troubleshooting)
+Triệu chứng:
 
-Trong quá trình khởi chạy hoặc lập trình phát triển hệ thống, bạn có thể gặp phải một số vấn đề liên quan đến cổng kết nối mạng hoặc cơ sở dữ liệu. Dưới đây là các sự cố tiêu biểu và cách khắc phục:
+- Server báo `java.net.BindException: Address already in use`.
+- Client không kết nối được server hoặc ảnh sản phẩm không load.
 
-### A. Lỗi xung đột cổng mạng (Port Conflict Error)
-*   **Triệu chứng**: Khi chạy Server, console hiển thị lỗi `java.net.BindException: Address already in use: bind`.
-*   **Nguyên nhân**: Cổng **`3618`** (cổng TCP Socket của vBay Server) hoặc **`1639`** (cổng HTTP Image Server) đã bị chiếm dụng bởi một tiến trình khác chạy ngầm trên máy tính của bạn.
-*   **Giải pháp**:
-    *   *Phương án 1*: Tìm và tắt tiến trình đang chiếm cổng. Trên Windows, mở PowerShell với quyền Administrator và chạy lệnh:
-        ```powershell
-        Stop-Process -Id (Get-NetTCPConnection -LocalPort 3618).OwningProcess -Force
-        ```
-    *   *Phương án 2*: Thay đổi cổng Server trong lớp `ServerApplication.java` (đổi hằng số `PORT`) và đổi cấu hình kết nối tương ứng phía Client tại lớp `SocketClient.java`.
+Nguyên nhân thường gặp:
 
----
+- TCP socket server port `3618` đang bị chiếm.
+- Image HTTP server port `1639` đang bị chiếm.
 
-### B. Lỗi kết nối cơ sở dữ liệu thất bại (Database Connection Failure)
-*   **Triệu chứng**: Khi chạy Server, hệ thống ném ra lỗi `SQLException: Cannot create database...` hoặc `Communication link failure`.
-*   **Nguyên nhân**:
-    1.  Dịch vụ MySQL Server chưa khởi động.
-    2.  MySQL Server đang chạy trên cổng khác mặc định trong code (cổng mặc định trong code vBay là `1638`, trong khi mặc định của cài đặt MySQL thông thường là `3306`).
-    3.  Tên đăng nhập hoặc mật khẩu MySQL không khớp (mặc định trong code là user `root`, mật khẩu `1234`).
-*   **Giải pháp**:
-    *   Truy cập tệp `DatabaseConfig.java` (`server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java`).
-    *   Cập nhật lại cổng kết nối (`PORT`) thành cổng thực tế (ví dụ: `3306`), và đổi lại mật khẩu (`PASSWORD`) cho khớp với cơ sở dữ liệu MySQL cục bộ của bạn.
-    *   Đảm bảo dịch vụ MySQL đang hoạt động bình thường.
+Kiểm tra trên Windows:
 
----
+```powershell
+Get-NetTCPConnection -LocalPort 3618
+Get-NetTCPConnection -LocalPort 1639
+```
 
-### C. Lỗi không tải được hình ảnh sản phẩm (Image Upload/Write Failure)
-*   **Triệu chứng**: Khi Seller tạo phiên đấu giá và đính kèm ảnh sản phẩm, hệ thống báo lỗi không thể lưu ảnh hoặc Client không hiển thị được ảnh sản phẩm (ảnh trắng).
-*   **Nguyên nhân**: 
-    1.  Thư mục lưu trữ hình ảnh tải lên (`uploads/`) ở thư mục gốc dự án chưa được tạo hoặc không có quyền ghi tệp (Write Permissions).
-    2.  Máy chủ HTTP tải ảnh (`ImageHttpServer`) khởi chạy thất bại trên cổng `1639`.
-*   **Giải pháp**:
-    *   Đảm bảo thư mục `uploads/` có quyền đọc và ghi dữ liệu đầy đủ.
-    *   Kiểm tra log của Server để chắc chắn `ImageHttpServer` đã khởi chạy thành công trên cổng `1639`.
+Cách xử lý:
 
----
+- Tắt process đang chiếm port.
+- Hoặc đổi port tương ứng trong code server/client nếu cần chạy song song nhiều instance.
 
-## 2. Quy Trình Đóng Gói & Phát Hành Dự Án (Release Guide)
+## 2. Lỗi MySQL Và Database Init
 
-Dự án vBay hỗ trợ đóng gói tự động thành các tệp tin JAR chứa đầy đủ tài nguyên và dependencies đi kèm (FAT Executable JARs) thông qua plugin chuyên dụng của Maven.
+Triệu chứng:
 
-### Bước 1: Dọn dẹp và đóng gói dự án
-Mở terminal tại thư mục gốc của dự án (`d:\vbay`) và thực thi lệnh:
+- `Communication link failure`.
+- `Access denied for user`.
+- Server không tạo được database/schema.
+
+Cấu hình mặc định nằm trong `DatabaseConfig.java`:
+
+| Tham số | Giá trị mặc định |
+| :--- | :--- |
+| Host | `localhost` |
+| Port | `1638` |
+| Database | `vbay` |
+| Username | `root` |
+| Password | `1234` |
+
+Cách xử lý:
+
+- Đảm bảo MySQL đang chạy.
+- Kiểm tra port thực tế của MySQL, nhiều máy dùng `3306` thay vì `1638`.
+- Sửa username/password trong `DatabaseConfig.java` cho khớp môi trường.
+- Kiểm tra `server/src/main/resources/data_init.sql` nếu lỗi schema init.
+
+## 3. Lỗi JavaFX Runtime, FXML, CSS Và Media
+
+Triệu chứng:
+
+- Client không mở UI.
+- Lỗi `JavaFX runtime components are missing`.
+- Lỗi `Location is not set` hoặc không load được FXML.
+- Nhạc/media không phát hoặc báo thiếu module.
+
+Cách xử lý:
+
+- Khi phát triển, ưu tiên chạy client bằng Maven plugin:
+
+```bash
+mvn -pl client javafx:run
+```
+
+- Kiểm tra `client/pom.xml` có `javafx-controls`, `javafx-fxml`, `javafx-media`.
+- Nếu lỗi FXML/resource, kiểm tra đường dẫn trong controller và đảm bảo file nằm trong `client/src/main/resources`.
+- Nếu media không phát, kiểm tra JavaFX media module, định dạng file và đường dẫn resource.
+- Với cảnh báo native access, client Maven plugin đã có option `--enable-native-access=javafx.graphics`.
+
+## 4. Lỗi Image Upload Hoặc Không Hiển Thị Ảnh
+
+Triệu chứng:
+
+- Tạo auction không lưu được ảnh.
+- Card/list item hiện ảnh trắng.
+- URL ảnh trả về nhưng browser/client không tải được.
+
+Cách xử lý:
+
+- Đảm bảo thư mục `uploads/` tồn tại và có quyền ghi.
+- Đảm bảo `ImageHttpServer` chạy trên port `1639`.
+- Kiểm tra URL ảnh được trả về cho client.
+- Khi chạy bằng JAR, đặt `uploads/` cùng môi trường làm việc của server hoặc cấu hình lại đường dẫn lưu ảnh.
+
+## 5. Đóng Gói Release
+
+Build toàn bộ project:
+
+```bash
+mvn clean package
+```
+
+Build nhanh không chạy test:
 
 ```bash
 mvn clean package -DskipTests
 ```
-*(Bỏ qua tham số `-DskipTests` nếu bạn muốn chạy kiểm thử tự động trước khi đóng gói).*
 
----
+Artifact sau khi package:
 
-### Bước 2: Vị trí các tệp thực thi sau khi đóng gói
-Sau khi Maven chạy hoàn tất thông báo `BUILD SUCCESS`, bạn có thể tìm thấy các tệp tin JAR độc lập tại các thư mục sau:
+| Module | JAR |
+| :--- | :--- |
+| Server | `server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar` |
+| Client | `client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar` |
 
-| Module | Tệp tin thực thi (Artifact JAR) | Vai trò vận hành |
-| :--- | :--- | :--- |
-| **Server** | `server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar` | Chạy máy chủ TCP Socket và MySQL Service |
-| **Client** | `client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar` | Ứng dụng Desktop JavaFX dành cho người dùng |
+Chạy server JAR:
 
-Các tệp tin JAR này đã được "shade" (đóng gói gộp) toàn bộ các thư viện bổ trợ cần thiết (như Gson, Jackson, băm mật khẩu Argon2, MySQL Driver...) nên có thể chạy độc lập trên bất kỳ máy tính nào có cài đặt môi trường chạy Java (JRE) mà không cần cấu hình thêm thư viện mạng.
-
----
-
-### Bước 3: Khởi chạy tệp tin phân phối thực tế
-Để phân phối và khởi chạy ứng dụng ngoài môi trường phát triển code, bạn chỉ cần sao chép các tệp JAR trên và chạy lệnh:
-
-#### Chạy Server:
 ```bash
-java -jar server-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
-#### Chạy Client:
+Chạy client JAR:
+
 ```bash
-java -jar client-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
-*(Đảm bảo đã tạo thư mục `uploads` nằm cùng cấp với tệp JAR của Server để lưu trữ hình ảnh đăng tải của người dùng).*
+
+Server JAR dùng main class `com.vbay.server.ServerApplication`. Client JAR dùng launcher `com.vbay.Launcher`, còn khi chạy bằng Maven JavaFX plugin thì main app là `com.vbay.MainApp`.

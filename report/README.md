@@ -25,15 +25,15 @@ Thư mục này gồm các tài liệu thiết kế, cài đặt, vận hành v�
 | `protocol.md` | TCP protocol và realtime event | Đã đối chiếu enum trong `shared` |
 | `realtime-architecture.md` | Realtime, scheduler, concurrency | Tập trung vào room/event/scheduler |
 | `bidding-architecture.md` | Bid engine, resolution, applier, result pipeline | Mới tách riêng từ phần realtime |
-| `class-diagram.md` | Bản đồ class/module và sequence | Cần rà tiếp nếu muốn đồng bộ sâu hơn |
-| `testing-guide.md` | Test tự động và test thủ công | Cần sửa phần H2 integration test |
-| `user-manual.md` | Hướng dẫn sử dụng | Cần sửa cách mô tả role nghiệp vụ |
-| `troubleshooting-release.md` | Lỗi thường gặp và release | Cần bổ sung lỗi JavaFX/FXML/media |
+| `class-diagram.md` | Bản đồ class/module và sequence | Đã đồng bộ pipeline bidding và module hiện tại |
+| `testing-guide.md` | Test tự động và test thủ công | Đã ghi đúng H2 integration test và kịch bản manual |
+| `user-manual.md` | Hướng dẫn sử dụng | Đã đồng bộ role `USER`/`ADMIN` |
+| `troubleshooting-release.md` | Lỗi thường gặp và release | Đã bổ sung JavaFX/FXML/media/MySQL/image/release |
 
 ## Quy Ước Quan Trọng
 
 - Tài khoản chỉ có `Position.USER` và `Position.ADMIN`.
 - `seller` và `bidder` là vai trò nghiệp vụ theo từng auction, được thể hiện bằng `auctions.seller_id` và `bids.bidder_id`.
-- Realtime room hiện tại gồm `AUCTION`, `USER`, `AUCTION_LIST`; không dùng `AUCTION_DETAIL`.
+- Realtime room hiện tại gồm `AUCTION`, `USER`, `AUCTION_LIST`; không dùng room detail riêng.
 - Mật khẩu được băm bằng `Argon2PasswordHasher`.
 - Tiền đang giữ nằm trong `hold_balance`; tiền thanh toán cuối cùng được ghi trong bảng `payments`.
