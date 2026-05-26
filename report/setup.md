@@ -1,102 +1,103 @@
-# Hướng Dẫn Cài Đặt Và Khởi Chạy Hệ Thống vBay
+# Hướng Dẫn Cài Đặt Và Khởi Chạy vBay
 
-Tài liệu này hướng dẫn chi tiết cách chuẩn bị môi trường, cấu hình cơ sở dữ liệu MySQL, biên dịch mã nguồn và khởi chạy Server cùng các Client đấu giá của vBay.
+Tài liệu này hướng dẫn cài đặt môi trường, cấu hình database, build và khởi chạy server/client.
 
----
+## 1. Yêu Cầu Môi Trường
 
-## 1. Yêu Cầu Hệ Thống & Môi Trường
+- JDK 25, tối thiểu nên dùng JDK 21+ nếu cần tương thích.
+- Maven 3.9+.
+- MySQL Server 8.0+ hoặc 9.x.
+- Hệ điều hành desktop có hỗ trợ JavaFX: Windows, macOS, Linux.
 
-Trước khi bắt đầu, hãy đảm bảo máy tính của bạn đã cài đặt các công cụ sau:
+## 2. Cấu Hình MySQL
 
-1.  **Java Development Kit (JDK)**: Phiên bản **Java 25** (tối thiểu Java 21) để biên dịch dự án.
-2.  **Apache Maven**: Phiên bản **3.9+** để quản lý dependency và đóng gói build.
-3.  **Hệ Quản Trị Cơ Sở Dữ Liệu**: **MySQL Server 9.4.0** (hoặc các phiên bản 8.0+ tương thích).
-4.  **Hệ Điều Hành**: Môi trường có hỗ trợ đồ họa (Windows, macOS hoặc Linux Desktop) để chạy JavaFX Client.
+Server tự khởi tạo database và schema bằng `DatabaseInitializer` khi start. Schema nằm tại:
 
----
+```text
+server/src/main/resources/data_init.sql
+```
 
-## 2. Cấu Hình Cơ Sở Dữ Liệu MySQL
+Cấu hình kết nối mặc định nằm trong:
 
-Mặc định, vBay tự động khởi tạo cơ sở dữ liệu và bảng dữ liệu khi Server khởi chạy lần đầu nhờ lớp `DatabaseInitializer`. Bạn chỉ cần chuẩn bị một thực thể MySQL Server đang hoạt động và cập nhật cấu hình kết nối.
+```text
+server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java
+```
 
-### Bước 1: Khởi động MySQL Server
-Đảm bảo dịch vụ MySQL đang chạy trên máy của bạn.
+Giá trị mặc định:
 
-### Bước 2: Kiểm tra cấu hình kết nối
-Các cấu hình mặc định được khai báo tĩnh tại lớp `DatabaseConfig.java` (`server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java`):
+| Tham số | Giá trị |
+| :--- | :--- |
+| Host | `localhost` |
+| Port | `1638` |
+| Database | `vbay` |
+| Username | `root` |
+| Password | `1234` |
 
-*   **Host**: `localhost`
-*   **Port**: `1638`
-*   **Database Name**: `vbay`
-*   **Username**: `root`
-*   **Password**: `1234`
+Nếu MySQL của máy đang chạy ở port hoặc mật khẩu khác, sửa `DatabaseConfig.java` trước khi chạy server.
 
-> [!TIP]
-> Bạn có thể thay đổi các giá trị này trong tệp tin `DatabaseConfig.java` để khớp với môi trường MySQL cục bộ của bạn (ví dụ: đổi cổng về mặc định `3306` hoặc thay đổi mật khẩu root).
+## 3. Build Dự Án
 
-### Bước 3: Tự động chạy Schema
-Khi bạn chạy Server lần đầu, nó sẽ tự động:
-1.  Kết nối với MySQL Server và chạy lệnh `CREATE DATABASE IF NOT EXISTS vbay CHARACTER SET utf8mb4 ...`
-2.  Đọc tệp tin SQL khởi tạo schema tại `/data_init.sql` (nằm trong thư mục `server/src/main/resources/data_init.sql`) để tạo các bảng.
-3.  Tự động tạo các chỉ mục cơ sở dữ liệu (Indexes) để tăng tốc truy vấn tìm kiếm phiên đấu giá.
-
----
-
-## 3. Biên Dịch Dự Án Với Maven
-
-Mở terminal tại thư mục gốc của dự án (`d:\vbay`) và thực hiện lệnh biên dịch toàn bộ các module:
+Tại thư mục gốc `vbay/`, chạy:
 
 ```bash
 mvn clean package
 ```
 
-Lệnh này sẽ tải toàn bộ thư viện cần thiết (Jackson, Gson, MySQL Connector, JavaFX, BCrypt, Ikonli, JUnit...), chạy các bài kiểm thử tự động, và đóng gói dự án thành các tệp tin `.jar` trong thư mục `target` của mỗi module.
+Lệnh này build 3 module `shared`, `server`, `client`, chạy test và tạo JAR trong từng thư mục `target`.
 
----
-
-## 4. Hướng Dẫn Khởi Chạy Hệ Thống
-
-Hệ thống vBay hoạt động theo mô hình Client - Server, vì vậy bạn cần chạy Server trước, sau đó mới khởi chạy một hoặc nhiều Client để kết nối và thực hiện demo đấu giá.
-
-### A. Khởi Chạy Server
-Có hai cách để chạy Server:
-
-#### Cách 1: Chạy trực tiếp qua Maven (Khuyên dùng khi phát triển)
-Di chuyển vào module `server` và sử dụng plugin `exec-maven-plugin`:
+Nếu chỉ cần build nhanh không chạy test:
 
 ```bash
-cd server
-mvn exec:java -Dexec.mainClass="com.vbay.server.ServerApplication"
+mvn clean package -DskipTests
 ```
 
-#### Cách 2: Chạy tệp tin JAR đã đóng gói
-Sau khi chạy lệnh `mvn package`, di chuyển vào thư mục `server/target` và chạy tệp JAR:
+## 4. Chạy Server
+
+Khuyên dùng khi phát triển:
 
 ```bash
-java -jar server-1.0-SNAPSHOT-jar-with-dependencies.jar
+mvn -pl server exec:java
 ```
 
-Khi Server khởi động thành công, terminal sẽ hiển thị dòng log:
-`Server listening on port 3618` và `Image HTTP Server started on port 1639` (hoặc cổng tương ứng).
-
----
-
-### B. Khởi Chạy Client (JavaFX App)
-Để chạy giao diện đồ họa người dùng:
-
-#### Cách 1: Chạy qua Maven
-Mở một terminal mới tại thư mục gốc của dự án, di chuyển vào module `client` và chạy lệnh sau:
+Hoặc chạy JAR sau khi package:
 
 ```bash
-cd client
-mvn javafx:run
+java -jar server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
-#### Cách 2: Chạy tệp JAR đã đóng gói
-Di chuyển vào thư mục `client/target` và chạy tệp JAR ứng dụng:
+Server thành công sẽ mở:
+
+- TCP socket server: port `3618`.
+- Image HTTP server: port `1639`.
+- Kết nối MySQL theo `DatabaseConfig`.
+
+## 5. Chạy Client
+
+Khuyên dùng khi phát triển:
 
 ```bash
-java -jar client-1.0-SNAPSHOT-jar-with-dependencies.jar
+mvn -pl client javafx:run
 ```
 
-Bạn có thể khởi chạy nhiều terminal để mở **nhiều Client song song**, giúp demo các kịch bản đấu giá realtime giữa các tài khoản khác nhau (ví dụ: Seller tạo phòng đấu giá, Bidder 1 đặt giá thầu, Bidder 2 đặt giá thầu cạnh tranh hoặc cài đặt Auto-bid).
+Hoặc chạy JAR sau khi package:
+
+```bash
+java -jar client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar
+```
+
+Client JAR dùng manifest main class `com.vbay.Launcher`, còn khi chạy Maven plugin thì dùng `com.vbay.MainApp`.
+
+## 6. Demo Nhiều Client
+
+Để demo realtime, chạy server trước, sau đó mở nhiều terminal client:
+
+```bash
+mvn -pl client javafx:run
+```
+
+Mỗi client đăng nhập bằng tài khoản khác nhau để demo:
+
+- User A tạo auction.
+- User B đặt bid.
+- User C dùng auto-bid hoặc buy now.
+- Admin approve deposit, lock/warn/kick user hoặc stop auction.

@@ -1,96 +1,100 @@
-# Kiến Trúc Real-time & Xử Lý Đồng Thời vBay
+# Kiến Trúc Real-time Và Xử Lý Đồng Thời vBay
 
-Đấu giá trực tuyến đòi hỏi tốc độ truyền tải thông tin cực kỳ nhanh và khả năng kiểm soát concurrency tuyệt đối an toàn. Tài liệu này mô tả chi tiết giải pháp kiến trúc đa luồng, cơ chế phòng đăng ký sự kiện (Real-time Rooms), trình lập lịch tự phục hồi (Task Scheduler), và lõi đấu giá tự động (Auto-bid Engine) của vBay Server.
+Realtime của vBay được xây trên TCP Socket persistent connection. Server nhận request theo từng `ClientHandler`, xử lý nghiệp vụ trong service layer, sau đó phát domain event thành realtime event đến các room liên quan.
 
----
-
-## 1. Kiến Trúc Đa Luồng TCP Server (TCP Concurrency)
-
-Server của vBay chạy song song hàng loạt dịch vụ mạng để duy trì kết nối ổn định:
+## 1. TCP Server Và Client Handler
 
 ```mermaid
 graph TD
-    ServerSocket[ServerSocket Port 3618] -->|Chấp nhận kết nối| Accept{accept}
-    Accept -->|Mỗi Client| ThreadSpawn[Spawn ClientHandler Thread]
-    ThreadSpawn --> CH1[ClientHandler Thread 1]
-    ThreadSpawn --> CH2[ClientHandler Thread 2]
-    ThreadSpawn --> CH3[ClientHandler Thread N]
-
-    CH1 -->|Nhận tin| Dispatcher[RequestDistributor]
-    CH2 -->|Nhận tin| Dispatcher
-    CH3 -->|Nhận tin| Dispatcher
+    ServerSocket[ServerSocket 3618] --> Accept[Accept connection]
+    Accept --> Handler[ClientHandler per client]
+    Handler --> RequestDistributor
+    RequestDistributor --> Services[Auth/Auction/Bid/Admin Services]
+    Services --> Repositories[JDBC Repositories]
 ```
 
-*   **`ServerApplication`**: Duy trì một vòng lặp vô hạn `while(true) { Socket socket = serverSocket.accept(); ... }` trên luồng chính để tiếp nhận kết nối mới.
-*   **`ClientHandler`**: Với mỗi Socket kết nối thành công, Server tạo ra một luồng xử lý riêng biệt chạy độc lập dưới dạng `Runnable`. Luồng này duy trì việc đọc dòng dữ liệu JSON từ Client, điều phối tới `RequestDistributor` để thực thi nghiệp vụ, và phản hồi kết quả trực tiếp qua mạng.
+- Mỗi client có một socket connection và một `ClientHandler`.
+- `ClientConnection.send(...)` đồng bộ việc ghi message ra socket.
+- Client đọc message bằng listener thread, parse tại `ServerMessageParser`, sau đó đẩy event vào `RealtimeEventDispatcher`.
 
----
+## 2. Room-based Subscription
 
-## 2. Cơ Chế Phòng Đăng Ký (Room-based Broadcasting)
+Room hiện tại gồm:
 
-Để giảm thiểu băng thông truyền tải và tránh spam dữ liệu tới các người dùng không liên quan, vBay triển khai cơ chế **Room Subscription** (Đăng ký nhận tin theo phòng):
+| RoomType | Phạm vi |
+| :--- | :--- |
+| `AUCTION` | Các event của một auction cụ thể: state, bid history, watcher count |
+| `USER` | Event riêng của một user: balance, my bid item, admin warning/kick, deposit result, autobid |
+| `AUCTION_LIST` | Event cho danh sách auction và admin deposit lobby |
 
 ```mermaid
-classDiagram
-    class SubscriptionService {
-        +subscribe(Room room, ClientConnection client)
-        +unsubscribe(Room room, ClientConnection client)
-    }
-    class SubscriptionRegistry {
-        -Map roomsMap
-        +getSubscriptions(Room room) List
-    }
-    class RealtimeBroadcaster {
-        +broadcast(Room room, RealtimeEvent event)
-    }
-
-    SubscriptionService --> SubscriptionRegistry
-    RealtimeBroadcaster --> SubscriptionRegistry
+graph LR
+    DomainEvent --> Handler[Realtime Handler]
+    Handler --> Mapper[RealtimeEventMapper]
+    Mapper --> Broadcaster[RealtimeBroadcaster]
+    Broadcaster --> Registry[SubscriptionRegistry]
+    Registry --> Clients[Subscribed clients]
 ```
 
-### A. Phân Loại Phòng (`RoomType`)
-1.  **`AUCTION_LIST`**: Phòng toàn cục. Bất kỳ sự thay đổi giá thầu hay trạng thái nào ngoài trang chủ đều được phát vào phòng này để tất cả các Client đang duyệt danh sách cập nhật trực tiếp Card hiển thị.
-2.  **`AUCTION_DETAIL` (Mã phiên)**: Phòng đấu giá chi tiết. Khi người dùng bấm vào xem một sản phẩm, Client gửi yêu cầu `SUBSCRIBE_ROOM` với mã phiên đấu giá. Mọi sự kiện liên quan đến phiên (lượt thầu mới, watcher count, chống bắn tỉa anti-snipe) chỉ được phát tới những người trong phòng này.
-3.  **`USER` (Mã người dùng)**: Phòng cá nhân. Chỉ phát các thông tin bảo mật, riêng tư như thay đổi số dư ví, phê duyệt nạp tiền, hoặc cảnh cáo từ admin đến đúng Client của người dùng đó.
+## 3. Event Flow
 
-### B. Thực Thi `SubscriptionRegistry`
-Server sử dụng cấu trúc `ConcurrentHashMap` lưu trữ danh sách đăng ký. Khi phát sinh một sự kiện mới, `RealtimeBroadcaster` lấy danh sách các kết nối client thuộc về phòng đó và viết dữ liệu JSON trực tiếp vào luồng output Socket của từng client.
+- Bid thành công phát `BidUpdatedDomainEvent`, `AuctionListItemUpdatedDomainEvent`, `UserBalanceUpdatedDomainEvent`.
+- Buy now phát event auction state, bid history, balance và list item.
+- Auction start/end từ scheduler phát auction state và list item.
+- Auto-bid update phát `AUTOBID_UPDATED` vào room `USER`.
+- Admin actions phát event user/auction/deposit tương ứng.
 
----
+## 4. Client Realtime Lifecycle
 
-## 3. Trình Lập Lịch Tự Phục Hồi (Auction Task Scheduler)
+Phía client không render UI chỉ bằng event realtime. Mỗi màn hình luôn lấy một snapshot mới nhất trước, sau đó mới dùng realtime event để merge incremental update.
 
-Phiên đấu giá phải tự động đổi trạng thái từ lên lịch (`SCHEDULED`) sang trực tiếp (`ACTIVE`) và tự động kết thúc (`ENDED`/`FAILED`) chính xác từng mili-giây. vBay xây dựng một **`AuctionTaskScheduler`** cực kỳ thông minh:
+Quy trình chuẩn khi mở màn:
 
-*   **Động Cơ Lập Lịch (`ScheduledExecutorService`)**: Sử dụng một Thread Pool cố định gồm **4 luồng nền** để chuyên trách việc lập lịch và đếm ngược thời gian.
-*   **Lập Lịch Chờ (`scheduleStart` & `scheduleEnd`)**:
-    *   Khi một phiên đấu giá mới được tạo, hệ thống tính toán khoảng thời gian delay từ hiện tại đến giờ mở/đóng cửa và đưa vào hàng chờ lập lịch.
-    *   Hai bản đồ luồng an toàn (`ConcurrentHashMap`) là `startTasks` và `endTasks` được dùng để lưu vết các `ScheduledFuture<?>` đang đếm ngược. Nếu Seller cập nhật lại thời gian đấu giá hoặc Admin hủy phiên thầu, hệ thống dễ dàng hủy (`cancel`) tiến trình lập lịch cũ để tránh chạy sai giờ.
-*   **Cơ Chế Tự Phục Hồi Lỗi (Self-Healing Recovery Engine)**:
-    *   Cứ mỗi **30 giây**, một luồng nền định kỳ (`scheduleAtFixedRate`) sẽ quét cơ sở dữ liệu để kiểm tra xem có phiên đấu giá nào bị trôi qua giờ mở/đóng mà chưa được đổi trạng thái hay không (ví dụ: do Server bị mất điện, crash đột ngột dẫn đến mất hàng đếm ngược trong RAM).
-    *   Lớp phục hồi (`recoverMissedAuctions`) tự động đồng bộ hóa trạng thái phiên đấu giá về đúng thực tế và lập lịch lại các phiên đang dang dở, giúp hệ thống phục hồi 100% dữ liệu sạch sau sự cố.
+1. Controller fetch snapshot mới nhất từ server bằng request tương ứng, ví dụ auction list, auction detail hoặc my-bid list.
+2. Controller render snapshot đó thành state hiện tại của màn hình.
+3. Controller subscribe đúng server room và đúng event type mà màn đó cần.
+4. Khi nhận realtime event, controller merge event lên snapshot/cache hiện tại bằng `auctionVersion`, `version` hoặc `updatedAt`.
+5. Khi dispose màn, controller unsubscribe listener, unsubscribe room nếu có, stop timer/timeline và bỏ state riêng của màn.
 
----
+`RealtimeEventDispatcher` ở client chỉ điều phối event theo `RealtimeEventType`. Dispatcher không quyết định event nào còn mới; controller giữ cache của màn và tự bỏ stale event.
 
-## 4. Động Cơ Đấu Giá Tự Động (Auto-Bid Engine)
+Các rule xử lý stale chính:
 
-Động cơ Auto-bid (`AutobidService` kết hợp `AuctionBidEngine`) chạy hoàn toàn trên bộ nhớ của Server với các cam kết an toàn tài chính cực cao:
+- Với auction list item, nếu incoming `auctionVersion` nhỏ hơn version đang có thì bỏ qua.
+- Nếu version bằng nhau, dùng `updatedAt` để tránh event cũ ghi đè snapshot hoặc event mới hơn.
+- Với auction detail, `AUCTION_STATE_UPDATED` chỉ apply khi `payload.auctionVersion > currentAuction.version`.
+- Với my-bid/autobid state, controller cũng dùng `auctionVersion` và `updatedAt` để tránh private state cũ ghi đè state mới.
+- Mọi callback chạy sau khi màn đã rời phải check `disposed` trước khi đụng vào UI.
 
-1.  **Kích Hoạt Tự Động**: Khi có một lượt đặt giá thủ công mới thành công, hệ thống bắn ra sự kiện `BidPlacedEvent`.
-2.  **Xử Lý Đệ Quy (Auto-bid Competition)**:
-    *   Hệ thống quét bảng `autobids` tìm xem có người nào đang cấu hình tự động cho phiên đấu giá này hay không.
-    *   Nếu có, nó sẽ tự động thay mặt người dùng đó đặt một mức giá thầu mới bằng: **Giá thầu cao nhất hiện tại + Bước giá tối thiểu**.
-    *   Nếu có nhiều hơn một người cấu hình Auto-bid cạnh tranh nhau, Server sẽ lập tức tính toán lượt đặt giá đấu tranh qua lại cho đến khi:
-        *   Một bên đạt giới hạn tối đa (`max_bid_amount`) của mình.
-        *   Người có giới hạn cao hơn sẽ là người dẫn đầu phiên thầu với mức giá bằng: **Giới hạn của người thua cuộc + Bước giá tối thiểu**.
-3.  **Thread-Safety**: Toàn bộ luồng tính toán Auto-bid cạnh tranh được bọc trong một Database Transaction duy nhất với cơ chế khóa bi quan `FOR UPDATE` trên dòng phiên đấu giá. Điều này đảm bảo tuyệt đối không có hai luồng xử lý tranh chấp số tiền ví hoặc ghi đè lịch sử đặt thầu của nhau.
+Cách này giúp client chịu được event đến muộn, event lặp, hoặc response snapshot về sau event realtime. Snapshot vẫn là nguồn khởi tạo state, realtime chỉ là lớp cập nhật liên tục.
 
----
+## 5. Auction Scheduler
 
-## 5. Các Kỹ Thuật Đảm Bảo Thread-Safety Trên Server
+`AuctionTaskScheduler` quản lý start/end task bằng `ScheduledExecutorService`.
 
-Do hàng ngàn Client gửi request lên đồng thời, Server vBay áp dụng các kỹ thuật lập trình thread-safety tiên tiến:
+- Khi server start, scheduler đọc auction cần lập lịch từ database.
+- Khi auction đến giờ start/end, scheduler gọi `AuctionService.syncAuctionStatus`.
+- Recovery task định kỳ quét auction bị missed do server restart/crash.
+- `AuctionScheduleDomainEventHandler` nằm cạnh scheduler và lắng nghe `AuctionListItemUpdatedDomainEvent`.
+- Handler chỉ refresh lịch với các reason có thể ảnh hưởng scheduling: `CREATED`, `STATUS_CHANGED`, `TIME_CHANGED`.
+- Anti-snipe có thể cập nhật `ending_time`; bid flow chỉ cần phát list item event với reason `TIME_CHANGED`, scheduler sẽ tự reschedule end task.
+- Nếu sau này seller được phép đổi thời gian auction, service đó cũng chỉ cần phát `TIME_CHANGED`; không cần phụ thuộc trực tiếp vào scheduler.
+- Cách event-driven này giữ scheduler ít coupling với nghiệp vụ bid/seller/admin và dễ mở rộng khi có thêm nguồn làm thay đổi thời gian auction.
 
-*   **Luồng dữ liệu an toàn**: Sử dụng `ConcurrentHashMap` và `CopyOnWriteArrayList` cho mọi bộ sưu tập (Collections) dùng chung trong RAM.
-*   **Khóa nguyên tử (Atomic locks)**: Sử dụng từ khóa `synchronized` kết hợp các cơ chế khóa khóa độc quyền cơ sở dữ liệu (`FOR UPDATE`).
-*   **Không lưu trạng thái ở Service (Stateless Services)**: Toàn bộ lớp Service (`AuthService`, `AuctionService`, `ManualBidService`...) đều được thiết kế stateless (không lưu trữ biến trạng thái nghiệp vụ trong RAM của service). Mọi trạng thái nghiệp vụ đều được truy vấn động từ Connection cơ sở dữ liệu hoặc tham số đầu vào của luồng, giúp các Service an toàn tuyệt đối khi chạy đa luồng.
+## 6. Concurrency Safety
+
+- Service layer thiết kế gần stateless; mỗi request tạo connection/transaction riêng.
+- Flow bid/buy now/auto-bid lock auction bằng `FOR UPDATE`.
+- SQL update balance có điều kiện `available_balance >= ?` hoặc `hold_balance >= ?`.
+- Collection realtime/subscription dùng các cấu trúc thread-safe.
+- Event chỉ publish sau khi transaction commit để client không nhận state chưa commit.
+
+## 7. Liên Kết Với Bidding Pipeline
+
+Realtime không trực tiếp quyết định logic bid/auto-bid. Các service bidding xử lý transaction, tạo result nghiệp vụ và publish domain event sau khi commit.
+
+- Manual bid, auto-bid và buy now phát các domain event tương ứng để realtime mapper tạo payload public/private.
+- Public room `AUCTION` và `AUCTION_LIST` chỉ nhận state công khai như current price, winner, bid history, reserve met và auction version.
+- Dữ liệu riêng của user như balance, my-bid item và `maxBidAmount` chỉ gửi qua room `USER`.
+- Khi bid flow tạo anti-snipe extension, event `AUCTION_LIST_ITEM_UPDATED` với reason `TIME_CHANGED` vừa cập nhật UI vừa kích hoạt scheduler reschedule.
+- Chi tiết về `AuctionBidEngine`, `BidResolution`, `BidResolutionApplier` và `AuctionChange` được tách sang `bidding-architecture.md`.

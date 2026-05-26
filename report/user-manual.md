@@ -32,7 +32,7 @@ Khi đăng nhập với vai trò mặc định là người dùng thông thườ
 1.  Trong phòng đấu giá chi tiết, chuyển sang tab **Auto-Bid**.
 2.  Nhập **Mức giá thầu tối đa** bạn sẵn sàng trả cho sản phẩm này.
 3.  Bấm **Kích hoạt** (Activate Auto-bid). Hệ thống sẽ thay mặt bạn tự động đặt giá thầu cạnh tranh mỗi khi có người khác trả giá cao hơn, đảm bảo bạn luôn dẫn đầu với chi phí tối thiểu cho đến khi vượt quá giới hạn tối đa bạn cài đặt.
-4.  Bạn có thể tăng mức giới hạn tối đa này hoặc bấm **Hủy tự động** bất kỳ lúc nào.
+4.  Bạn có thể tăng mức giới hạn tối đa bất cứ lúc nào.
 
 ### E. Mua đứt sản phẩm (Buy Now)
 *   Nếu người bán cấu hình giá mua đứt (`buy_now_price`) và phiên đấu giá chưa kết thúc, nút **Mua Ngay** (Buy Now) sẽ hiển thị.
