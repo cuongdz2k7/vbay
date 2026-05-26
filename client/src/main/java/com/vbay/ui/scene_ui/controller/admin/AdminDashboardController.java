@@ -35,15 +35,28 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar.ButtonData;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.SVGPath;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 public class AdminDashboardController {
     private static final Logger LOGGER = LoggingUtils.getLogger(AdminDashboardController.class);
@@ -277,7 +290,7 @@ public class AdminDashboardController {
                 if (user.getStatus() != UserStatus.BANNED && user.getStatus() != UserStatus.DELETED) {
                     Button banBtn = new Button("Ban");
                     banBtn.getStyleClass().addAll("table-action-btn", "ban-btn");
-                    banBtn.setOnAction(e -> handleUserAction(RequestType.ADMIN_BAN_USER, user.getUserId(), "Ban Reason:"));
+                    banBtn.setOnAction(e -> handleBanUser(user.getUserId()));
                     
                     Button kickBtn = new Button("Kick");
                     kickBtn.getStyleClass().addAll("table-action-btn", "kick-btn");
@@ -287,11 +300,7 @@ public class AdminDashboardController {
                     warnBtn.getStyleClass().addAll("table-action-btn", "warn-btn");
                     warnBtn.setOnAction(e -> handleUserAction(RequestType.ADMIN_WARN_USER, user.getUserId(), "Warning Reason:"));
                     
-                    Button lockBtn = new Button("Lock");
-                    lockBtn.getStyleClass().addAll("table-action-btn", "lock-btn");
-                    lockBtn.setOnAction(e -> handleLockUser(user.getUserId()));
-                    
-                    box.getChildren().addAll(kickBtn, warnBtn, lockBtn, banBtn);
+                    box.getChildren().addAll(kickBtn, warnBtn, banBtn);
                 }
                 
                 setGraphic(box);
@@ -368,15 +377,15 @@ public class AdminDashboardController {
         auctionsTable.setItems(auctionsData);
     }
     //Helper css styles (Popup dialogs)
-    private void styleDialog(javafx.scene.control.Dialog<?> dialog) {
+    private void styleDialog(Dialog<?> dialog) {
         dialog.getDialogPane().getStylesheets().add(getClass().getResource("/jfx/css/AdminDashboard.css").toExternalForm());
         dialog.getDialogPane().getStyleClass().add("custom-dialog");
         
         // Create custom red triangle with white question mark icon
-        javafx.scene.shape.SVGPath triangle = new javafx.scene.shape.SVGPath();
+        SVGPath triangle = new SVGPath();
         triangle.setContent("M12 2L2 22h20L12 2z");
-        triangle.setFill(javafx.scene.paint.Color.web("#e53935"));
-        triangle.setStroke(javafx.scene.paint.Color.TRANSPARENT);
+        triangle.setFill(Color.web("#e53935"));
+        triangle.setStroke(Color.TRANSPARENT);
         triangle.setScaleX(1.8);
         triangle.setScaleY(1.8);
 
@@ -384,20 +393,20 @@ public class AdminDashboardController {
         qLabel.setStyle("-fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;");
         qLabel.setTranslateY(2); // Shift question mark down slightly to center inside triangle
 
-        javafx.scene.layout.StackPane customIcon = new javafx.scene.layout.StackPane(triangle, qLabel);
+        StackPane customIcon = new StackPane(triangle, qLabel);
         customIcon.setPrefWidth(40);
         customIcon.setPrefHeight(40);
         dialog.setGraphic(customIcon);
         
         // Set the stage style to TRANSPARENT before showing
-        dialog.initStyle(javafx.stage.StageStyle.TRANSPARENT);
+        dialog.initStyle(StageStyle.TRANSPARENT);
         
         // Configure Scene and Window once the dialog starts showing (ensuring scene is fully initialized)
         dialog.setOnShowing(event -> {
-            javafx.scene.Scene scene = dialog.getDialogPane().getScene();
+            Scene scene = dialog.getDialogPane().getScene();
             if (scene != null) {
-                scene.setFill(javafx.scene.paint.Color.TRANSPARENT);
-                javafx.stage.Stage stage = (javafx.stage.Stage) scene.getWindow();
+                scene.setFill(Color.TRANSPARENT);
+                Stage stage = (Stage) scene.getWindow();
                 if (stage != null) {
                     // Mouse drag handlers so users can move the frameless window naturally
                     final double[] xOffset = new double[1];
@@ -443,36 +452,99 @@ public class AdminDashboardController {
         }
     }
 
-    private void handleLockUser(long targetUserId) {
-        TextInputDialog durationDialog = new TextInputDialog("30");
-        durationDialog.setTitle("Lock User");
-        durationDialog.setHeaderText("Enter lock duration in minutes:");
-        styleDialog(durationDialog);
-        Optional<String> durationResult = durationDialog.showAndWait();
-        if (durationResult.isEmpty()) return;
+    private void handleBanUser(long targetUserId) {
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Ban User");
+        dialog.setHeaderText("Ban configuration for User ID: " + targetUserId);
+        styleDialog(dialog);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 20, 20, 20));
+
+        TextField durationField = new TextField("30");
+        durationField.setPromptText("Duration");
+
+        ComboBox<String> unitBox = new ComboBox<>();
+        unitBox.getItems().addAll("PHÚT", "GIỜ", "NGÀY", "NĂM");
+        unitBox.setValue("PHÚT");
+
+        TextField reasonField = new TextField();
+        reasonField.setPromptText("Ban reason");
+
+        // Styling elements to look good
+        durationField.getStyleClass().add("text-field");
+        reasonField.getStyleClass().add("text-field");
+        unitBox.getStyleClass().add("combo-box");
+
+        Label durationLabel = new Label("Duration:");
+        durationLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+        Label unitLabel = new Label("Unit:");
+        unitLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+        Label reasonLabel = new Label("Reason:");
+        reasonLabel.setStyle("-fx-text-fill: #ffb5a0; -fx-font-weight: bold;");
+
+        grid.add(durationLabel, 0, 0);
+        grid.add(durationField, 1, 0);
+        grid.add(unitLabel, 0, 1);
+        grid.add(unitBox, 1, 1);
+        grid.add(reasonLabel, 0, 2);
+        grid.add(reasonField, 1, 2);
+
+        dialog.getDialogPane().setContent(grid);
+
+        ButtonType okButtonType = new ButtonType("Ban User", ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+
+        // Standard styling for buttons in our dialog
+        Button okBtn = (Button) dialog.getDialogPane().lookupButton(okButtonType);
+        if (okBtn != null) {
+            okBtn.getStyleClass().addAll("table-action-btn", "ban-btn");
+        }
         
-        int minutes;
-        try {
-            minutes = Integer.parseInt(durationResult.get());
-        } catch (NumberFormatException e) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Invalid Input", "Please enter a valid number");
-            return;
+        Button cancelBtn = (Button) dialog.getDialogPane().lookupButton(ButtonType.CANCEL);
+        if (cancelBtn != null) {
+            cancelBtn.getStyleClass().addAll("table-action-btn", "kick-btn");
         }
 
-        TextInputDialog reasonDialog = new TextInputDialog();
-        reasonDialog.setTitle("Lock User");
-        reasonDialog.setHeaderText("Lock Reason:");
-        styleDialog(reasonDialog);
-        Optional<String> reasonResult = reasonDialog.showAndWait();
-        
-        if (reasonResult.isPresent()) {
+        Optional<ButtonType> result = dialog.showAndWait();
+
+        if (result.isPresent() && result.get() == okButtonType) {
+            String durationText = durationField.getText().trim();
+            int duration;
+            try {
+                duration = Integer.parseInt(durationText);
+            } catch (NumberFormatException e) {
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Invalid Input", "Please enter a valid number for duration.");
+                return;
+            }
+
+            String vietnameseUnit = unitBox.getValue();
+            String englishUnit = switch (vietnameseUnit) {
+                case "PHÚT" -> "MINUTE";
+                case "GIỜ" -> "HOUR";
+                case "NGÀY" -> "DAY";
+                case "NĂM" -> "YEAR";
+                default -> "MINUTE";
+            };
+
+            String reason = reasonField.getText().trim();
+            if (reason.isEmpty()) {
+                reason = "Banned by Admin";
+            }
+
+            final int finalDuration = duration;
+            final String finalUnit = englishUnit;
+            final String finalReason = reason;
+
             new Thread(() -> {
                 try {
-                    AdminLockUserRequest req = new AdminLockUserRequest(targetUserId, minutes, reasonResult.get());
-                    Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(RequestType.ADMIN_LOCK_USER, req));
+                    AdminUserActionRequest req = new AdminUserActionRequest(targetUserId, finalReason, finalDuration, finalUnit);
+                    Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(RequestType.ADMIN_BAN_USER, req));
                     if (response.isStatus()) {
                         Platform.runLater(() -> {
-                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "User locked");
+                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "User banned successfully.");
                             refreshUsers();
                         });
                     } else {
