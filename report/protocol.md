@@ -64,7 +64,89 @@ vBay dùng TCP Socket persistent connection. Mỗi message là JSON một dòng,
 - `room.type` là enum `RoomType`: `AUCTION`, `USER`, `AUCTION_LIST`.
 - Event được client parse tại `ServerMessageParser` và dispatch bằng `RealtimeEventDispatcher`.
 
-## 2. Session Boundary Và Identity
+## 2. Subscribe Room Payload
+
+Client subscribe/unsubscribe room bằng request `SUBSCRIBE_ROOM` hoặc `UNSUBSCRIBE_ROOM`. Payload là DTO `Room`, gồm `type`, `targetId` và `filter`.
+
+Subscribe màn chi tiết auction:
+
+```json
+{
+  "messageType": "REQUEST",
+  "requestType": "SUBSCRIBE_ROOM",
+  "requestId": "req_sub_auction_10",
+  "payload": {
+    "type": "AUCTION",
+    "targetId": 10
+  }
+}
+```
+
+Subscribe room riêng của user hiện tại:
+
+```json
+{
+  "messageType": "REQUEST",
+  "requestType": "SUBSCRIBE_ROOM",
+  "requestId": "req_sub_user_2",
+  "payload": {
+    "type": "USER",
+    "targetId": 2
+  }
+}
+```
+
+Subscribe danh sách auction mặc định:
+
+```json
+{
+  "messageType": "REQUEST",
+  "requestType": "SUBSCRIBE_ROOM",
+  "requestId": "req_sub_list_all",
+  "payload": {
+    "type": "AUCTION_LIST"
+  }
+}
+```
+
+Subscribe danh sách auction theo filter:
+
+```json
+{
+  "messageType": "REQUEST",
+  "requestType": "SUBSCRIBE_ROOM",
+  "requestId": "req_sub_list_active",
+  "payload": {
+    "type": "AUCTION_LIST",
+    "filter": {
+      "filters": {
+        "status": "ACTIVE",
+        "category": "ELECTRONICS"
+      }
+    }
+  }
+}
+```
+
+Server dùng `Room.key()` để chuyển room thành key lưu trong subscription registry:
+
+| Room payload | Room key |
+| :--- | :--- |
+| `AUCTION`, `targetId = 10` | `auction:10` |
+| `USER`, `targetId = 2` | `user:2` |
+| `AUCTION_LIST` không filter | `auction-list:all` |
+| `AUCTION_LIST` có filter | `auction-list:{RoomFilter.keyPart()}` |
+
+`RoomFilter.keyPart()` sort key, encode key/value và tạo chuỗi ổn định. Vì vậy các client đang xem cùng một list filter sẽ subscribe vào cùng một room key; khi server broadcast list item update, nó tìm subscriber theo key thay vì tự duyệt từng client rồi so điều kiện.
+
+Validate rule khi subscribe/unsubscribe:
+
+- `USER` room bắt buộc login, `targetId` phải bằng `session.userId`, và không nhận filter.
+- `AUCTION` room bắt buộc login, phải có `targetId`, và không nhận filter.
+- `AUCTION_LIST` không nhận `targetId`; filter dùng để phân loại list room.
+- Subscription là runtime state trong `InMemorySubscriptionRegistry`; khi socket disconnect, `unsubscribeAll` xóa toàn bộ room của connection. Sau restart/reconnect, client fetch snapshot mới rồi subscribe lại room bằng cùng payload.
+
+## 3. Session Boundary Và Identity
 
 `requestId` và `payload` do client gửi chỉ mô tả thao tác và dữ liệu đầu vào. Server là trust boundary của hệ thống: định danh, phân quyền, quyền sở hữu dữ liệu và business rule đều được validate lại ở server trước khi xử lý.
 
@@ -97,7 +179,7 @@ Server sẽ lấy bidder từ session hiện tại:
 bidderId = session.getUserId()
 ```
 
-## 3. RequestType Chính
+## 4. RequestType Chính
 
 | Nhóm | RequestType |
 | :--- | :--- |
@@ -111,7 +193,7 @@ bidderId = session.getUserId()
 
 Một số enum có trong `RequestType` là dự phòng hoặc chưa có UI đầy đủ; tài liệu vẫn liệt kê theo enum để đồng bộ code.
 
-## 4. RealtimeEventType Và RoomType
+## 5. RealtimeEventType Và RoomType
 
 | Event | Room | Mục đích |
 | :--- | :--- | :--- |
@@ -129,7 +211,7 @@ Một số enum có trong `RequestType` là dự phòng hoặc chưa có UI đ�
 | `ADMIN_USER_WARNED` | `USER` | Cảnh báo user |
 | `AUTOBID_UPDATED` | `USER` | Cập nhật auto-bid của user |
 
-## 5. Flow Place Bid
+## 6. Flow Place Bid
 
 ```mermaid
 sequenceDiagram
