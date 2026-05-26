@@ -167,34 +167,38 @@ public class AuthService {
             }
             User user = userOptional.get();
             if (user.isBanned()) {
-                String reasonStr = "No reason provided.";
-                Optional<String> banReason = userRepository.findLatestBanReason(user.getId());
-                if (banReason.isPresent() && !banReason.get().isBlank()) {
-                    reasonStr = banReason.get();
-                }
-                logError("LOGIN_FAILED", "username=" + username + ", reason: " + reasonStr);
-                
-                String message;
-                if (user.getUserStatus() == com.vbay.shared.enums.auth.UserStatus.DELETED) {
-                    message = "Your account has been permanently banned and deleted.\nReason: " + reasonStr;
+                if (user.getUserStatus() == UserStatus.BANNED) {
+                    if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {
+                        userRepository.updateStatus(user.getId(), UserStatus.ACTIVE);
+                        userRepository.setLockUntil(user.getId(), null);
+                        user.setStatus(UserStatus.ACTIVE);
+                        user.setLockUntil(null);
+                    } else {
+                        String durationStr = "indefinitely";
+                        if (user.getLockUntil() != null) {
+                            durationStr = formatRemainingDuration(java.time.LocalDateTime.now(), user.getLockUntil());
+                        }
+                        logError("LOGIN_FAILED", "username=" + username + ", reason: user_banned_until_" + user.getLockUntil());
+                        throw new AuthenticationException("Log in failed : You have been banned for " + durationStr);
+                    }
                 } else {
-                    message = "Your account has been banned.\nReason: " + reasonStr;
+                    String reasonStr = "No reason provided.";
+                    Optional<String> banReason = userRepository.findLatestBanReason(user.getId());
+                    if (banReason.isPresent() && !banReason.get().isBlank()) {
+                        reasonStr = banReason.get();
+                    }
+                    logError("LOGIN_FAILED", "username=" + username + ", reason: " + reasonStr);
+                    
+                    String message;
+                    if (user.getUserStatus() == com.vbay.shared.enums.auth.UserStatus.DELETED) {
+                        message = "Your account has been permanently banned and deleted.\nReason: " + reasonStr;
+                    } else {
+                        message = "Your account has been banned.\nReason: " + reasonStr;
+                    }
+                    throw new AuthenticationException(message);
                 }
-                throw new AuthenticationException(message);
             }
-            if (user.isLocked()) {
-                if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {
-                    userRepository.updateStatus(user.getId(), UserStatus.ACTIVE);
-                    userRepository.setLockUntil(user.getId(), null);
-                    user.setStatus(UserStatus.ACTIVE);
-                    user.setLockUntil(null);
-                } else {
-                    logError("LOGIN_FAILED", "username=" + username + ", reason: user_locked");
-                    java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                    String until = user.getLockUntil() != null ? user.getLockUntil().format(formatter) : "indefinitely";
-                    throw new AuthenticationException("Your account is locked until " + until);
-                }
-            }
+
 
             if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
                 logError("LOGIN_FAILED", "username=" + username + ", reason: invalid_password");
@@ -262,5 +266,36 @@ public class AuthService {
         }
         register(registerRequest);
         return new Respond<>(requestId, true, "Register successful", null);
+    }
+
+    private String formatRemainingDuration(java.time.LocalDateTime start, java.time.LocalDateTime end) {
+        if (start == null || end == null || start.isAfter(end)) {
+            return "0 seconds";
+        }
+        
+        java.time.LocalDateTime temp = java.time.LocalDateTime.from(start);
+
+        long years = temp.until(end, java.time.temporal.ChronoUnit.YEARS);
+        temp = temp.plusYears(years);
+
+        long days = temp.until(end, java.time.temporal.ChronoUnit.DAYS);
+        temp = temp.plusDays(days);
+
+        long hours = temp.until(end, java.time.temporal.ChronoUnit.HOURS);
+        temp = temp.plusHours(hours);
+
+        long minutes = temp.until(end, java.time.temporal.ChronoUnit.MINUTES);
+        temp = temp.plusMinutes(minutes);
+
+        long seconds = temp.until(end, java.time.temporal.ChronoUnit.SECONDS);
+
+        StringBuilder sb = new StringBuilder();
+        if (years > 0) sb.append(years).append(" year").append(years > 1 ? "s" : "").append(" ");
+        if (days > 0) sb.append(days).append(" day").append(days > 1 ? "s" : "").append(" ");
+        if (hours > 0) sb.append(hours).append(" hour").append(hours > 1 ? "s" : "").append(" ");
+        if (minutes > 0) sb.append(minutes).append(" minute").append(minutes > 1 ? "s" : "").append(" ");
+        if (seconds > 0 || sb.length() == 0) sb.append(seconds).append(" second").append(seconds != 1 ? "s" : "");
+        
+        return sb.toString().trim();
     }
 }
