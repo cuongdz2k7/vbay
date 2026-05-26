@@ -11,4 +11,5 @@ public interface RepositoryFactory {
     UserRepository createUserRepository(Connection connection);
     BidRepository createBidRepository(Connection connection); 
     PaymentRepository createPaymentRepository(Connection connection);
+    DepositRequestRepository createDepositRequestRepository(Connection connection);
 }

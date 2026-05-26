@@ -14,8 +14,10 @@ import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.NotificationPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.WatcherCountPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserWarnedPayload;
 import com.vbay.shared.enums.MessageType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.RealtimeEvent;
@@ -122,6 +124,11 @@ public class ServerMessageParser {
         types.put(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, AuctionListItemPayload.class);
         types.put(RealtimeEventType.USER_BALANCE_UPDATED, UserBalanceUpdatedPayload.class);
         types.put(RealtimeEventType.WATCHER_COUNT_CHANGED, WatcherCountPayload.class);
+        types.put(RealtimeEventType.DEPOSIT_REQUEST_UPDATED, DepositRequestPayload.class);
+        types.put(RealtimeEventType.ADMIN_DEPOSIT_REQUESTED, DepositRequestPayload.class);
+        types.put(RealtimeEventType.ADMIN_USER_KICKED, Void.class);
+        types.put(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, Void.class);
+        types.put(RealtimeEventType.ADMIN_USER_WARNED, UserWarnedPayload.class);
         types.put(RealtimeEventType.AUTOBID_UPDATED, AutobidUpdatedPayload.class);
         return types;
     }

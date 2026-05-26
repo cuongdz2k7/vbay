@@ -20,6 +20,7 @@ import com.google.gson.JsonElement;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.productDTO.UploadImageRequest;
 import com.vbay.shared.protocol.Respond;
+import com.vbay.server.exception.AuthenticationException;
 
 /*
 nhận UploadImageRequest
@@ -212,6 +213,9 @@ public class ImageStorageService {
     }
 
     public Respond<String> handleUploadImage(String requestId, JsonElement payload, ClientSession session) throws IOException {
+        if (session == null || !session.isAuthenticated()) {
+            throw new AuthenticationException("User must be logged in to upload images");
+        }
         UploadImageRequest request = JsonUtils.fromJson(payload, UploadImageRequest.class);
         if (request == null) {
             return new Respond<>(requestId, false, "Invalid upload image request", null);

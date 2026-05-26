@@ -18,8 +18,12 @@ import javafx.scene.shape.Polyline;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
-public class BidPriceChart extends Pane {
+
+public final class BidPriceChart extends Pane {
     private final List<BidHistoryItemPayload> bids = new ArrayList<>();
     
     public BidPriceChart() {
@@ -56,12 +60,12 @@ public class BidPriceChart extends Pane {
     private String formatTime(java.time.LocalDateTime time) {
         if (time == null) return "Now";
         try {
-            java.time.ZonedDateTime utcZoned = time.atZone(java.time.ZoneId.of("UTC"));
-            java.time.ZonedDateTime vnZoned = utcZoned.withZoneSameInstant(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
-            return vnZoned.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+            ZonedDateTime utcZoned = time.atZone(ZoneId.of("UTC"));
+            ZonedDateTime vnZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Ho_Chi_Minh"));
+            return vnZoned.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         } catch (Exception e) {
             try {
-                return time.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+                return time.format(DateTimeFormatter.ofPattern("HH:mm:ss"));
             } catch (Exception ex) {
                 return "Now";
             }

@@ -25,6 +25,10 @@ import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
 import com.vbay.shared.enums.bid.BidSource;
 import com.vbay.shared.enums.bid.BidStatus;
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
+import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 
 import java.math.BigDecimal;
 
@@ -121,5 +125,21 @@ public class BidQueryService {
             }
             return items;
         }
+    }
+
+    public Respond<MyBidListResponse> handleGetMyBidList(String requestId, ClientSession session) throws SQLException {
+        return new Respond<>(requestId, true, "My bid list loaded successfully", getMyBidList(session));
+    }
+
+    public Respond<List<BidHistoryItemPayload>> handleGetBidHistory(
+            String requestId,
+            JsonElement payload,
+            ClientSession session) throws SQLException {
+        AuctionDetailRequest request = JsonUtils.fromJson(payload, AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid request payload", null);
+        }
+        List<BidHistoryItemPayload> history = getBidHistory(request.getAuctionId());
+        return new Respond<>(requestId, true, "Bid history loaded", history);
     }
 }

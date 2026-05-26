@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
@@ -30,6 +31,7 @@
             <Label text="VBAY" styleClass="brand-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <HBox alignment="CENTER_RIGHT" spacing="20">
+
                 <Label fx:id="balanceLabel" text="BALANCE: \$0.00" styleClass="balance-chip"/>
                 <Button text="Deposit Balance" onAction="#handleDepositBalance" styleClass="deposit-balance-btn"/>
                 <HBox alignment="CENTER" spacing="10" styleClass="account-chip">
@@ -41,14 +43,14 @@
     </top>
 
     <left>
-        <ScrollPane fx:id="sidebarScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" prefWidth="246" styleClass="sidebar-scroll">
+        <ScrollPane fx:id="sidebarScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" prefWidth="266" styleClass="sidebar-scroll">
             <content>
-                <VBox prefWidth="246" styleClass="sidebar-shell">
+                <VBox prefWidth="266" styleClass="sidebar-shell">
                     <padding>
                         <Insets top="18" right="16" bottom="18" left="16"/>
                     </padding>
 
-                    <VBox prefWidth="214" spacing="28" styleClass="sidebar-frame" VBox.vgrow="ALWAYS">
+                    <VBox prefWidth="234" spacing="28" styleClass="sidebar-frame" VBox.vgrow="ALWAYS">
                         <VBox spacing="22">
                             <VBox spacing="18" styleClass="navigation-frame">
                                 <VBox spacing="5" styleClass="navigation-frame-header">
@@ -107,6 +109,7 @@
                             <Button text="Launch Auction" maxWidth="Infinity" onAction="#handleCreateAuctions" styleClass="create-auctions-btn"/>
                         </VBox>
 
+
                         <Region VBox.vgrow="ALWAYS"/>
                         <VBox spacing="10" styleClass="sidebar-utility-card">
                             <Button text="SETTINGS" maxWidth="Infinity" styleClass="secondary-action-btn"/>
@@ -122,12 +125,12 @@
     <center>
         <ScrollPane fx:id="mainScroll" fitToWidth="true" hbarPolicy="NEVER" styleClass="main-scroll">
             <content>
-                <VBox spacing="20" styleClass="main-content">
+                <VBox alignment="TOP_CENTER" spacing="20" styleClass="main-content">
                     <padding>
                         <Insets top="34" right="34" bottom="40" left="34"/>
                     </padding>
 
-                    <VBox spacing="20">
+                    <VBox alignment="TOP_CENTER" spacing="20">
                         <VBox fx:id="homeDashboard" maxWidth="1210" spacing="28">
                             <VBox spacing="4" styleClass="home-page-heading">
                                 <Label text="Home" styleClass="catalog-title"/>
@@ -159,7 +162,7 @@
                             </VBox>
                         </VBox>
 
-                        <VBox fx:id="catalogContent" spacing="16">
+                        <VBox fx:id="catalogContent" spacing="16" maxWidth="980">
                             <HBox alignment="CENTER_LEFT" styleClass="live-heading-row">
                                 <VBox spacing="4">
                                     <Label fx:id="catalogTitle" text="Live Auction" styleClass="catalog-title"/>
@@ -179,7 +182,7 @@
                                 </ComboBox>
                             </HBox>
                             <Label fx:id="emptyStateLabel" text="No auctions available." styleClass="empty-state"/>
-                            <FlowPane fx:id="productFlow" hgap="22" vgap="22" prefWrapLength="760" styleClass="auction-grid"/>
+                            <FlowPane fx:id="productFlow" alignment="TOP_LEFT" hgap="20" vgap="20" prefWrapLength="980" maxWidth="980" styleClass="auction-grid"/>
                         </VBox>
                         <HBox fx:id="paginationBar" managed="false" visible="false" styleClass="pagination"/>
                     </VBox>
@@ -191,7 +194,7 @@
     <right>
         <ScrollPane fx:id="portfolioScroll" fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" styleClass="portfolio-scroll">
             <content>
-                <VBox fx:id="portfolioDrawer" minWidth="336" prefWidth="336" maxWidth="336" spacing="30" styleClass="portfolio-drawer">
+                <VBox fx:id="portfolioDrawer" minWidth="366" prefWidth="366" maxWidth="366" spacing="30" styleClass="portfolio-drawer">
                     <BorderPane.margin>
                         <Insets top="10" right="14" bottom="10" left="0"/>
                     </BorderPane.margin>
@@ -205,6 +208,7 @@
                     </VBox>
 
                     <VBox spacing="18" styleClass="portfolio-module-stack">
+                        <!-- PERSONAL BID Module -->
                         <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
                             <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
                                 <SVGPath content="M3 4H15V15H3ZM6 7H13M6 10H10M12 11H17V17H12Z" styleClass="portfolio-section-icon"/>
@@ -214,6 +218,18 @@
                             </HBox>
                             <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar"/>
                             <VBox fx:id="myBidPreviewBox" spacing="16"/>
+                        </VBox>
+
+                        <!-- MY AUCTIONS Module -->
+                        <VBox maxWidth="Infinity" spacing="16" styleClass="portfolio-module">
+                            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="portfolio-module-header">
+                                <SVGPath content="M2 13L6 9L9 12L5 16ZM9 3L14 8L12 10L7 5ZM11 2L15 6" styleClass="portfolio-section-icon"/>
+                                <Label text="MY AUCTIONS" styleClass="portfolio-section-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Button text="View All" onAction="#handleViewAllMyAuction" styleClass="portfolio-mini-link"/>
+                            </HBox>
+                            <Region prefHeight="6" maxHeight="6" styleClass="portfolio-module-bar"/>
+                            <VBox fx:id="myAuctionsPreviewBox" spacing="16"/>
                         </VBox>
                     </VBox>
 

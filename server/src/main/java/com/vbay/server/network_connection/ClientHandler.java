@@ -43,6 +43,9 @@ public class ClientHandler implements Runnable {
                         LOGGER.warning(() -> "Empty request from " + clientAddress);
                         continue;
                     }
+                    if (line.trim().equalsIgnoreCase("exit")) {
+                        break;
+                    }
 
                     Respond<?> response = distributor.dispatch(line, session, connection);
                     connection.send(response);

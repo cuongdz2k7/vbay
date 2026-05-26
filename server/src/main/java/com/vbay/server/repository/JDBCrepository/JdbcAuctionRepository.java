@@ -20,6 +20,7 @@ import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
+import com.vbay.shared.enums.auction.AuctionStatus;
 
 
 
@@ -615,7 +616,6 @@ public class JdbcAuctionRepository implements AuctionRepository {
             }
         }
     }
-    
     @Override
     public long applyAntiSnipeExtension(long auctionId, LocalDateTime endingTime) throws SQLException {
         String sql = """
@@ -628,7 +628,7 @@ public class JdbcAuctionRepository implements AuctionRepository {
             """;
 
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            Timestamp timestamp = Timestamp.valueOf(endingTime);
+            java.sql.Timestamp timestamp = java.sql.Timestamp.valueOf(endingTime);
             statement.setTimestamp(1, timestamp);
             statement.setLong(2, auctionId);
             statement.setTimestamp(3, timestamp);
@@ -638,4 +638,37 @@ public class JdbcAuctionRepository implements AuctionRepository {
         return findVersionById(auctionId);
     }
 
+    @Override
+    public void deleteById(long auctionId) throws SQLException {
+        String sql = "DELETE FROM auctions WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void updateStatus(long auctionId, AuctionStatus status) throws SQLException {
+        String sql = "UPDATE auctions SET status = ?, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setLong(2, auctionId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public List<Auction> findAllForAdmin() throws SQLException {
+        String sql = """
+            SELECT id, product_id, seller_id, title, description, minimum_bid_step,
+                   starting_price, current_price, reserve_price, buy_now_price,
+                   starting_time, ending_time, status, winner_user_id, anti_snipe_extension_count, version
+            FROM auctions
+            ORDER BY id DESC
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            return AuctionRowMapper.mapAuctions(rs);
+        }
+    }
 }

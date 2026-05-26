@@ -9,6 +9,7 @@ import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
@@ -31,6 +32,8 @@ public class DepositBalanceController {
     private Label balanceLabel;
     @FXML
     private TextField amountField;
+    @FXML
+    private Label statusLabel;
 
     private Runnable onBack;
     private RealtimeEventListener<UserBalanceUpdatedPayload> balanceListener;
@@ -42,6 +45,17 @@ public class DepositBalanceController {
         MoneyInput.install(amountField);
         updateBalanceDisplay(UserData.getAvailableBalance());
         subscribeBalanceUpdates();
+        if (statusLabel != null) {
+            statusLabel.setText("");
+        }
+    }
+
+    public void updateStatusLabel(String text) {
+        Platform.runLater(() -> {
+            if (statusLabel != null) {
+                statusLabel.setText(text);
+            }
+        });
     }
 
     public void setOnBack(Runnable onBack) {
@@ -83,12 +97,10 @@ public class DepositBalanceController {
                 return;
             }
 
-            UserBalanceResponse balanceResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), UserBalanceResponse.class);
-            if (balanceResponse != null) {
-                UserData.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
-                updateBalanceDisplay(balanceResponse.getAvailableBalance());
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit Request Sent", "waiting for the admin to accept");
+            if (statusLabel != null) {
+                statusLabel.setText("waiting for the admin to accept");
             }
-            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
             amountField.clear();
         } catch (Exception exception) {
             NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", exception.getMessage());
@@ -135,5 +147,4 @@ public class DepositBalanceController {
         BigDecimal balance = availableBalance == null ? BigDecimal.ZERO : availableBalance;
         balanceLabel.setText(CURRENCY_FORMAT.format(balance));
     }
-
 }

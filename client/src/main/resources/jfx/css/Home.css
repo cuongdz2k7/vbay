@@ -590,9 +590,9 @@
     -fx-border-width: 1.05;
     -fx-border-radius: 22;
     -fx-background-radius: 22;
-    -fx-min-width: 304;
-    -fx-pref-width: 304;
-    -fx-max-width: 304;
+    -fx-min-width: 334;
+    -fx-pref-width: 334;
+    -fx-max-width: 334;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.24), 14, 0.12, 0, 3);
 }
 
@@ -878,3 +878,42 @@
     -fx-font-size: 14px;
     -fx-font-weight: 900;
 }
+
+/* Topbar Music Controller Chip */
+.topbar-music-chip {
+    -fx-background-color: rgba(255, 255, 255, 0.03);
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-border-radius: 999;
+    -fx-border-width: 1.1;
+    -fx-padding: 7 14 7 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.18), 8, 0.08, 0, 2);
+}
+
+.music-mute-btn-mini {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+    -fx-cursor: hand;
+    -fx-min-width: 18;
+    -fx-min-height: 18;
+    -fx-max-width: 18;
+    -fx-max-height: 18;
+}
+
+.music-icon-shape {
+    -fx-fill: -app-accent-soft;
+    -fx-stroke: transparent;
+}
+
+.music-mute-btn-mini:hover .music-icon-shape {
+    -fx-fill: -app-accent-strong;
+}
+
+.music-status-mini {
+    -fx-text-fill: rgba(255, 181, 160, 0.72);
+    -fx-font-size: 11px;
+    -fx-font-weight: 800;
+    -fx-min-width: 32;
+    -fx-alignment: CENTER_LEFT;
+}
+

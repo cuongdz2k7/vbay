@@ -1,5 +1,6 @@
 package com.vbay.server.service;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -9,6 +10,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
+
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -16,18 +21,21 @@ import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Autobid;
 import com.vbay.server.model.Bid;
+import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
+import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
 import com.vbay.server.realtime.domain.enums.AuctionListItemUpdateReason;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.AuctionRepository;
 import com.vbay.server.repository.AutobidRepository;
 import com.vbay.server.repository.BidRepository;
+import com.vbay.server.repository.PaymentRepository;
 import com.vbay.server.repository.ProductImageRepository;
 import com.vbay.server.repository.ProductRepository;
 import com.vbay.server.repository.RepositoryFactory;
@@ -38,6 +46,7 @@ import com.vbay.server.service.result.AuctionClosedResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.AutobidUpdateResult;
 import com.vbay.server.service.result.CreateAuctionResult;
+import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
@@ -53,6 +62,8 @@ import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidSummaryPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.bid.BidStatus;
+import com.vbay.shared.enums.payment.PaymentStatus;
+import com.vbay.shared.enums.payment.PaymentType;
 
  /*
 * Business rules:
@@ -321,6 +332,7 @@ public class AuctionService {
         AuctionClosedDomainEvent auctionClosedEvent = null;
         AuctionStartedDomainEvent auctionStartedEvent = null;
         AuctionListItemUpdatedDomainEvent auctionListEvent = null;
+        List<UserBalanceUpdatedDomainEvent> userBalanceEvents = List.of();
 
         try (Connection connection = connectionProvider.getConnection()) {
             connection.setAutoCommit(false);
@@ -332,6 +344,8 @@ public class AuctionService {
                 BidRepository bidRepository = repositoryFactory.createBidRepository(connection);    
                 AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
                 ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+                UserRepository userRepository = repositoryFactory.createUserRepository(connection);
+                PaymentRepository paymentRepository = repositoryFactory.createPaymentRepository(connection);
                 
                 auctionRepository.lockAuctionForUpdate(auctionId).orElseThrow(); //////lock auction first
                 LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
@@ -349,11 +363,16 @@ public class AuctionService {
                             auctionRepository,
                             bidRepository,
                             autobidRepository,
-                            productImageRepository
+                            productImageRepository,
+                            userRepository,
+                            paymentRepository
                         );
                         
                         if (closeResult != null) {
                             auctionClosedEvent = new AuctionClosedDomainEvent(closeResult);
+                            userBalanceEvents = closeResult.getAffectedBalanceResults().stream()
+                                .map(result -> new UserBalanceUpdatedDomainEvent(result, result.getUpdatedAt()))
+                                .toList();
                             statusChanged = true;
                         }
                     }
@@ -385,6 +404,9 @@ public class AuctionService {
         if (auctionClosedEvent != null) {
             domainEventPublisher.publish(auctionClosedEvent);
         }
+        for (UserBalanceUpdatedDomainEvent event : userBalanceEvents) {
+            domainEventPublisher.publish(event);
+        }
     }
 
     private AuctionClosedResult closeExpiredAuction(
@@ -393,23 +415,35 @@ public class AuctionService {
             AuctionRepository auctionRepository,
             BidRepository bidRepository,
             AutobidRepository autobidRepository,
-            ProductImageRepository productImageRepository) throws SQLException {
+            ProductImageRepository productImageRepository,
+            UserRepository userRepository,
+            PaymentRepository paymentRepository) throws SQLException {
+        Optional<Autobid> winningAutobid = autobidRepository.findWinningByAuctionId(auction.getId());
         if (checkIfAuctionFailed(auction)) {
+            Bid bidToRelease = bidRepository.findWinningBidByAuctionId(auction.getId()).orElse(null);
             long version = auctionRepository.terminateAuction(auction.getId());
             if (version == 0L) {
                 return null;
             }
             bidRepository.markAuctionBidsLost(auction.getId());
             Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+            List<UserBalanceResult> affectedBalances = releaseClosedAuctionHold(
+                bidToRelease,
+                winningAutobid.orElse(null),
+                userRepository,
+                closedAt,
+                "AUCTION_FAILED_RELEASE"
+            );
             Optional<AutobidUpdateResult> affectedAutobid =
-                endActiveAutobidsForClosedAuction(refreshedAuction, autobidRepository, closedAt);
+                endActiveAutobidsForClosedAuction(refreshedAuction, winningAutobid, autobidRepository, closedAt);
             return buildAuctionClosedResult(
                 refreshedAuction,
                 AuctionCloseReason.TIME_EXPIRED_FAILED,
                 closedAt,
                 bidRepository,
                 productImageRepository,
-                affectedAutobid
+                affectedAutobid,
+                affectedBalances
             );
         }
 
@@ -423,24 +457,93 @@ public class AuctionService {
         bidRepository.updateStatusesByAuctionIdExceptBid(auction.getId(), winningBid.getId(), BidStatus.LOST);
         bidRepository.updateStatus(winningBid.getId(), BidStatus.WON);
         Auction refreshedAuction = auctionRepository.findById(auction.getId()).orElseThrow();
+        List<UserBalanceResult> affectedBalances = settleClosedAuctionPayment(
+            refreshedAuction,
+            winningBid,
+            winningAutobid.orElse(null),
+            userRepository,
+            paymentRepository,
+            closedAt
+        );
         Optional<AutobidUpdateResult> affectedAutobid =
-            endActiveAutobidsForClosedAuction(refreshedAuction, autobidRepository, closedAt);
+            endActiveAutobidsForClosedAuction(refreshedAuction, winningAutobid, autobidRepository, closedAt);
         return buildAuctionClosedResult(
             refreshedAuction,
             AuctionCloseReason.TIME_EXPIRED_ENDED,
             closedAt,
             bidRepository,
             productImageRepository,
-            affectedAutobid
+            affectedAutobid,
+            affectedBalances
         );
+    }
+
+    private List<UserBalanceResult> settleClosedAuctionPayment(
+            Auction auction,
+            Bid winningBid,
+            Autobid winningAutobid,
+            UserRepository userRepository,
+            PaymentRepository paymentRepository,
+                LocalDateTime closedAt) throws SQLException {
+        List<UserBalanceResult> results = releaseClosedAuctionHold(
+            winningBid,
+            winningAutobid,
+            userRepository,
+            closedAt,
+            "AUCTION_WON_HOLD_RELEASE"
+        );
+
+        BigDecimal finalPrice = auction.getCurrentPrice();
+        userRepository.decreaseAvailableBalance(winningBid.getBidderId(), finalPrice);
+        paymentRepository.save(new Payment(
+            auction.getId(),
+            winningBid.getBidderId(),
+            auction.getSellerId(),
+            winningBid.getId(),
+            finalPrice,
+            PaymentType.AUCTION_WIN,
+            PaymentStatus.HELD
+        ));
+        results.add(readUserBalanceResult(
+            userRepository,
+            winningBid.getBidderId(),
+            "AUCTION_WIN_PAYMENT",
+            closedAt
+        ));
+        return results;
+    }
+
+    private List<UserBalanceResult> releaseClosedAuctionHold(
+            Bid winningBid,
+            Autobid winningAutobid,
+            UserRepository userRepository,
+            LocalDateTime closedAt,
+            String reason) throws SQLException {
+        if (winningBid == null) {
+            return new ArrayList<>();
+        }
+
+        BigDecimal holdAmount = winningBid.getBidAmount();
+        if (winningAutobid != null && winningAutobid.getUserId() == winningBid.getBidderId()) {
+            holdAmount = winningAutobid.getMaxBidAmount();
+        }
+
+        userRepository.releaseHoldBalance(winningBid.getBidderId(), holdAmount);
+        List<UserBalanceResult> results = new ArrayList<>();
+        results.add(readUserBalanceResult(
+            userRepository,
+            winningBid.getBidderId(),
+            reason,
+            closedAt
+        ));
+        return results;
     }
 
     private Optional<AutobidUpdateResult> endActiveAutobidsForClosedAuction(
             Auction auction,
+            Optional<Autobid> winningAutobid,
             AutobidRepository autobidRepository,
             LocalDateTime closedAt) throws SQLException {
-        Optional<Autobid> winningAutobid =
-            autobidRepository.findWinningByAuctionId(auction.getId());
         if (winningAutobid.isEmpty()) {
             return Optional.empty();
         }
@@ -466,7 +569,8 @@ public class AuctionService {
             LocalDateTime closedAt,
             BidRepository bidRepository,
             ProductImageRepository productImageRepository,
-            Optional<AutobidUpdateResult> affectedAutobid) throws SQLException {
+            Optional<AutobidUpdateResult> affectedAutobid,
+            List<UserBalanceResult> affectedBalanceResults) throws SQLException {
         String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
         List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
         for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(auction.getId())) {
@@ -492,8 +596,19 @@ public class AuctionService {
             reason,
             closedAt,
             affectedMyBidItems,
-            affectedAutobid.map(List::of).orElseGet(List::of)
+            affectedAutobid.map(List::of).orElseGet(List::of),
+            affectedBalanceResults
         );
+    }
+
+    private UserBalanceResult readUserBalanceResult(
+            UserRepository userRepository,
+            long userId,
+            String reason,
+            LocalDateTime updatedAt) throws SQLException {
+        return userRepository.findById(userId)
+            .map(user -> ResultMapper.toUserBalanceResult(user, reason, updatedAt))
+            .orElseThrow(() -> new ValidationException("User not found"));
     }
 
     private AutobidUpdateResult toAutobidUpdateResult(
@@ -579,5 +694,31 @@ public class AuctionService {
         if (limit > MAX_AUCTION_LIST_LIMIT) {
             request.setLimit(MAX_AUCTION_LIST_LIMIT);
         }
+    }
+
+    public Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
+        if (createAuctionRequest == null) {
+            return new Respond<>(requestId, false, "Invalid create auction request", null);
+        }
+        createAuction(createAuctionRequest, session);
+        return new Respond<>(requestId, true, "Auction created successfully", null);
+    }
+
+    public Respond<AuctionListResponse> handleGetAuctionList(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        AuctionListRequest request = JsonUtils.fromJson(payload, AuctionListRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction list request", null);
+        }
+        AuctionListResponse response = getAuctionList(request, session);
+        return new Respond<>(requestId, true, "Auction list loaded", response);
+    }
+
+    public Respond<?> handleGetAuctionDetail(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        AuctionDetailRequest request = JsonUtils.fromJson(payload, AuctionDetailRequest.class);
+        if (request == null) {
+            return new Respond<>(requestId, false, "Invalid auction detail request", null);
+        }
+        return new Respond<>(requestId, true, "Auction detail loaded", getAuctionDetail(request, session));
     }
 }

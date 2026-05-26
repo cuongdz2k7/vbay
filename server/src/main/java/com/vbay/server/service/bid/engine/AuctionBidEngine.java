@@ -53,7 +53,7 @@ public class AuctionBidEngine {
             Optional<Bid> currentWinningBid,
             Optional<Autobid> winningAutobid,
             BuyNowCommand command) {
-       long auctionId = auction.getId();
+        long auctionId = auction.getId();
         long buyerId = command.getBuyerUserId();
         BigDecimal buyNowPrice = command.getBuyNowPrice();
 

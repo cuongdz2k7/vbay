@@ -2,6 +2,7 @@ package com.vbay.server.mapper.rowmapper;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 
 import com.vbay.server.model.User;
 import com.vbay.shared.enums.auth.Position;
@@ -18,6 +19,8 @@ public class UserRowMapper {
                         UserStatus.valueOf(rs.getString("status")),
                         rs.getBigDecimal("available_balance"),
                         rs.getBigDecimal("hold_balance"),
+                        rs.getInt("warning_count"),
+                        rs.getTimestamp("lock_until") != null ? rs.getTimestamp("lock_until").toLocalDateTime() : null,
                         rs.getString("time_init"));
         user.setId(rs.getLong("id"));
         user.setVersion(rs.getLong("version"));

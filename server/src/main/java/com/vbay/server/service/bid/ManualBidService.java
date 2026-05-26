@@ -5,6 +5,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.*;
+
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
@@ -39,7 +44,17 @@ import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
-
+import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
+import com.vbay.shared.enums.payment.PaymentStatus;
+import com.vbay.shared.enums.payment.PaymentType;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
+import com.vbay.shared.dto.auctionDTO.MyBidListResponse;
+import com.vbay.server.repository.ProductImageRepository;
+import com.vbay.server.service.result.UserMyBidListItemResult;
+import com.vbay.server.service.result.mapper.ResultMapper;
+import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
+import com.vbay.server.service.bid.BuyNowService;
 /*
 BUG:
 Trong BidService.java, hàm placeBid(...) hiện chỉ tạo affectedMyBidItems cho:
@@ -416,146 +431,13 @@ public class ManualBidService {
             updatedAt
         );
     }
+    public Respond<Void> handlePlaceBid(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        PlaceBidRequest placeBidRequest = JsonUtils.fromJson(payload, PlaceBidRequest.class);
+        if (placeBidRequest == null) {
+            return new Respond<>(requestId, false, "Invalid place bid request", null);
+        }
+        placeBid(placeBidRequest, session);
+        return new Respond<>(requestId, true, "Placed bid successfully", null);
+    }
 }
-/*
-    public AutobidRegistrationResult autoBid(long auctionId, BigDecimal maxBidAmount, ClientSession session) throws SQLException {
-        checkSession(session);
-        ValidateBidDTO.validateAutoBidRequest(auctionId, maxBidAmount);
 
-        try (Connection connection = connectionProvider.getConnection()) {
-            connection.setAutoCommit(false);
-            try {
-                AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-                UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-                BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
-                AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
-
-                Auction auction = auctionRepository.lockAuctionForUpdate(auctionId)
-                    .orElseThrow(() -> new ValidationException("Auction not found"));
-                LocalDateTime dbNow = auctionRepository.getCurrentDatabaseTime();
-
-                validateAuctionEligibility(auction, session.getUserId(), dbNow);
-                checkAutoBidBuyNowLimit(auction, maxBidAmount);
-
-                Optional<Bid> currentWinningBid = bidRepository.findWinningBidByAuctionId(auctionId);
-                validateMinimumBid(auction, maxBidAmount, currentWinningBid);
-
-                Autobid winningAutobid = autobidRepository.findWinningByAuctionId(auctionId).orElse(null);
-                rejectIfUserAlreadyHasWinningAutobid(winningAutobid, session.getUserId());
-
-                User user = userRepository.lockUserForUpdate(session.getUserId())
-                    .orElseThrow(() -> new ValidationException("User not found"));
-                validateUserEligibility(user, maxBidAmount, currentWinningBid);
-
-                RegisterAutobidCommand command = new RegisterAutobidCommand(
-                    auctionId,
-                    session.getUserId(),
-                    maxBidAmount,
-                    dbNow
-                );
-                AutobidResolution resolution = autobidEngine.resolveAfterRegisterAutobid(
-                    auction,
-                    winningAutobid,
-                    command
-                );
-
-                Autobid autobidToCreate = resolution.isAccepted()
-                    ? new Autobid(
-                        auctionId,
-                        session.getUserId(),
-                        maxBidAmount,
-                        maxBidAmount,
-                        AutobidStatus.WINNING,
-                        dbNow,
-                        dbNow
-                    )
-                    : null;
-
-                AutobidRegistrationResult result = autobidService.applyRegisterAutobidResolution(
-                    resolution,
-                    autobidToCreate,
-                    currentWinningBid,
-                    dbNow,
-                    connection
-                );
-
-                AuctionListItemResult listItem = auctionRepository.findAuctionListItemById(auctionId)
-                    .orElseThrow(() -> new ValidationException("Auction list item not found"));
-                List<UserBalanceResult> balanceResults = new ArrayList<>();
-                for (BalanceChange balanceChange : resolution.getBalanceChanges()) {
-                    balanceResults.add(readUserBalanceResult(
-                        userRepository,
-                        balanceChange.getUserId(),
-                        balanceChange.getReason(),
-                        dbNow
-                    ));
-                }
-
-                connection.commit();
-
-                domainEventPublisher.publish(new AuctionListItemUpdatedDomainEvent(
-                    listItem,
-                    AuctionListItemUpdateReason.BID_UPDATED,
-                    dbNow
-                ));
-                domainEventPublisher.publish(new BidUpdatedDomainEvent(result));
-                for (UserBalanceResult balanceResult : balanceResults) {
-                    domainEventPublisher.publish(new UserBalanceUpdatedDomainEvent(balanceResult, balanceResult.getUpdatedAt()));
-                }
-
-                if (!resolution.isAccepted()) {
-                    throw new ValidationException(resolution.getMessage());
-                }
-                return result;
-            } catch (Exception e) {
-                connection.rollback();
-                throw e;
-            }
-        }
-    }
- */
-
-    /*
-    public MyBidListResponse getMyBidList(ClientSession session) throws SQLException {
-        checkSession(session);
-
-        try (Connection connection = connectionProvider.getConnection()) {
-            BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
-            AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
-            ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
-
-            List<com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload> items = new ArrayList<>();
-            for (Bid bid : bidRepository.findLatestBidsByBidderId(session.getUserId())) {
-                Auction auction = auctionRepository.findById(bid.getAuctionId())
-                    .orElseThrow(() -> new ValidationException("Auction not found"));
-                String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
-                UserMyBidListItemResult result = ResultMapper.toUserMyBidListItemResult(
-                    auction,
-                    thumbnailUrl,
-                    bid,
-                    bid.getStatus(),
-                    bid.getBidTime()
-                );
-                items.add(ResultMapper.toMyBidListItemPayload(result));
-            }
-            return new MyBidListResponse(items);
-        }
-    }
-        private List<UserMyBidListItemResult> buildAffectedMyBidItems(
-            Auction refreshedAuction,
-            String thumbnailUrl,
-            BidRepository bidRepository,
-            LocalDateTime updatedAt) throws SQLException {
-        List<UserMyBidListItemResult> affectedMyBidItems = new ArrayList<>();
-        for (Bid bid : bidRepository.findLatestBidPerBidderByAuctionId(refreshedAuction.getId())) {
-            affectedMyBidItems.add(ResultMapper.toUserMyBidListItemResult(
-                refreshedAuction,
-                thumbnailUrl,
-                bid,
-                bid.getStatus(),
-                updatedAt
-            ));
-        }
-        return affectedMyBidItems;
-    }
-*/

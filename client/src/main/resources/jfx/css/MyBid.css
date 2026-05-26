@@ -54,9 +54,9 @@
 .my-bid-filter-combo {
     -fx-background-color: rgba(255, 95, 46, 0.12);
     -fx-background-insets: 0;
-    -fx-background-radius: 8;
+    -fx-background-radius: 14;
     -fx-border-color: rgba(255, 145, 110, 0.35);
-    -fx-border-radius: 8;
+    -fx-border-radius: 14;
     -fx-padding: 5 11 5 11;
     -fx-cursor: hand;
     -fx-effect: dropshadow(two-pass-box, rgba(255, 95, 46, 0.08), 6, 0.0, 0, 0);
@@ -109,7 +109,7 @@
     -fx-border-color: rgba(255, 181, 160, 0.11);
     -fx-border-radius: 20;
     -fx-border-width: 1;
-    -fx-max-width: 1210;
+    -fx-max-width: 980;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 14, 0.1, 0, 4);
     -fx-padding: 0 0 10 0;
 }

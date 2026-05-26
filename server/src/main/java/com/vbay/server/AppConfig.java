@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.network_connection.ClientConnectionRegistry;
 import com.vbay.server.network_connection.RequestDistributor;
 import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
@@ -34,6 +35,7 @@ import com.vbay.server.service.AdminAccountService;
 import com.vbay.server.service.AdminUserService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
+import com.vbay.server.service.AdminService;
 import com.vbay.server.service.UserAccountService;
 import com.vbay.server.service.bid.AutobidService;
 import com.vbay.server.service.bid.BidQueryService;
@@ -82,6 +84,8 @@ public class AppConfig {
     private final List<DomainEventHandler> domainEventHandlers;
     private final RealtimeEventMapper realtimeEventMapper;
     private final AuctionTaskScheduler auctionScheduler;
+    private final ClientConnectionRegistry connectionRegistry;
+    private final AdminService adminService;
 
     
 /*
@@ -175,6 +179,8 @@ new AppConfig()
             new AuctionListRoomSubscriptionRule()
         ));
         this.subscriptionService = new SubscriptionService(subscriptionValidator, subscriptionRegistry);
+        this.connectionRegistry = new ClientConnectionRegistry();
+        this.adminService = new AdminService(connectionProvider, repositoryFactory, connectionRegistry, realtimeBroadcaster);
         ///business service
         this.adminAccountService = new AdminAccountService(connectionProvider, repositoryFactory, passwordHasher);
         this.adminUserService = new AdminUserService(connectionProvider, repositoryFactory);
@@ -204,7 +210,7 @@ new AppConfig()
             bidResolutionApplier
         );
         this.bidQueryService = new BidQueryService(connectionProvider, repositoryFactory);
-        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
+        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher, realtimeBroadcaster);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(
@@ -229,7 +235,9 @@ new AppConfig()
             bidQueryService,
             userAccountService,
             subscriptionService, 
-            imageStorageService);
+            imageStorageService,
+            adminService,
+            connectionRegistry);
     }
 
      public AuctionTaskScheduler getAuctionScheduler() {

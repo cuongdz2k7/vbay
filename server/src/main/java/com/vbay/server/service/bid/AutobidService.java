@@ -43,6 +43,10 @@ import com.vbay.server.service.result.BidUpdateResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.validation.ValidateBidDTO;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
 
 /*
 BUG(fixed):
@@ -553,7 +557,55 @@ public class AutobidService {
         }
     }
 
+    public Respond<AutobidRegistrationResult> handleAutoBid(
+            String requestId,
+            JsonElement payload,
+            ClientSession session) throws SQLException {
+        if (payload == null || !payload.isJsonObject()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
 
+        JsonObject object = payload.getAsJsonObject();
+        JsonElement auctionIdElement = object.get("auctionId");
+        JsonElement maxBidAmountElement = object.get("maxBidAmount");
+        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            maxBidAmountElement = object.get("bidAmount");
+        }
 
+        if (auctionIdElement == null || auctionIdElement.isJsonNull()
+                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            return new Respond<>(requestId, false, "Invalid auto bid request", null);
+        }
 
+        long auctionId = auctionIdElement.getAsLong();
+        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
+        AutobidRegistrationResult result = registerAutobid(auctionId, maxBidAmount, session);
+        return new Respond<>(requestId, true, "AutoBid subscribed successfully", result);
+    }
+
+    public Respond<Void> handleIncreaseAutobidMax(
+            String requestId,
+            JsonElement payload,
+            ClientSession session) throws SQLException {
+        if (payload == null || !payload.isJsonObject()) {
+            return new Respond<>(requestId, false, "Invalid increase auto bid request", null);
+        }
+
+        JsonObject object = payload.getAsJsonObject();
+        JsonElement auctionIdElement = object.get("auctionId");
+        JsonElement maxBidAmountElement = object.get("maxBidAmount");
+        if (maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            maxBidAmountElement = object.get("bidAmount");
+        }
+
+        if (auctionIdElement == null || auctionIdElement.isJsonNull()
+                || maxBidAmountElement == null || maxBidAmountElement.isJsonNull()) {
+            return new Respond<>(requestId, false, "Invalid increase auto bid request", null);
+        }
+
+        long auctionId = auctionIdElement.getAsLong();
+        BigDecimal maxBidAmount = maxBidAmountElement.getAsBigDecimal();
+        increaseMaxAutobidAmount(auctionId, maxBidAmount, session);
+        return new Respond<>(requestId, true, "AutoBid max increased successfully", null);
+    }
 }

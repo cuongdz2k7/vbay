@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
     hold_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+    warning_count INT NOT NULL DEFAULT 0,
+    lock_until TIMESTAMP NULL,
     version BIGINT NOT NULL DEFAULT 0,
     time_init TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -160,4 +162,40 @@ CREATE TABLE IF NOT EXISTS payments (
         ON UPDATE CASCADE,
 
     CONSTRAINT uq_payments_auction UNIQUE (auction_id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_actions_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    admin_id BIGINT NOT NULL,
+    target_user_id BIGINT,
+    target_auction_id BIGINT,
+    action_type VARCHAR(30) NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin_log_admin
+        FOREIGN KEY (admin_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_admin_log_target_user
+        FOREIGN KEY (target_user_id) REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_admin_log_target_auction
+        FOREIGN KEY (target_auction_id) REFERENCES auctions(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS deposit_requests (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    admin_id BIGINT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP NULL,
+    CONSTRAINT fk_deposit_requests_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );

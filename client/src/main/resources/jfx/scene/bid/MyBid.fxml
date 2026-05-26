@@ -17,12 +17,12 @@
             styleClass="my-bid-scroll"
             fx:controller="com.vbay.ui.scene_ui.controller.bid.MyBidController">
     <content>
-        <VBox spacing="20" styleClass="my-bid-page">
+        <VBox spacing="20" styleClass="my-bid-page" alignment="TOP_CENTER">
             <padding>
                 <Insets top="34" right="34" bottom="40" left="34"/>
             </padding>
 
-            <HBox alignment="CENTER_LEFT" styleClass="my-bid-heading-row">
+            <HBox alignment="CENTER_LEFT" styleClass="my-bid-heading-row" maxWidth="980">
                 <VBox spacing="4">
                     <Label text="Personal Bid" styleClass="my-bid-title"/>
                     <Label text="Real-time overview of your active and historical commitments." styleClass="my-bid-subtitle"/>
@@ -42,7 +42,7 @@
                 </ComboBox>
             </HBox>
 
-            <VBox styleClass="my-bid-table">
+            <VBox styleClass="my-bid-table" maxWidth="980">
                 <HBox alignment="CENTER_LEFT" spacing="12" styleClass="my-bid-table-header">
                     <Region styleClass="my-bid-row-accent-ended"/>
                     <Label text="AUCTION TITLE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-product"/>

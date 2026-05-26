@@ -144,7 +144,7 @@ public class CreateAuctionController {
     @FXML
     private void handleCancel() {
         try {
-            com.vbay.ui.scene_ui.SceneManager.switchScene("/jfx/scene/Home.fxml");
+            SceneManager.switchScene("/jfx/scene/Home.fxml");
             NotificationManager.show(NotificationManager.NotificationType.INFO,"Cancelation", "Cancelled auction creation");
         } catch (Exception e) {
             e.printStackTrace();

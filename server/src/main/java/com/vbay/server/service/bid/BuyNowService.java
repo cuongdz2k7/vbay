@@ -41,6 +41,9 @@ import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.validation.ValidateBidDTO;
 import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
+import com.google.gson.JsonElement;
+import com.vbay.shared.Utils.JsonUtils;
+import com.vbay.shared.protocol.Respond;
 
 /*
 BUG:
@@ -363,5 +366,14 @@ public class BuyNowService {
             showActiveMaxBid,
             updatedAt
         );
+    }
+
+    public Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
+        BuyNowRequest buyNowRequest = JsonUtils.fromJson(payload, BuyNowRequest.class);
+        if (buyNowRequest == null) {
+            return new Respond<>(requestId, false, "Invalid buy now request", null);
+        }
+        buyNow(buyNowRequest, session);
+        return new Respond<>(requestId, true, "Buy now completed successfully", null);
     }
 }
