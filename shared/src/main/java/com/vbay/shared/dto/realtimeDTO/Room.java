@@ -5,6 +5,7 @@ import com.vbay.shared.enums.realtime.RoomType;
 public class Room {
     private RoomType type;
     private Long targetId;
+    ///hiện tại chưa dùng filter
     private RoomFilter filter;
 
     public String key() {

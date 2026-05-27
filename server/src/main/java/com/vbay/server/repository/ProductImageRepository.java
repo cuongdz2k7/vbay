@@ -13,5 +13,7 @@ public interface ProductImageRepository {
 
     List<ProductImage> findByProductId(long productId) throws SQLException;
 
+    Optional<String> findThumbnailUrlByProductId(long productId) throws SQLException;
+
     void deleteByProductId(long productId) throws SQLException;
 }

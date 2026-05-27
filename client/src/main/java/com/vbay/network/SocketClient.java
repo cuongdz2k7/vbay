@@ -157,11 +157,6 @@ public class SocketClient {
             switch (message.getMessageType()) {
                 case RESPONSE -> {
                     Respond<?> respond = message.getResponse();
-                    LOGGER.info(
-                        "Received response: requestId=" + respond.getRequestId()
-                            + ", status=" + respond.isStatus()
-                            + ", message=" + respond.getMessage()
-                    );
                     completePendingResponse(respond);
                 }
                 case EVENT -> realtimeEventDispatcher.dispatch(message.getEvent());

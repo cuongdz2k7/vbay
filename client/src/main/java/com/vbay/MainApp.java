@@ -47,6 +47,9 @@ public class MainApp extends Application {
         initSocketClient();
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
+        // Start background music playback
+        com.vbay.ui.util.MusicManager.playBackgroundMusic();
+
         SceneManager.setStage(primaryStage);
         primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/auth/Login.fxml"));
         primaryStage.setTitle("VBay");
@@ -72,14 +75,14 @@ public class MainApp extends Application {
         LoggingUtils.configure("client");
         //ShutDownHook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.warning("App shutting down. Emergency shutdown detected.");
+            System.out.println("[SHUTDOWN] App shutting down. Emergency shutdown detected.");
             try {
                 SocketClient client = SocketClient.getClient();
                 if (client.isConnected()) {
                     client.disconnect();
                 }
             } catch (Exception exception) {
-                LOGGER.log(Level.WARNING, "Error during emergency shutdown.", exception);
+                System.err.println("[SHUTDOWN] Error during emergency shutdown: " + exception.getMessage());
             }
         }));
         //Start FXApplication-->start()

@@ -37,8 +37,9 @@ logs/
 # Virtual machine crash logs
 hs_err_pid*
 replay_pid*
-#Markdown files
-*.md
-!README.md
+
+
+# Uploaded product images
+server/uploads/
 # Gemini Agents
 .gemini/agents/

@@ -12,6 +12,7 @@ import com.vbay.server.exception.ValidationException;
 import com.vbay.server.mapper.rowmapper.UserRowMapper;
 import com.vbay.server.model.User;
 import com.vbay.server.repository.UserRepository;
+import com.vbay.shared.enums.auth.UserStatus;
 
 public class JdbcUserRepository implements UserRepository {
     private final Connection connection;
@@ -23,7 +24,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findById(long id) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, warning_count, lock_until, version, time_init
             FROM users
             WHERE id = ?
             """;
@@ -42,7 +43,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByUsername(String username) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, warning_count, lock_until, version, time_init
             FROM users
             WHERE username = ?
             """;
@@ -61,7 +62,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, warning_count, lock_until, version, time_init
             FROM users
             WHERE email = ?
             LIMIT 1
@@ -142,7 +143,7 @@ public class JdbcUserRepository implements UserRepository {
     @Override
     public Optional<User> lockUserForUpdate (long id) throws SQLException {
         String sql = """
-            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, version, time_init
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, warning_count, lock_until, version, time_init
             FROM users
             WHERE id = ?
             FOR UPDATE
@@ -257,6 +258,105 @@ public class JdbcUserRepository implements UserRepository {
                     throw new SQLException("User not found while reading version");
                 }
                 return rs.getLong("version");
+            }
+        }
+    }
+
+    @Override
+    public java.util.List<User> findAll() throws SQLException {
+        String sql = """
+            SELECT id, username, email, password_hash, phone_number, position, status, available_balance, hold_balance, warning_count, lock_until, version, time_init
+            FROM users
+            ORDER BY id DESC
+            """;
+        java.util.List<User> users = new java.util.ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                users.add(UserRowMapper.mapUser(rs));
+            }
+        }
+        return users;
+    }
+
+    @Override
+    public void updateStatus(long userId, UserStatus status) throws SQLException {
+        String sql = "UPDATE users SET status = ?, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, status.name());
+            statement.setLong(2, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void incrementWarningCount(long userId) throws SQLException {
+        String sql = "UPDATE users SET warning_count = warning_count + 1, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void setLockUntil(long userId, java.time.LocalDateTime lockUntil) throws SQLException {
+        String sql = "UPDATE users SET lock_until = ?, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            if (lockUntil != null) {
+                statement.setTimestamp(1, java.sql.Timestamp.valueOf(lockUntil));
+            } else {
+                statement.setNull(1, java.sql.Types.TIMESTAMP);
+            }
+            statement.setLong(2, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void resetWarningCount(long userId) throws SQLException {
+        String sql = "UPDATE users SET warning_count = 0, version = version + 1 WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public void deleteById(long userId) throws SQLException {
+        String sql = "DELETE FROM users WHERE id = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            statement.executeUpdate();
+        }
+    }
+
+    @Override
+    public Optional<String> findLatestBanReason(long userId) throws SQLException {
+        String sql = """
+            SELECT reason
+            FROM admin_actions_log
+            WHERE target_user_id = ? AND action_type = 'BAN_USER'
+            ORDER BY created_at DESC
+            LIMIT 1
+            """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.ofNullable(rs.getString("reason"));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public boolean existsBannedUserByUsername(String username) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE status = 'DELETED' AND username LIKE ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, "deleted_%_" + username);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
             }
         }
     }

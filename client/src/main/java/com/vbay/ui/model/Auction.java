@@ -16,9 +16,16 @@ public class Auction {
     private final BigDecimal buyNowPrice;
     private final Long winnerUserId;
     private final Boolean reserveMet;
+    private final boolean antiSnipeExtended;
     private final LocalDateTime startingTime;
     private final LocalDateTime endingTime;
     private final Product product;
+    private final Long viewerAutobidId;
+    private final BigDecimal viewerMaxBidAmount;
+    private final String viewerAutobidStatus;
+    private final boolean viewerAutobidWinning;
+    private final boolean viewerShowActiveMaxBid;
+    private final LocalDateTime viewerBidStateUpdatedAt;
 
     public Auction(
         long id,
@@ -37,6 +44,56 @@ public class Auction {
         LocalDateTime endingTime,
         Product product
     ) {
+        this(
+            id,
+            version,
+            sellerId,
+            title,
+            description,
+            status,
+            startingPrice,
+            currentPrice,
+            minimumBidStep,
+            buyNowPrice,
+            winnerUserId,
+            reserveMet,
+            false,
+            startingTime,
+            endingTime,
+            product,
+            null,
+            null,
+            null,
+            false,
+            false,
+            null
+        );
+    }
+
+    public Auction(
+        long id,
+        long version,
+        long sellerId,
+        String title,
+        String description,
+        String status,
+        BigDecimal startingPrice,
+        BigDecimal currentPrice,
+        BigDecimal minimumBidStep,
+        BigDecimal buyNowPrice,
+        Long winnerUserId,
+        Boolean reserveMet,
+        boolean antiSnipeExtended,
+        LocalDateTime startingTime,
+        LocalDateTime endingTime,
+        Product product,
+        Long viewerAutobidId,
+        BigDecimal viewerMaxBidAmount,
+        String viewerAutobidStatus,
+        boolean viewerAutobidWinning,
+        boolean viewerShowActiveMaxBid,
+        LocalDateTime viewerBidStateUpdatedAt
+    ) {
         this.id = id;
         this.version = version;
         this.sellerId = sellerId;
@@ -49,9 +106,16 @@ public class Auction {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.product = product;
+        this.viewerAutobidId = viewerAutobidId;
+        this.viewerMaxBidAmount = viewerMaxBidAmount;
+        this.viewerAutobidStatus = viewerAutobidStatus;
+        this.viewerAutobidWinning = viewerAutobidWinning;
+        this.viewerShowActiveMaxBid = viewerShowActiveMaxBid;
+        this.viewerBidStateUpdatedAt = viewerBidStateUpdatedAt;
     }
 
     public long getId() {
@@ -102,6 +166,10 @@ public class Auction {
         return reserveMet;
     }
 
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
     public LocalDateTime getStartingTime() {
         return startingTime;
     }
@@ -112,5 +180,48 @@ public class Auction {
 
     public Product getProduct() {
         return product;
+    }
+
+    public Long getViewerAutobidId() {
+        return viewerAutobidId;
+    }
+
+    public BigDecimal getViewerMaxBidAmount() {
+        return viewerMaxBidAmount;
+    }
+
+    public String getViewerAutobidStatus() {
+        return viewerAutobidStatus;
+    }
+
+    public boolean isViewerAutobidWinning() {
+        return viewerAutobidWinning;
+    }
+
+    public boolean isViewerShowActiveMaxBid() {
+        return viewerShowActiveMaxBid;
+    }
+
+    public LocalDateTime getViewerBidStateUpdatedAt() {
+        return viewerBidStateUpdatedAt;
+    }
+
+    private String sellerUsername;
+    private String sellerEmail;
+
+    public String getSellerUsername() {
+        return sellerUsername;
+    }
+
+    public void setSellerUsername(String sellerUsername) {
+        this.sellerUsername = sellerUsername;
+    }
+
+    public String getSellerEmail() {
+        return sellerEmail;
+    }
+
+    public void setSellerEmail(String sellerEmail) {
+        this.sellerEmail = sellerEmail;
     }
 }

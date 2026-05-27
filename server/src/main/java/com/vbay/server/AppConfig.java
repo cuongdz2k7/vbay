@@ -1,17 +1,21 @@
 package com.vbay.server;
 
+import java.time.Duration;
 import java.util.List;
 
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.databaseManager.DatabaseConnection;
+import com.vbay.server.network_connection.ClientConnectionRegistry;
 import com.vbay.server.network_connection.RequestDistributor;
+import com.vbay.server.realtime.handler.AuctionClosedRealtimeHandler;
 import com.vbay.server.realtime.handler.AuctionListItemUpdatedRealtimeHandler;
+import com.vbay.server.realtime.handler.AuctionStartedRealtimeHandler;
+import com.vbay.server.realtime.handler.AutobidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BidUpdatedRealtimeHandler;
 import com.vbay.server.realtime.handler.BuyNowRealtimeHandler;
 import com.vbay.server.realtime.handler.DomainEventHandler;
 import com.vbay.server.realtime.handler.UserBalanceUpdatedRealtimeHandler;
 import com.vbay.server.realtime.mapper.RealtimeEventMapper;
-import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.realtime.publisher.InMemoryDomainEventPublisher;
 import com.vbay.server.realtime.subscription.InMemorySubscriptionRegistry;
 import com.vbay.server.realtime.subscription.SubscriptionRegistry;
@@ -29,8 +33,15 @@ import com.vbay.server.security.Argon2PasswordHasher;
 import com.vbay.server.security.PasswordHasher;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
-import com.vbay.server.service.BidService;
+import com.vbay.server.service.bid.ManualBidService;
+import com.vbay.server.service.AdminService;
 import com.vbay.server.service.UserAccountService;
+import com.vbay.server.service.bid.AutobidService;
+import com.vbay.server.service.bid.BidQueryService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.engine.AntiSnipePolicy;
+import com.vbay.server.service.bid.engine.AuctionBidEngine;
+import com.vbay.server.service.bid.resolution.BidResolutionApplier;
 import com.vbay.server.upload.ImageStorageService;
 
 
@@ -43,12 +54,21 @@ các thành phần khác của ứng dụng.
 */
 
 public class AppConfig {
+    private static final AntiSnipeSettings DEFAULT_ANTI_SNIPE_SETTINGS = new AntiSnipeSettings(
+        Duration.ofSeconds(30),//window
+        Duration.ofMinutes(5),//extension
+        5
+    );
+
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
     private final AuthService authService;
     private final AuctionService auctionService;
-    private final BidService bidService;
+    private final ManualBidService bidService;
+    private final AutobidService autobidService;
+    private final BuyNowService buyNowService;
+    private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
     private final RequestDistributor requestDistributor;
     private final ImageStorageService imageStorageService;
@@ -60,6 +80,8 @@ public class AppConfig {
     private final List<DomainEventHandler> domainEventHandlers;
     private final RealtimeEventMapper realtimeEventMapper;
     private final AuctionTaskScheduler auctionScheduler;
+    private final ClientConnectionRegistry connectionRegistry;
+    private final AdminService adminService;
 
     
 /*
@@ -74,7 +96,8 @@ new AppConfig()
     public AppConfig() {
         this(DatabaseConnection::getConnection, 
             new ImageStorageService(), 
-            new Argon2PasswordHasher());
+            new Argon2PasswordHasher(),
+            DEFAULT_ANTI_SNIPE_SETTINGS);
     }
 
     public AppConfig(
@@ -83,9 +106,23 @@ new AppConfig()
             PasswordHasher passwordHasher) {
         this(
             connectionProvider,
+            imageStorageService,
+            passwordHasher,
+            DEFAULT_ANTI_SNIPE_SETTINGS
+        );
+    }
+
+    public AppConfig(
+            ConnectionProvider connectionProvider,
+            ImageStorageService imageStorageService,
+            PasswordHasher passwordHasher,
+            AntiSnipeSettings antiSnipeSettings) {
+        this(
+            connectionProvider,
             new JdbcRepositoryFactory(imageStorageService),
             passwordHasher,
-            imageStorageService
+            imageStorageService,
+            antiSnipeSettings
         );
     }
 
@@ -93,21 +130,42 @@ new AppConfig()
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
             PasswordHasher passwordHasher) {
-        this(connectionProvider, repositoryFactory, passwordHasher, new ImageStorageService());
+        this(
+            connectionProvider,
+            repositoryFactory,
+            passwordHasher,
+            new ImageStorageService(),
+            DEFAULT_ANTI_SNIPE_SETTINGS
+        );
+    }
+
+    public AppConfig(
+            ConnectionProvider connectionProvider,
+            RepositoryFactory repositoryFactory,
+            PasswordHasher passwordHasher,
+            AntiSnipeSettings antiSnipeSettings) {
+        this(
+            connectionProvider,
+            repositoryFactory,
+            passwordHasher,
+            new ImageStorageService(),
+            antiSnipeSettings
+        );
     }
 
     private AppConfig(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
             PasswordHasher passwordHasher,
-            ImageStorageService imageStorageService) {
+            ImageStorageService imageStorageService,
+            AntiSnipeSettings antiSnipeSettings) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
         ///realtime
         this.subscriptionRegistry = new InMemorySubscriptionRegistry();
         this.realtimeBroadcaster = new RealtimeBroadcaster(subscriptionRegistry);
-        this.realtimeEventMapper = new RealtimeEventMapper();
+        this.realtimeEventMapper = new RealtimeEventMapper(connectionProvider, repositoryFactory);
         
         this.domainEventPublisher = new InMemoryDomainEventPublisher();
 
@@ -117,19 +175,47 @@ new AppConfig()
             new AuctionListRoomSubscriptionRule()
         ));
         this.subscriptionService = new SubscriptionService(subscriptionValidator, subscriptionRegistry);
+        this.connectionRegistry = new ClientConnectionRegistry();
+        this.adminService = new AdminService(connectionProvider, repositoryFactory, connectionRegistry, realtimeBroadcaster);
         ///business service
         this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.bidService = new BidService(connectionProvider, repositoryFactory, domainEventPublisher);
-        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher);
+        AuctionBidEngine auctionBidEngine = new AuctionBidEngine(antiSnipeSettings.toPolicy());
+        BidResolutionApplier bidResolutionApplier = new BidResolutionApplier(repositoryFactory);
+        this.bidService = new ManualBidService(
+            connectionProvider,
+            repositoryFactory,
+            domainEventPublisher,
+            auctionBidEngine,
+            bidResolutionApplier
+        );
+        this.autobidService = new AutobidService(
+            connectionProvider,
+            repositoryFactory,
+            domainEventPublisher,
+            auctionBidEngine,
+            bidResolutionApplier
+        );
+        this.buyNowService = new BuyNowService(
+            connectionProvider,
+            repositoryFactory,
+            domainEventPublisher,
+            auctionBidEngine,
+            bidResolutionApplier
+        );
+        this.bidQueryService = new BidQueryService(connectionProvider, repositoryFactory);
+        this.userAccountService = new UserAccountService(connectionProvider, repositoryFactory, domainEventPublisher,realtimeBroadcaster);
         this.imageStorageService = imageStorageService;
         this.auctionScheduler = new AuctionTaskScheduler(auctionService);
         this.domainEventHandlers = List.of(
+            new AuctionClosedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionListItemUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AuctionStartedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new AuctionScheduleDomainEventHandler(auctionScheduler),
             new BidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
             new BuyNowRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
-            new UserBalanceUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
+            new UserBalanceUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper),
+            new AutobidUpdatedRealtimeHandler(realtimeBroadcaster, realtimeEventMapper)
         );
         this.domainEventPublisher.registerAll(domainEventHandlers);
 
@@ -137,9 +223,14 @@ new AppConfig()
             authService, 
             auctionService, 
             bidService, 
+            autobidService,
+            buyNowService,
+            bidQueryService,
             userAccountService,
             subscriptionService, 
-            imageStorageService);
+            imageStorageService,
+            adminService,
+            connectionRegistry);
     }
 
      public AuctionTaskScheduler getAuctionScheduler() {
@@ -164,5 +255,46 @@ new AppConfig()
 
     public AuctionService getAuctionService() {
         return auctionService;
+    }
+
+    public static AntiSnipeSettings defaultAntiSnipeSettings() {
+        return DEFAULT_ANTI_SNIPE_SETTINGS;
+    }
+
+    public static final class AntiSnipeSettings {
+        private final Duration window;
+        private final Duration extension;
+        private final int maxExtensions;
+
+        public AntiSnipeSettings(Duration window, Duration extension, int maxExtensions) {
+            if (window == null || window.isZero() || window.isNegative()) {
+                throw new IllegalArgumentException("Anti-snipe window must be positive");
+            }
+            if (extension == null || extension.isZero() || extension.isNegative()) {
+                throw new IllegalArgumentException("Anti-snipe extension must be positive");
+            }
+            if (maxExtensions < 0) {
+                throw new IllegalArgumentException("Anti-snipe max extensions must not be negative");
+            }
+            this.window = window;
+            this.extension = extension;
+            this.maxExtensions = maxExtensions;
+        }
+
+        public Duration getWindow() {
+            return window;
+        }
+
+        public Duration getExtension() {
+            return extension;
+        }
+
+        public int getMaxExtensions() {
+            return maxExtensions;
+        }
+
+        private AntiSnipePolicy toPolicy() {
+            return new AntiSnipePolicy(window, extension, maxExtensions);
+        }
     }
 }

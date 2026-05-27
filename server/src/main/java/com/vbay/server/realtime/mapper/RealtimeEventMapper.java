@@ -1,38 +1,69 @@
 package com.vbay.server.realtime.mapper;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import com.vbay.server.databaseManager.ConnectionProvider;
+import com.vbay.server.realtime.domain.AuctionClosedDomainEvent;
 import com.vbay.server.realtime.domain.AuctionListItemUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.AuctionStartedDomainEvent;
+import com.vbay.server.realtime.domain.AutobidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BidUpdatedDomainEvent;
 import com.vbay.server.realtime.domain.BuyNowDomainEvent;
 import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
+import com.vbay.server.realtime.domain.enums.AuctionCloseReason;
+import com.vbay.server.repository.RepositoryFactory;
+import com.vbay.server.service.result.AuctionClosedResult;
+import com.vbay.server.service.result.AuctionListItemResult;
+import com.vbay.server.service.result.AutobidUpdateResult;
+import com.vbay.server.service.result.BidUpdateResult;
 import com.vbay.server.service.result.BuyNowResult;
-import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.shared.dto.realtimeDTO.Room;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
-import com.vbay.shared.enums.auction.BidStatus;
 import com.vbay.shared.enums.bid.BidSource;
+import com.vbay.shared.enums.bid.BidStatus;
+import com.vbay.shared.enums.realtime.AuctionStateChangeReason;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.enums.realtime.RoomType;
 import com.vbay.shared.protocol.RealtimeEvent;
 
 public class RealtimeEventMapper {
-    public RealtimeEvent<AuctionStateUpdatedPayload> toAuctionStateUpdatedEvent(BidUpdatedDomainEvent event) {
-        PlaceBidResult result = event.getResult();
-        AuctionStateUpdatedPayload payload = new AuctionStateUpdatedPayload();
+    private final ConnectionProvider connectionProvider;
+    private final RepositoryFactory repositoryFactory;
+
+    public RealtimeEventMapper() {
+        this.connectionProvider = null;
+        this.repositoryFactory = null;
+    }
+
+    public RealtimeEventMapper(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory) {
+        this.connectionProvider = connectionProvider;
+        this.repositoryFactory = repositoryFactory;
+    }
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BidUpdatedDomainEvent event) {
+        BidUpdateResult result = event.getResult();
+        AuctionStatePayload payload = new AuctionStatePayload();
         payload.setAuctionId(result.getAuctionId());
         payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getAuctionStatus());
         payload.setCurrentPrice(result.getCurrentPrice());
-        payload.setNextMinimumBid(result.getNextMinimumBid());
         payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
         payload.setWinnerUserId(result.getBidderId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
         payload.setUpdatedAt(result.getBidTime());
-
-        RealtimeEvent<AuctionStateUpdatedPayload> realtimeEvent = new RealtimeEvent<>(
+        payload.setStateChangeReason(AuctionStateChangeReason.BID_PLACED);
+        
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
             RealtimeEventType.AUCTION_STATE_UPDATED,
             auctionRoom(result.getAuctionId()),
             payload
@@ -42,13 +73,24 @@ public class RealtimeEventMapper {
     }
 
     public RealtimeEvent<BidHistoryItemPayload> toBidHistoryItemAddedEvent(BidUpdatedDomainEvent event) {
-        PlaceBidResult result = event.getResult();
+        BidUpdateResult result = event.getResult();
+        String bidderDisplayName = null;
+        if (connectionProvider != null && repositoryFactory != null) {
+            try (Connection conn = connectionProvider.getConnection()) {
+                bidderDisplayName = repositoryFactory.createUserRepository(conn)
+                    .findById(result.getBidderId())
+                    .map(com.vbay.server.model.User::getUserName)
+                    .orElse(null);
+            } catch (SQLException e) {
+                throw new RuntimeException("Error occurred while fetching bidder display name", e);
+            }
+        }
         BidHistoryItemPayload payload = new BidHistoryItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
             result.getBidId(),
             result.getBidderId(),
-            null,
+            bidderDisplayName,
             result.getBidAmount(),
             result.getBidStatus().name(),
             result.getBidSource().name(),
@@ -63,6 +105,34 @@ public class RealtimeEventMapper {
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;
     }
+    public RealtimeEvent<MyBidListItemPayload> toMyBidListItemUpdatedEvent(UserMyBidListItemResult result) {
+        MyBidListItemPayload payload = new MyBidListItemPayload(
+            result.getBidId(),
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getAuctionTitle(),
+            result.getThumbnailUrl(),
+            result.getCurrentPrice(),
+            result.getAuctionStatus().name(),
+            result.isAntiSnipeExtended(),
+            result.getMyBidAmount(),
+            result.getMyMaxBidAmount(),
+            result.getBidStatus(),
+            result.getBidSource(),
+            result.getBidTime(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
+        );
+
+        RealtimeEvent<MyBidListItemPayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.MY_BID_LIST_ITEM_UPDATED,
+            userRoom(result.getUserId()),
+            payload
+        );  
+        realtimeEvent.setOccurredAt(result.getUpdatedAt());
+        return realtimeEvent;
+    }
 
     public RealtimeEvent<AuctionListItemPayload> toAuctionListItemUpdatedEvent(AuctionListItemUpdatedDomainEvent event) {
         RealtimeEvent<AuctionListItemPayload> realtimeEvent = new RealtimeEvent<>(
@@ -74,20 +144,73 @@ public class RealtimeEventMapper {
         return realtimeEvent;
     }
 
-    public RealtimeEvent<AuctionEndedPayload> toAuctionEndedEvent(BuyNowDomainEvent event) {
-        BuyNowResult result = event.getResult();
-        AuctionEndedPayload payload = new AuctionEndedPayload(
-            result.getAuctionId(),
-            result.getAuctionVersion(),
-            "ENDED",
-            result.getFinalPrice(),
-            result.getBuyerId(),
-            result.getBoughtAt(),
-            "BUY_NOW"
-        );
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(AuctionStartedDomainEvent event) {
+        AuctionListItemResult result = event.getAuction();
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getStatus());
+        payload.setCurrentPrice(result.getCurrentPrice());
+        payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
+        payload.setWinnerUserId(result.getWinnerUserId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
+        payload.setUpdatedAt(result.getUpdatedAt());
+        payload.setStateChangeReason(AuctionStateChangeReason.STARTED);
 
-        RealtimeEvent<AuctionEndedPayload> realtimeEvent = new RealtimeEvent<>(
-            RealtimeEventType.AUCTION_ENDED,
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
+            auctionRoom(result.getAuctionId()),
+            payload
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(AuctionClosedDomainEvent event) {
+        AuctionClosedResult result = event.getResult();
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getAuctionStatus().name());
+        payload.setCurrentPrice(result.getCurrentPrice());
+        payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
+        payload.setWinnerUserId(result.getWinnerUserId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
+        payload.setUpdatedAt(result.getClosedAt());
+        payload.setEndedAt(result.getClosedAt());
+        payload.setStateChangeReason(toAuctionStateChangeReason(result.getReason()));
+
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
+            auctionRoom(result.getAuctionId()),
+            payload
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
+    public RealtimeEvent<AuctionStatePayload> toAuctionStateEvent(BuyNowDomainEvent event) {
+        BuyNowResult result = event.getResult();
+        AuctionStatePayload payload = new AuctionStatePayload();
+        payload.setAuctionId(result.getAuctionId());
+        payload.setAuctionVersion(result.getAuctionVersion());
+        payload.setStatus(result.getAuctionStatus().name());
+        payload.setCurrentPrice(result.getFinalPrice());
+        payload.setWinnerUserId(result.getBuyerId());
+        payload.setStartingTime(result.getStartingTime());
+        payload.setEndingTime(result.getEndingTime());
+        payload.setUpdatedAt(result.getBoughtAt());
+        payload.setEndedAt(result.getBoughtAt());
+        payload.setStateChangeReason(AuctionStateChangeReason.BUY_NOW);
+        payload.setReserveMet(result.getReserveMet());
+        payload.setAntiSnipeExtended(result.isAntiSnipeExtended());
+
+        RealtimeEvent<AuctionStatePayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUCTION_STATE_UPDATED,
             auctionRoom(result.getAuctionId()),
             payload
         );
@@ -97,15 +220,26 @@ public class RealtimeEventMapper {
 
     public RealtimeEvent<BidHistoryItemPayload> toBuyNowHistoryItemEvent(BuyNowDomainEvent event) {
         BuyNowResult result = event.getResult();
+        String buyerDisplayName = null;
+        if (connectionProvider != null && repositoryFactory != null) {
+            try (Connection conn = connectionProvider.getConnection()) {
+                buyerDisplayName = repositoryFactory.createUserRepository(conn)
+                    .findById(result.getBuyerId())
+                    .map(com.vbay.server.model.User::getUserName)
+                    .orElse(null);
+            } catch (SQLException e) {
+                // Log or handle error, fallback to null
+            }
+        }
         BidHistoryItemPayload payload = new BidHistoryItemPayload(
             result.getAuctionId(),
             result.getAuctionVersion(),
             result.getBidId(),
             result.getBuyerId(),
-            null,
+            buyerDisplayName,
             result.getFinalPrice(),
             BidStatus.WON.name(),
-            BidSource.USER_BID.name(),
+            BidSource.BUY_NOW.name(),
             result.getBoughtAt()
         );
 
@@ -127,6 +261,38 @@ public class RealtimeEventMapper {
         );
         realtimeEvent.setOccurredAt(event.occurredAt());
         return realtimeEvent;
+    }
+
+
+    public RealtimeEvent<AutobidUpdatedPayload> toAutobidUpdatedEvent(
+        AutobidUpdatedDomainEvent event) {
+    AutobidUpdateResult result = event.getResult();
+
+    AutobidUpdatedPayload payload = new AutobidUpdatedPayload(
+            result.getAuctionId(),
+            result.getUserId(),
+            result.getAutobidId(),
+            result.getMaxBidAmount(),
+            result.getAutobidStatus().name(),
+            result.isWinning(),
+            result.isShowActiveMaxBid(),
+            result.getUpdatedAt()
+        );
+
+        RealtimeEvent<AutobidUpdatedPayload> realtimeEvent = new RealtimeEvent<>(
+            RealtimeEventType.AUTOBID_UPDATED,
+            userRoom(result.getUserId()),
+            payload
+        );
+        realtimeEvent.setOccurredAt(event.occurredAt());
+        return realtimeEvent;
+    }
+
+    private AuctionStateChangeReason toAuctionStateChangeReason(AuctionCloseReason reason) {
+        return switch (reason) {
+            case TIME_EXPIRED_ENDED -> AuctionStateChangeReason.TIME_EXPIRED_ENDED;
+            case TIME_EXPIRED_FAILED -> AuctionStateChangeReason.TIME_EXPIRED_FAILED;
+        };
     }
 
     private Room auctionRoom(long auctionId) {

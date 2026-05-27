@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
     hold_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
+    warning_count INT NOT NULL DEFAULT 0,
+    lock_until TIMESTAMP NULL,
     version BIGINT NOT NULL DEFAULT 0,
     time_init TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -59,10 +61,11 @@ CREATE TABLE IF NOT EXISTS auctions (
     ending_time TIMESTAMP NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
     winner_user_id BIGINT NULL,
+    anti_snipe_extension_count INT NOT NULL DEFAULT 0,
     version BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
+    
     CONSTRAINT fk_auctions_product
         FOREIGN KEY (product_id) REFERENCES products(id)
         ON DELETE RESTRICT
@@ -95,6 +98,28 @@ CREATE TABLE IF NOT EXISTS bids (
         FOREIGN KEY (bidder_id) REFERENCES users(id)
         ON DELETE RESTRICT
         ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS autobids (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    auction_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    max_bid_amount DECIMAL(15,2) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_autobids_auction
+        FOREIGN KEY (auction_id) REFERENCES auctions(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_autobids_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT uq_autobids_auction_user UNIQUE (auction_id, user_id)
 );
 
 CREATE TABLE IF NOT EXISTS payments (
@@ -137,4 +162,40 @@ CREATE TABLE IF NOT EXISTS payments (
         ON UPDATE CASCADE,
 
     CONSTRAINT uq_payments_auction UNIQUE (auction_id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_actions_log (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    admin_id BIGINT NOT NULL,
+    target_user_id BIGINT,
+    target_auction_id BIGINT,
+    action_type VARCHAR(30) NOT NULL,
+    reason TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_admin_log_admin
+        FOREIGN KEY (admin_id) REFERENCES users(id)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_admin_log_target_user
+        FOREIGN KEY (target_user_id) REFERENCES users(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+    CONSTRAINT fk_admin_log_target_auction
+        FOREIGN KEY (target_auction_id) REFERENCES auctions(id)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS deposit_requests (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    admin_id BIGINT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    processed_at TIMESTAMP NULL,
+    CONSTRAINT fk_deposit_requests_user
+        FOREIGN KEY (user_id) REFERENCES users(id)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );

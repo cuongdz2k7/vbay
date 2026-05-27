@@ -1,63 +1,61 @@
 package com.vbay.server.network_connection;
-
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.realtime.subscription.SubscriptionService;
+import com.vbay.server.service.AdminService;
 import com.vbay.server.service.AuctionService;
 import com.vbay.server.service.AuthService;
-import com.vbay.server.service.BidService;
 import com.vbay.server.service.UserAccountService;
-import com.vbay.server.service.result.UserBalanceResult;
-import com.vbay.server.service.result.mapper.ResultMapper;
+import com.vbay.server.service.bid.AutobidService;
+import com.vbay.server.service.bid.BidQueryService;
+import com.vbay.server.service.bid.BuyNowService;
+import com.vbay.server.service.bid.ManualBidService;
 import com.vbay.server.upload.ImageStorageService;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
-import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
-import com.vbay.shared.dto.auctionDTO.AuctionListResponse;
-import com.vbay.shared.dto.auctionDTO.BuyNowRequest;
-import com.vbay.shared.dto.auctionDTO.CreateAuctionRequest;
-import com.vbay.shared.dto.auctionDTO.PlaceBidRequest;
-import com.vbay.shared.dto.authDTO.LoginRequest;
-import com.vbay.shared.dto.authDTO.LoginResponse;
-import com.vbay.shared.dto.authDTO.RegisterRequest;
-import com.vbay.shared.dto.productDTO.UploadImageRequest;
-import com.vbay.shared.dto.realtimeDTO.Room;
-import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
-import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
 import com.vbay.shared.protocol.Respond;
-
 public class RequestDistributor {
     private static final Logger LOGGER = LoggingUtils.getLogger(RequestDistributor.class);
     private final AuthService authService;
     private final AuctionService auctionService;
-    private final BidService bidService;
+    private final ManualBidService bidService;
+    private final AutobidService autobidService;
+    private final BuyNowService buyNowService;
+    private final BidQueryService bidQueryService;
     private final UserAccountService userAccountService;
     private final SubscriptionService subscriptionService;
     private final ImageStorageService imageStorageService;
-    
-
+    private final AdminService adminService;
+    private final ClientConnectionRegistry connectionRegistry;
     public RequestDistributor (AuthService authService, 
                                 AuctionService auctionService, 
-                                BidService bidService, 
+                                ManualBidService bidService, 
+                                AutobidService autobidService,
+                                BuyNowService buyNowService,
+                                BidQueryService bidQueryService,
                                 UserAccountService userAccountService,
                                 SubscriptionService subscriptionService,
-                                ImageStorageService imageStorageService) {
+                                ImageStorageService imageStorageService,
+                                AdminService adminService,
+                                ClientConnectionRegistry connectionRegistry) {
         this.authService = authService;
         this.auctionService = auctionService;
         this.bidService = bidService;
+        this.autobidService = autobidService;
+        this.buyNowService = buyNowService;
+        this.bidQueryService = bidQueryService;
         this.userAccountService = userAccountService;
         this.subscriptionService = subscriptionService;
         this.imageStorageService = imageStorageService;
+        this.adminService = adminService;
+        this.connectionRegistry = connectionRegistry;
     }
-
     public Respond<?> dispatch (String rawRequest, ClientSession session, ClientConnection connection) {
         JsonObject root;
         try {
@@ -74,39 +72,52 @@ public class RequestDistributor {
         if (typeElement == null || typeElement.isJsonNull()) {
             typeElement = root.get("type");
         }
-
         String requestId = (requestIdElement != null && !requestIdElement.isJsonNull()) 
                             ? requestIdElement.getAsString() : null;
-
         String typeRaw = (typeElement != null && !typeElement.isJsonNull()) ? typeElement.getAsString() : null;
-
         if (typeRaw == null || typeRaw.isBlank()) {
             return new Respond<>(requestId, false, "Invalid request type", null);
         }
-
         JsonElement payload = root.get("payload");
-
         RequestType type;
         try {
             type = RequestType.valueOf(typeRaw);
         } catch (IllegalArgumentException e) {
             return new Respond<>(requestId, false, "Unsupported request type: " + typeRaw, null);
         }
-
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
-                case LOGIN -> handleLogin(requestId, payload, session);
-                case LOGOUT -> handleLogout(requestId, session);
-                case REGISTER -> handleRegister(requestId, payload);
-                case UPLOAD_IMAGE -> handleUploadImage(requestId, payload, session);
-                case CREATE_AUCTION -> handleCreateAuction(requestId, payload, session);
-                case PLACE_BID -> handlePlaceBid(requestId, payload, session);
-                case BUY_NOW -> handleBuyNow(requestId, payload, session);
-                case DEPOSIT_BALANCE -> handleDepositBalance(requestId, payload, session);
-                case SUBSCRIBE_ROOM -> handleSubscribeRoom(requestId, payload, session, connection);
-                case UNSUBSCRIBE_ROOM -> handleUnsubscribeRoom(requestId, payload, session, connection);
-                case GET_AUCTION_LIST -> handleGetAuctionList(requestId, payload, session);
+                case LOGIN -> authService.handleLogin(requestId, payload, session);
+                case LOGOUT -> {
+                    subscriptionService.disconnect(connection);
+                    yield authService.handleLogout(requestId, session);
+                }
+                case REGISTER -> authService.handleRegister(requestId, payload);
+                case UPLOAD_IMAGE -> imageStorageService.handleUploadImage(requestId, payload, session);
+                case CREATE_AUCTION -> auctionService.handleCreateAuction(requestId, payload, session);
+                case GET_MY_BID_LIST -> bidQueryService.handleGetMyBidList(requestId, session);
+                case PLACE_BID -> bidService.handlePlaceBid(requestId, payload, session);
+                case AUTO_BID -> autobidService.handleAutoBid(requestId, payload, session);
+                case INCREASE_AUTOBID_MAX -> autobidService.handleIncreaseAutobidMax(requestId, payload, session);
+                case BUY_NOW -> buyNowService.handleBuyNow(requestId, payload, session);
+                case DEPOSIT_BALANCE -> userAccountService.handleDepositBalance(requestId, payload, session);
+                case SUBSCRIBE_ROOM -> subscriptionService.handleSubscribeRoom(requestId, payload, session, connection);
+                case UNSUBSCRIBE_ROOM -> subscriptionService.handleUnsubscribeRoom(requestId, payload, session, connection);
+                case GET_AUCTION_LIST -> auctionService.handleGetAuctionList(requestId, payload, session);
+                case GET_AUCTION_DETAIL -> auctionService.handleGetAuctionDetail(requestId, payload, session);
+                case GET_BID_HISTORY -> bidQueryService.handleGetBidHistory(requestId, payload, session);
+                case ADMIN_GET_ALL_USERS -> adminService.handleAdminGetAllUsers(requestId, session);
+                case ADMIN_GET_ALL_AUCTIONS -> adminService.handleAdminGetAllAuctions(requestId, session);
+                case ADMIN_BAN_USER -> adminService.handleAdminBanUser(requestId, payload, session);
+                case ADMIN_KICK_USER -> adminService.handleAdminKickUser(requestId, payload, session);
+                case ADMIN_WARN_USER -> adminService.handleAdminWarnUser(requestId, payload, session);
+                case ADMIN_DELETE_AUCTION -> adminService.handleAdminDeleteAuction(requestId, payload, session);
+                case ADMIN_STOP_AUCTION -> adminService.handleAdminStopAuction(requestId, payload, session);
+                case ADMIN_CONTINUE_AUCTION -> adminService.handleAdminContinueAuction(requestId, payload, session);
+                case ADMIN_GET_PENDING_DEPOSITS -> adminService.handleAdminGetPendingDeposits(requestId, session);
+                case ADMIN_APPROVE_DEPOSIT -> adminService.handleAdminApproveDeposit(requestId, payload, session);
+                case ADMIN_REJECT_DEPOSIT -> adminService.handleAdminRejectDeposit(requestId, payload, session);
                 default -> new Respond<>(requestId, false, "Request type not implemented yet", null);
             };
         } catch (ValidationException | AuthenticationException e) {
@@ -120,134 +131,4 @@ public class RequestDistributor {
             return new Respond<>(requestId, false, "Unexpected error", null);
         }
     }
-
-
-    private Respond<AuctionListResponse> handleGetAuctionList(
-        String requestId,
-        JsonElement payload,
-        ClientSession session) throws SQLException {
-
-        AuctionListRequest request = JsonUtils.fromJson(payload, AuctionListRequest.class);
-        if (request == null) {
-            return new Respond<>(requestId, false, "Invalid auction list request", null);
-        }
-
-        AuctionListResponse response = auctionService.getAuctionList(request, session);
-        return new Respond<>(requestId, true, "Auction list loaded", response);
-    }
-
-    private Respond<Void> handleSubscribeRoom(
-        String requestId,
-        JsonElement payload,
-        ClientSession session,
-        ClientConnection connection
-    ) {
-
-        Room room = JsonUtils.fromJson(payload, Room.class);
-        if (room == null) {
-            return new Respond<>(requestId, false, "Invalid room", null);
-        }
-
-        subscriptionService.subscribe(room, session, connection);
-        return new Respond<>(requestId, true, "Subscribed room successfully", null);
-    }
-    
-    private Respond<Void> handleUnsubscribeRoom(
-        String requestId,
-        JsonElement payload,
-        ClientSession session,
-        ClientConnection connection) {
-
-        Room room = JsonUtils.fromJson(payload, Room.class);
-        if (room == null) {
-            return new Respond<>(requestId, false, "Invalid unsubscribe room request", null);
-        }
-
-        subscriptionService.unsubscribe(room, session, connection);
-        return new Respond<>(requestId, true, "Unsubscribed room successfully", null);
-    }
-
-
-
-    private Respond<LoginResponse> handleLogin(String requestId, JsonElement payload, ClientSession session) throws SQLException, AuthenticationException {
-        if (session.isAuthenticated()) {
-            throw new AuthenticationException("Client is already logged in");
-        }
-        LoginRequest loginRequest = JsonUtils.fromJson(payload, LoginRequest.class);
-        if (loginRequest == null) {
-            return new Respond<>(requestId, false, "Invalid login request", null);
-        }
-        LoginResponse loginResponse = authService.login(loginRequest);
-        session.setSession(loginResponse.getUserId(), 
-                            loginResponse.getUsername(), 
-                            loginResponse.getPosition());
-        
-        return new Respond<>(requestId, true, "Login successful", loginResponse);
-    }
-
-    private Respond<Void> handleLogout(String requestId, ClientSession session) {
-        if (session == null || !session.isAuthenticated()) {
-            return new Respond<>(requestId, true, "Client is already logged out", null);
-        }
-        session.clearSession();
-        return new Respond<>(requestId, true, "Logout successful", null);
-    }
-
-    private Respond<Void> handleRegister(String requestId, JsonElement payload) throws SQLException {
-        RegisterRequest registerRequest = JsonUtils.fromJson(payload, RegisterRequest.class);
-        if (registerRequest == null) {
-            return new Respond<>(requestId, false, "Invalid register request", null);
-        }
-        authService.register(registerRequest);
-        return new Respond<>(requestId, true, "Register successful", null);
-    }
-
-    private Respond<String> handleUploadImage(String requestId, JsonElement payload, ClientSession session) throws IOException {
-        if (session == null || !session.isAuthenticated()) {
-            throw new AuthenticationException("User must be logged in to upload images");
-        }
-        UploadImageRequest uploadRequest = JsonUtils.fromJson(payload, UploadImageRequest.class);
-        if (uploadRequest == null) {
-            return new Respond<>(requestId, false, "Invalid upload image request", null);
-        }
-        String imageUrl = imageStorageService.storeUploadedImage(uploadRequest);
-        return new Respond<>(requestId, true, "Image uploaded successfully", imageUrl);
-    }
-
-    private Respond<Void> handleCreateAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        CreateAuctionRequest createAuctionRequest = JsonUtils.fromJson(payload, CreateAuctionRequest.class);
-        if (createAuctionRequest == null) {
-            return new Respond<>(requestId, false, "Invalid create auction request", null);
-        }
-        auctionService.createAuction(createAuctionRequest, session);
-        return new Respond<>(requestId, true, "Auction created successfully", null);
-    }
-
-    private Respond<UserBalanceResponse> handleDepositBalance(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        DepositBalanceRequest depositRequest = JsonUtils.fromJson(payload, DepositBalanceRequest.class);
-        if (depositRequest == null) {
-            return new Respond<>(requestId, false, "Invalid deposit balance request", null);
-        }
-        UserBalanceResult result = userAccountService.depositBalance(depositRequest, session);
-        return new Respond<>(requestId, true, "Balance deposited successfully", ResultMapper.toUserBalanceResponse(result));
-    }
-
-    private Respond<Void> handlePlaceBid (String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        PlaceBidRequest placeBidRequest = JsonUtils.fromJson(payload, PlaceBidRequest.class);
-        if (placeBidRequest == null) {
-            return new Respond<>(requestId, false, "Invalid place bid request", null);
-        }
-        bidService.placeBid(placeBidRequest, session);
-        return new Respond<>(requestId, true, "Placed bid successfully", null);
-    }
-
-    private Respond<Void> handleBuyNow(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        BuyNowRequest buyNowRequest = JsonUtils.fromJson(payload, BuyNowRequest.class);
-        if (buyNowRequest == null) {
-            return new Respond<>(requestId, false, "Invalid buy now request", null);
-        }
-        bidService.buyNow(buyNowRequest, session);
-        return new Respond<>(requestId, true, "Buy now completed successfully", null);
-    }
-    
 }

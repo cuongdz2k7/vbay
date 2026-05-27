@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import java.lang.String?>
+<?import javafx.collections.FXCollections?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fitToWidth="true"
+            hbarPolicy="NEVER"
+            styleClass="my-bid-scroll"
+            fx:controller="com.vbay.ui.scene_ui.controller.bid.MyBidController">
+    <content>
+        <VBox spacing="20" styleClass="my-bid-page" alignment="TOP_CENTER">
+            <padding>
+                <Insets top="34" right="34" bottom="40" left="34"/>
+            </padding>
+
+            <HBox alignment="CENTER_LEFT" styleClass="my-bid-heading-row" maxWidth="980">
+                <VBox spacing="4">
+                    <Label text="Personal Bid" styleClass="my-bid-title"/>
+                    <Label text="Real-time overview of your active and historical commitments." styleClass="my-bid-subtitle"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <ComboBox fx:id="statusFilterComboBox" prefWidth="190" value="All Statuses" styleClass="my-bid-filter-combo">
+                    <items>
+                        <FXCollections fx:factory="observableArrayList">
+                            <String fx:value="All Statuses"/>
+                            <String fx:value="Winning"/>
+                            <String fx:value="Outbid"/>
+                            <String fx:value="Won"/>
+                            <String fx:value="Lost"/>
+                            <String fx:value="Canceled"/>
+                        </FXCollections>
+                    </items>
+                </ComboBox>
+            </HBox>
+
+            <VBox styleClass="my-bid-table" maxWidth="980">
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="my-bid-table-header">
+                    <Region styleClass="my-bid-row-accent-ended"/>
+                    <Label text="AUCTION TITLE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-product"/>
+                    <Label text="CURRENT PRICE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>
+                    <Label text="YOUR MAX BID" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-price"/>
+                    <Label text="BID PLACED" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-bid-time"/>
+                    <Label text="TIME LEFT" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-time"/>
+                    <Label text="SOURCE" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-source"/>
+                    <Label text="STATUS" maxWidth="Infinity" HBox.hgrow="ALWAYS" styleClass="my-bid-col-status"/>
+                </HBox>
+                <VBox fx:id="rowsBox" styleClass="my-bid-rows"/>
+            </VBox>
+
+            <Label fx:id="emptyStateLabel" text="No bids found." managed="false" visible="false" styleClass="my-bid-empty"/>
+        </VBox>
+    </content>
+</ScrollPane>

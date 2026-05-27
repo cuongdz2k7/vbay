@@ -12,12 +12,19 @@ import java.util.Optional;
 import com.vbay.server.mapper.rowmapper.ProductImageRowMapper;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.repository.ProductImageRepository;
+import com.vbay.server.upload.ImageStorageService;
 
 public class JdbcProductImageRepository implements ProductImageRepository {
     private final Connection connection;
+    private final ImageStorageService imageStorageService;
 
     public JdbcProductImageRepository(Connection connection) {
+        this(connection, new ImageStorageService());
+    }
+
+    public JdbcProductImageRepository(Connection connection, ImageStorageService imageStorageService) {
         this.connection = connection;
+        this.imageStorageService = imageStorageService;
     }
 
     @Override
@@ -65,6 +72,27 @@ public class JdbcProductImageRepository implements ProductImageRepository {
         }
 
         return images;
+    }
+
+    @Override
+    public Optional<String> findThumbnailUrlByProductId(long productId) throws SQLException {
+        String sql = """
+            SELECT image_url
+            FROM product_images
+            WHERE product_id = ?
+            ORDER BY is_thumbnail DESC, id ASC
+            LIMIT 1
+            """;
+
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setLong(1, productId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return Optional.empty();
+                }
+                return Optional.ofNullable(imageStorageService.toPublicThumbnailUrl(rs.getString("image_url")));
+            }
+        }
     }
 
     @Override

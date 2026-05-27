@@ -21,5 +21,6 @@ public class AuctionListItemUpdatedRealtimeHandler extends AbstractRealtimeHandl
     public void handle(DomainEvent event) {
         AuctionListItemUpdatedDomainEvent itemUpdatedEvent = (AuctionListItemUpdatedDomainEvent) event;
         broadcaster.broadcast(mapper.toAuctionListItemUpdatedEvent(itemUpdatedEvent));
+        
     }
 }

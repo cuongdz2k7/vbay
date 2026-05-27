@@ -1,0 +1,81 @@
+name: Auto Attach Jars to Release
+
+on:
+  release:
+    types: [published] # Tự động kích hoạt khi bạn nhấn nút "Publish release" trên GitHub
+
+permissions:
+  contents: write # Cấp quyền ghi để Action có thể upload file vào Release
+
+jobs:
+  build-and-upload-assets:
+    name: Build & Upload Binaries to Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+
+    steps:
+    # 1. Checkout mã nguồn
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. Thiết lập môi trường Java JDK 25
+    - name: Set up JDK 25
+      uses: actions/setup-java@v4
+      with:
+        java-version: '25'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    # 3. Biên dịch và đóng gói ứng dụng
+    - name: Build and Package with Maven
+      run: mvn clean package -DskipTests
+
+    # 3.5 Tạo cấu trúc thư mục phát hành phẳng và nén lưu trữ (ZIP/TAR)
+    - name: Package Full Release
+      shell: bash
+      run: |
+        # Tạo thư mục phẳng
+        mkdir -p release
+        mkdir -p release/music
+        mkdir -p release/uploads/products/thumbnails
+        mkdir -p release/log
+
+        # Copy các file JAR và đổi tên cho ngắn gọn, dễ chạy
+        if [ -f client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar release/client.jar
+        fi
+        if [ -f server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar release/server.jar
+        fi
+
+        # Copy nhạc nền vào release/music
+        if [ -d "music" ]; then
+          cp -r music/* release/music/
+        fi
+
+        # Tạo file giữ chỗ trong log và uploads
+        echo "placeholder" > release/log/.gitkeep
+        echo "placeholder" > release/uploads/products/.gitkeep
+        echo "placeholder" > release/uploads/products/thumbnails/.gitkeep
+
+        # Nén thư mục theo từng hệ điều hành
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          powershell.exe -Command "Compress-Archive -Path release -DestinationPath vbay-release-windows-latest.zip"
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          zip -r vbay-release-macos-latest.zip release
+        else
+          tar -czf vbay-release-ubuntu-latest.tar.gz release
+        fi
+
+    # 4. Tự động đính kèm file nén của hệ điều hành vào trang Release
+    - name: Upload Executable Packages to Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: vbay-release-${{ matrix.os }}.*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

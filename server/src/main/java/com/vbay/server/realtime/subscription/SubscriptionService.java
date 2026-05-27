@@ -24,11 +24,17 @@ public class SubscriptionService {
     public void subscribe(Room room, ClientSession session, ClientConnection connection) {
         validator.validate(room, session);
         registry.subscribe(room, connection);
+        System.out.println("[RT_SUBSCRIBE] room=" + room.key()
+            + " userId=" + session.getUserId()
+            + " username=" + session.getUsername());
     }
 
     public void unsubscribe(Room room, ClientSession session, ClientConnection connection) {
         validator.validate(room, session);
         registry.unsubscribe(room, connection);
+        System.out.println("[RT_UNSUBSCRIBE] room=" + room.key()
+            + " userId=" + session.getUserId()
+            + " username=" + session.getUsername());
     }
 
     public Respond<Void> handleSubscribeRoom(String requestId, JsonElement payload, ClientSession session, ClientConnection connection) {
@@ -50,6 +56,8 @@ public class SubscriptionService {
     }
 
     public void disconnect(ClientConnection connection) {
+        System.out.println("[RT_DISCONNECT] userId=" + connection.getSession().getUserId()
+            + " username=" + connection.getSession().getUsername());
         registry.unsubscribeAll(connection);
     }
 }

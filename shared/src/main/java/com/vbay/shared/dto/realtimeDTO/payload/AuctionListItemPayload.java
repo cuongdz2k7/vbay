@@ -2,7 +2,6 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 public class AuctionListItemPayload {
     private long auctionId;
@@ -20,11 +19,12 @@ public class AuctionListItemPayload {
     private BigDecimal buyNowPrice;
     private Long winnerUserId;
     private Boolean reserveMet;
+    private boolean antiSnipeExtended;
     private String thumbnailUrl;
-    private List<String> imageUrls;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
+    private ViewerAuctionBidSummaryPayload viewerBidState;
 
     public AuctionListItemPayload() {
     }
@@ -45,8 +45,8 @@ public class AuctionListItemPayload {
             BigDecimal buyNowPrice,
             Long winnerUserId,
             Boolean reserveMet,
+            boolean antiSnipeExtended,
             String thumbnailUrl,
-            List<String> imageUrls,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
             LocalDateTime updatedAt) {
@@ -65,8 +65,8 @@ public class AuctionListItemPayload {
         this.buyNowPrice = buyNowPrice;
         this.winnerUserId = winnerUserId;
         this.reserveMet = reserveMet;
+        this.antiSnipeExtended = antiSnipeExtended;
         this.thumbnailUrl = thumbnailUrl;
-        this.imageUrls = imageUrls;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
@@ -192,20 +192,20 @@ public class AuctionListItemPayload {
         this.reserveMet = reserveMet;
     }
 
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) {
+        this.antiSnipeExtended = antiSnipeExtended;
+    }
+
     public String getThumbnailUrl() {
         return thumbnailUrl;
     }
 
     public void setThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
-    }
-
-    public List<String> getImageUrls() {
-        return imageUrls;
-    }
-
-    public void setImageUrls(List<String> imageUrls) {
-        this.imageUrls = imageUrls;
     }
 
     public LocalDateTime getStartingTime() {
@@ -230,5 +230,13 @@ public class AuctionListItemPayload {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public ViewerAuctionBidSummaryPayload getViewerBidState() {
+        return viewerBidState;
+    }
+
+    public void setViewerBidState(ViewerAuctionBidSummaryPayload viewerBidState) {
+        this.viewerBidState = viewerBidState;
     }
 }

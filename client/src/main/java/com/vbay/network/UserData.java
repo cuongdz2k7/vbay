@@ -12,6 +12,8 @@ public final class UserData {
     private static Position position;
     private static BigDecimal availableBalance;
     private static BigDecimal holdBalance;
+    private static int warningCount;
+    private static boolean kicked;
 
     private UserData() {
     }
@@ -23,6 +25,7 @@ public final class UserData {
         position = response.getPosition();
         availableBalance = response.getAvailableBalance();
         holdBalance = response.getHoldBalance();
+        warningCount = response.getWarningCount();
     }
 
     public static void setBalances(BigDecimal newAvailableBalance, BigDecimal newHoldBalance) {
@@ -37,6 +40,7 @@ public final class UserData {
         position = null;
         availableBalance = null;
         holdBalance = null;
+        warningCount = 0;
     }
 
     public static Long getUserId() {
@@ -61,5 +65,17 @@ public final class UserData {
 
     public static BigDecimal getHoldBalance() {
         return holdBalance;
+    }
+
+    public static int getWarningCount() {
+        return warningCount;
+    }
+
+    public static boolean isKicked() {
+        return kicked;
+    }
+
+    public static void setKicked(boolean isKicked) {
+        kicked = isKicked;
     }
 }

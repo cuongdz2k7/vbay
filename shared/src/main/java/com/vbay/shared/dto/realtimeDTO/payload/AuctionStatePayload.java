@@ -3,42 +3,51 @@ package com.vbay.shared.dto.realtimeDTO.payload;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public class AuctionStateUpdatedPayload {
+import com.vbay.shared.enums.realtime.AuctionStateChangeReason;
+
+public class AuctionStatePayload {
     private long auctionId;
     private long auctionVersion;
     private String status;
     private BigDecimal currentPrice;
-    private BigDecimal nextMinimumBid;
     private Boolean reserveMet;
-    private Long winningUserId;
+    private boolean antiSnipeExtended;
+    private Long winnerUserId;
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime updatedAt;
+    private LocalDateTime endedAt;
+    private AuctionStateChangeReason stateChangeReason;
 
-    public AuctionStateUpdatedPayload() {
+    public AuctionStatePayload() {
     }
 
-    public AuctionStateUpdatedPayload(
+    public AuctionStatePayload(
             long auctionId,
             long auctionVersion,
             String status,
             BigDecimal currentPrice,
             BigDecimal nextMinimumBid,
             Boolean reserveMet,
-            Long winningUserId,
+            boolean antiSnipeExtended,
+            Long winnerUserId,
             LocalDateTime startingTime,
             LocalDateTime endingTime,
-            LocalDateTime updatedAt) {
+            LocalDateTime updatedAt,
+            LocalDateTime endedAt,
+            AuctionStateChangeReason stateChangeReason) {
         this.auctionId = auctionId;
         this.auctionVersion = auctionVersion;
         this.status = status;
         this.currentPrice = currentPrice;
-        this.nextMinimumBid = nextMinimumBid;
         this.reserveMet = reserveMet;
-        this.winningUserId = winningUserId;
+        this.antiSnipeExtended = antiSnipeExtended;
+        this.winnerUserId = winnerUserId;
         this.startingTime = startingTime;
         this.endingTime = endingTime;
         this.updatedAt = updatedAt;
+        this.endedAt = endedAt;
+        this.stateChangeReason = stateChangeReason;
     }
 
     public long getAuctionId() {
@@ -73,14 +82,6 @@ public class AuctionStateUpdatedPayload {
         this.currentPrice = currentPrice;
     }
 
-    public BigDecimal getNextMinimumBid() {
-        return nextMinimumBid;
-    }
-
-    public void setNextMinimumBid(BigDecimal nextMinimumBid) {
-        this.nextMinimumBid = nextMinimumBid;
-    }
-
     public Boolean getReserveMet() {
         return reserveMet;
     }
@@ -89,12 +90,24 @@ public class AuctionStateUpdatedPayload {
         this.reserveMet = reserveMet;
     }
 
+    public boolean isAntiSnipeExtended() {
+        return antiSnipeExtended;
+    }
+
+    public void setAntiSnipeExtended(boolean antiSnipeExtended) {
+        this.antiSnipeExtended = antiSnipeExtended;
+    }
+
     public Long getWinningUserId() {
-        return winningUserId;
+        return winnerUserId;
+    }
+
+    public Long getWinnerUserId() {
+        return winnerUserId;
     }
 
     public void setWinnerUserId(Long winnerUserId) {
-        this.winningUserId = winnerUserId;
+        this.winnerUserId = winnerUserId;
     }
 
     public LocalDateTime getStartingTime() {
@@ -119,5 +132,21 @@ public class AuctionStateUpdatedPayload {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public LocalDateTime getEndedAt() {
+        return endedAt;
+    }
+
+    public void setEndedAt(LocalDateTime endedAt) {
+        this.endedAt = endedAt;
+    }
+
+    public AuctionStateChangeReason getStateChangeReason() {
+        return stateChangeReason;
+    }
+
+    public void setStateChangeReason(AuctionStateChangeReason stateChangeReason) {
+        this.stateChangeReason = stateChangeReason;
     }
 }

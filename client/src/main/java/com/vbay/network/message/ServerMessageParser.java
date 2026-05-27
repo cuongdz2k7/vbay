@@ -8,13 +8,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.realtimeDTO.Room;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionEndedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
-import com.vbay.shared.dto.realtimeDTO.payload.AuctionStateUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload;
+import com.vbay.shared.dto.realtimeDTO.payload.AutobidUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.BidHistoryItemPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.NotificationPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.WatcherCountPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.UserWarnedPayload;
 import com.vbay.shared.enums.MessageType;
 import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.RealtimeEvent;
@@ -114,13 +117,19 @@ public class ServerMessageParser {
 
     private Map<RealtimeEventType, Class<?>> createDefaultPayloadTypes() {
         Map<RealtimeEventType, Class<?>> types = new EnumMap<>(RealtimeEventType.class);
-        types.put(RealtimeEventType.AUCTION_STATE_UPDATED, AuctionStateUpdatedPayload.class);
+        types.put(RealtimeEventType.AUCTION_STATE_UPDATED, AuctionStatePayload.class);
         types.put(RealtimeEventType.BID_HISTORY_ITEM_ADDED, BidHistoryItemPayload.class);
+        types.put(RealtimeEventType.MY_BID_LIST_ITEM_UPDATED, MyBidListItemPayload.class);
         types.put(RealtimeEventType.NOTIFICATION_CREATED, NotificationPayload.class);
-        types.put(RealtimeEventType.AUCTION_ENDED, AuctionEndedPayload.class);
         types.put(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, AuctionListItemPayload.class);
         types.put(RealtimeEventType.USER_BALANCE_UPDATED, UserBalanceUpdatedPayload.class);
         types.put(RealtimeEventType.WATCHER_COUNT_CHANGED, WatcherCountPayload.class);
+        types.put(RealtimeEventType.DEPOSIT_REQUEST_UPDATED, DepositRequestPayload.class);
+        types.put(RealtimeEventType.ADMIN_DEPOSIT_REQUESTED, DepositRequestPayload.class);
+        types.put(RealtimeEventType.ADMIN_USER_KICKED, Void.class);
+        types.put(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, Void.class);
+        types.put(RealtimeEventType.ADMIN_USER_WARNED, UserWarnedPayload.class);
+        types.put(RealtimeEventType.AUTOBID_UPDATED, AutobidUpdatedPayload.class);
         return types;
     }
 }

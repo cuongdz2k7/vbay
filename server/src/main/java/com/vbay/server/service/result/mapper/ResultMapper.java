@@ -2,20 +2,26 @@ package com.vbay.server.service.result.mapper;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Bid;
 import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.User;
+import com.vbay.server.service.result.AuctionItemResult;
 import com.vbay.server.service.result.AuctionListItemResult;
 import com.vbay.server.service.result.BuyNowResult;
 import com.vbay.server.service.result.CreateAuctionResult;
 import com.vbay.server.service.result.PlaceBidResult;
 import com.vbay.server.service.result.UserBalanceResult;
+import com.vbay.server.service.result.UserMyBidListItemResult;
+import com.vbay.shared.dto.realtimeDTO.payload.AuctionItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.AuctionListItemPayload;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
+import com.vbay.shared.enums.bid.BidStatus;
+import com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload;
 
 public class ResultMapper {
     private ResultMapper() {
@@ -42,25 +48,29 @@ public class ResultMapper {
     public static PlaceBidResult toPlaceBidResult(
             Auction auction,
             Bid currentBid,
-            long auctionVersion,
-            BigDecimal nextMinimumBid,
             Long previousWinningUserId,
-            Long previousWinningBidId) {
+            Long previousWinningBidId,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         return new PlaceBidResult(
             auction.getId(),
-            auctionVersion,
+            auction.getVersion(),
             auction.getSellerId(),
             currentBid.getBidderId(),
             currentBid.getId(),
+            auction.getTitle(),
             currentBid.getBidAmount(),
             currentBid.getBidAmount(),
-            nextMinimumBid,
             reserveMet(auction, currentBid.getBidAmount()),
+            auction.getAntiSnipeExtensionCount() > 0,
+            auction.getStatus().name(),
             previousWinningUserId,
             previousWinningBidId,
             currentBid.getStatus(),
             currentBid.getBidSource(),
-            currentBid.getBidTime()
+            currentBid.getBidTime(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            affectedMyBidItems
         );
     }
 
@@ -78,7 +88,8 @@ public class ResultMapper {
             long auctionVersion,
             Long previousWinningUserId,
             Long previousWinningBidId,
-            LocalDateTime boughtAt) {
+            LocalDateTime boughtAt,
+            List<UserMyBidListItemResult> affectedMyBidItems) {
         return new BuyNowResult(
             auction.getId(),
             auctionVersion,
@@ -87,15 +98,20 @@ public class ResultMapper {
             currentBid.getId(),
             payment.getId(),
             currentBid.getBidAmount(),
+            auction.getStatus(),
+            reserveMet(auction, auction.getCurrentPrice()),
+            auction.getAntiSnipeExtensionCount() > 0,
             previousWinningUserId,
             previousWinningBidId,
-            boughtAt
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            boughtAt,
+            affectedMyBidItems
         );
     }
-
+    ///userbalance result chỉ có lưu holdbalance và available balance (mới) sau khi đã apply
     public static UserBalanceResult toUserBalanceResult(
             User user,
-            BigDecimal changedAmount,
             String reason,
             LocalDateTime updatedAt) {
         return new UserBalanceResult(
@@ -103,7 +119,6 @@ public class ResultMapper {
             user.getVersion(),
             user.getAvailableBalance(),
             user.getHoldBalance(),
-            changedAmount,
             reason,
             updatedAt
         );
@@ -124,7 +139,6 @@ public class ResultMapper {
             result.getUserVersion(),
             result.getAvailableBalance(),
             result.getHoldBalance(),
-            result.getChangedAmount(),
             result.getReason(),
             result.getUpdatedAt()
         );
@@ -147,6 +161,32 @@ public class ResultMapper {
             result.getBuyNowPrice(),
             result.getWinnerUserId(),
             result.getReserveMet(),
+            result.isAntiSnipeExtended(),
+            result.getThumbnailUrl(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
+        );
+    }
+
+    public static AuctionItemPayload toAuctionItemPayload(AuctionItemResult result) {
+        return new AuctionItemPayload(
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getProductId(),
+            result.getSellerId(),
+            result.getTitle(),
+            result.getDescription(),
+            result.getProductName(),
+            result.getCategoryId(),
+            result.getStatus(),
+            result.getStartingPrice(),
+            result.getCurrentPrice(),
+            result.getMinimumBidStep(),
+            result.getBuyNowPrice(),
+            result.getWinnerUserId(),
+            result.getReserveMet(),
+            result.isAntiSnipeExtended(),
             result.getThumbnailUrl(),
             result.getImageUrls(),
             result.getStartingTime(),
@@ -154,4 +194,74 @@ public class ResultMapper {
             result.getUpdatedAt()
         );
     }
+
+    public static MyBidListItemPayload toMyBidListItemPayload(
+            UserMyBidListItemResult result) {
+        return new MyBidListItemPayload(
+            result.getBidId(),
+            result.getAuctionId(),
+            result.getAuctionVersion(),
+            result.getAuctionTitle(),
+            result.getThumbnailUrl(),
+            result.getCurrentPrice(),
+            result.getAuctionStatus().name(),
+            result.isAntiSnipeExtended(),
+            result.getMyBidAmount(),
+            result.getMyMaxBidAmount(),
+            result.getBidStatus(),
+            result.getBidSource(),
+            result.getBidTime(),
+            result.getStartingTime(),
+            result.getEndingTime(),
+            result.getUpdatedAt()
+        );
+    }
+
+
+    public static UserMyBidListItemResult toUserMyBidListItemResult(
+            Auction auction,
+            String thumbnailUrl,
+            Bid bid,
+            BidStatus bidStatus,
+            LocalDateTime updatedAt
+    ) {
+        return toUserMyBidListItemResult(
+            auction,
+            thumbnailUrl,
+            bid,
+            null,
+            bidStatus,
+            updatedAt
+        );
+    }
+
+    public static UserMyBidListItemResult toUserMyBidListItemResult(
+            Auction auction,
+            String thumbnailUrl,
+            Bid bid,
+            BigDecimal myMaxBidAmount,
+            BidStatus bidStatus,
+            LocalDateTime updatedAt
+    ) {
+        return new UserMyBidListItemResult(
+            bid.getBidderId(),
+            bid.getId(),
+            auction.getId(),
+            auction.getVersion(),
+            auction.getTitle(),
+            thumbnailUrl,
+            auction.getCurrentPrice(),
+            auction.getStatus(),
+            auction.getAntiSnipeExtensionCount() > 0,
+            bid.getBidAmount(),
+            myMaxBidAmount,
+            bidStatus,
+            bid.getBidSource(),
+            bid.getBidTime(),
+            auction.getStartingTime(),
+            auction.getEndingTime(),
+            updatedAt
+        );
+    }
+
 }

@@ -4,13 +4,12 @@ import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-import javax.xml.catalog.CatalogResolver.NotFoundAction;
-
-import com.vbay.network.UserData;
 import com.vbay.network.SocketClient;
+import com.vbay.network.UserData;
 import com.vbay.network.dispatcher.RealtimeEventListener;
 import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
 import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.enums.RequestType;
@@ -18,14 +17,11 @@ import com.vbay.shared.enums.realtime.RealtimeEventType;
 import com.vbay.shared.protocol.Request;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.ui.scene_ui.NotificationManager;
-import com.vbay.ui.scene_ui.NotificationManager.NotificationType;
 import com.vbay.ui.util.MoneyInput;
 
-import atlantafx.base.controls.Notification;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
@@ -36,15 +32,30 @@ public class DepositBalanceController {
     private Label balanceLabel;
     @FXML
     private TextField amountField;
+    @FXML
+    private Label statusLabel;
 
     private Runnable onBack;
     private RealtimeEventListener<UserBalanceUpdatedPayload> balanceListener;
+    private boolean disposed;
 
     @FXML
     private void initialize() {
+        disposed = false;
         MoneyInput.install(amountField);
         updateBalanceDisplay(UserData.getAvailableBalance());
         subscribeBalanceUpdates();
+        if (statusLabel != null) {
+            statusLabel.setText("");
+        }
+    }
+
+    public void updateStatusLabel(String text) {
+        Platform.runLater(() -> {
+            if (statusLabel != null) {
+                statusLabel.setText(text);
+            }
+        });
     }
 
     public void setOnBack(Runnable onBack) {
@@ -53,9 +64,10 @@ public class DepositBalanceController {
 
     @FXML
     private void handleBack(ActionEvent event) {
+        Runnable backAction = onBack;
         dispose();
-        if (onBack != null) {
-            onBack.run();
+        if (backAction != null) {
+            backAction.run();
         }
     }
 
@@ -85,12 +97,10 @@ public class DepositBalanceController {
                 return;
             }
 
-            UserBalanceResponse balanceResponse = JsonUtils.fromJson(JsonUtils.toJson(response.getData()), UserBalanceResponse.class);
-            if (balanceResponse != null) {
-                UserData.setBalances(balanceResponse.getAvailableBalance(), balanceResponse.getHoldBalance());
-                updateBalanceDisplay(balanceResponse.getAvailableBalance());
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit Request Sent", "waiting for the admin to accept");
+            if (statusLabel != null) {
+                statusLabel.setText("waiting for the admin to accept");
             }
-            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit complete", "Deposit request for $" + amount.toPlainString() + " was confirmed.");
             amountField.clear();
         } catch (Exception exception) {
             NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", exception.getMessage());
@@ -98,14 +108,18 @@ public class DepositBalanceController {
     }
 
     public void dispose() {
-        if (balanceListener == null) {
-            return;
+        disposed = true;
+        if (balanceListener != null) {
+            SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
+                RealtimeEventType.USER_BALANCE_UPDATED,
+                balanceListener
+            );
+            balanceListener = null;
         }
-        SocketClient.getClient().getRealtimeEventDispatcher().unsubscribe(
-            RealtimeEventType.USER_BALANCE_UPDATED,
-            balanceListener
-        );
-        balanceListener = null;
+        if (amountField != null) {
+            amountField.clear();
+        }
+        onBack = null;
     }
 
     private void subscribeBalanceUpdates() {
@@ -116,6 +130,9 @@ public class DepositBalanceController {
                 return;
             }
             Platform.runLater(() -> {
+                if (disposed || balanceLabel == null) {
+                    return;
+                }
                 UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
                 updateBalanceDisplay(payload.getAvailableBalance());
             });
@@ -130,5 +147,4 @@ public class DepositBalanceController {
         BigDecimal balance = availableBalance == null ? BigDecimal.ZERO : availableBalance;
         balanceLabel.setText(CURRENCY_FORMAT.format(balance));
     }
-
 }

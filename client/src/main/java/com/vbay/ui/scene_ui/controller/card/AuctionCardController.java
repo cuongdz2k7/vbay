@@ -2,12 +2,11 @@ package com.vbay.ui.scene_ui.controller.card;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-import java.util.function.Consumer;
+import java.util.function.LongConsumer;
 
 import com.vbay.ui.model.Auction;
 import com.vbay.ui.model.Product;
@@ -23,6 +22,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 public class AuctionCardController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -48,15 +49,14 @@ public class AuctionCardController {
     @FXML
     private ProgressBar progressBar;
 
-    private Auction auction;
-    private Product product;
-    private Consumer<Auction> onSelected;
-    private Consumer<Product> onSelectedProduct;
+    private Auction listAuction;
+    private LongConsumer onSelected;
     private Timeline timeUpdater;
 
     @FXML
     private void initialize() {
         cardRoot.setFocusTraversable(true);
+        applyRoundedClip(productImageView, 220, 136, 12);
         cardRoot.sceneProperty().addListener((observable, oldScene, newScene) -> {
             if (newScene == null) {
                 stopTimeUpdater();
@@ -64,39 +64,32 @@ public class AuctionCardController {
         });
     }
 
-    public void setAuction(Auction auction) {
+    public void setAuction(Auction listAuction) {
         stopTimeUpdater();
-        this.auction = auction;
-        Product product = auction.getProduct();
-        titleLabel.setText(auction.getTitle());
-        priceLabel.setText("Current Bid  " + (auction.getWinnerUserId() == null ? "-" : formatCurrency(auction.getCurrentPrice())));
-        startingPriceLabel.setText("Starting Price  " + formatCurrency(auction.getStartingPrice()));
-        bidStepLabel.setText("Step  " + formatCurrency(auction.getMinimumBidStep()));
+        this.listAuction = listAuction;
+        Product product = listAuction.getProduct();
+        titleLabel.setText(listAuction.getTitle());
+        
+        boolean isEnded = isClosedStatus(listAuction.getStatus());
+        if (!isEnded) {
+            LocalDateTime endingTime = listAuction.getEndingTime();
+            if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                isEnded = true;
+            }
+        }
+        String pricePrefix = isEnded ? "Final Price  " : "Current Bid  ";
+        priceLabel.setText(pricePrefix + formatCurrentPrice(listAuction));
+        
+        startingPriceLabel.setText("Start  " + formatCurrency(listAuction.getStartingPrice()));
+        bidStepLabel.setText("Step  " + formatCurrency(listAuction.getMinimumBidStep()));
         ProductImageLoader.loadCover(productImageView, product.getImagePath());
         startTimeUpdater();
     }
 
-    public void setOnSelected(Consumer<Auction> onSelected) {
+    public void setOnSelected(LongConsumer onSelected) {
         this.onSelected = onSelected;
     }
-
-    public void setProduct(Product product) {
-        stopTimeUpdater();
-        this.auction = null;
-        this.product = product;
-        titleLabel.setText(product.getTitle());
-        priceLabel.setText("");
-        startingPriceLabel.setText("");
-        bidStepLabel.setText("");
-        timeLabel.setText("");
-        progressBar.setProgress(0.0);
-        ProductImageLoader.loadCover(productImageView, product.getImagePath());
-    }
-
-    public void setOnSelectedProduct(Consumer<Product> onSelectedProduct) {
-        this.onSelectedProduct = onSelectedProduct;
-    }
-
+    
     @FXML
     private void handleCardClicked(MouseEvent event) {
         notifySelection();
@@ -111,16 +104,21 @@ public class AuctionCardController {
     }
 
     private void notifySelection() {
-        if (auction != null && onSelected != null) {
-            onSelected.accept(auction);
-        } else if (product != null && onSelectedProduct != null) {
-            onSelectedProduct.accept(product);
+        if (listAuction != null && onSelected != null) {
+            onSelected.accept(listAuction.getId());
         }
+    }
+
+    private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
+        Rectangle clip = new Rectangle(width, height);
+        clip.setArcWidth(arc);
+        clip.setArcHeight(arc);
+        imageView.setClip(clip);
     }
 
     private void startTimeUpdater() {
         updateTimeState();
-        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeState()));
+        timeUpdater = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTimeState()));
         timeUpdater.setCycleCount(Timeline.INDEFINITE);
         timeUpdater.play();
     }
@@ -133,15 +131,32 @@ public class AuctionCardController {
     }
 
     private void updateTimeState() {
-        if (auction == null) {
+        if (listAuction == null) {
             return;
         }
-        timeLabel.setText(formatAuctionTime(auction));
-        progressBar.setProgress(calculateProgress(auction.getStartingTime(), auction.getEndingTime()));
+        timeLabel.setText(formatAuctionTime(listAuction));
+        progressBar.setProgress(calculateProgress(listAuction));
+        
+        boolean isEnded = isClosedStatus(listAuction.getStatus());
+        if (!isEnded) {
+            LocalDateTime endingTime = listAuction.getEndingTime();
+            if (endingTime != null && !utcNow().isBefore(endingTime)) {
+                isEnded = true;
+            }
+        }
+        String pricePrefix = isEnded ? "Final Price  " : "Current Bid  ";
+        priceLabel.setText(pricePrefix + formatCurrentPrice(listAuction));
     }
 
     private static String formatCurrency(BigDecimal value) {
         return value == null ? "-" : CURRENCY_FORMAT.format(value);
+    }
+
+    private static String formatCurrentPrice(Auction auction) {
+        BigDecimal currentPrice = auction.getCurrentPrice() == null
+            ? auction.getStartingPrice()
+            : auction.getCurrentPrice();
+        return formatCurrency(currentPrice);
     }
 
     private static String formatAuctionTime(Auction auction) {
@@ -166,8 +181,11 @@ public class AuctionCardController {
             if (startingTime == null) {
                 return "Starts: -";
             }
-            Duration remainingUntilStart = Duration.between(now, startingTime);
-            if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {
+            if (!now.isBefore(startingTime)) {
+                return "Starting...";
+            }
+            java.time.Duration remainingUntilStart = java.time.Duration.between(now, startingTime);
+            if (remainingUntilStart.compareTo(java.time.Duration.ofHours(24)) >= 0) {
                 return "Starts: " + formatVietnamTime(startingTime);
             }
             return "Starts in " + formatRemainingDuration(remainingUntilStart);
@@ -176,14 +194,15 @@ public class AuctionCardController {
             return "-";
         }
 
-        Duration remaining = Duration.between(now, endingTime);
-        if (remaining.compareTo(Duration.ofHours(24)) >= 0) {
-            return "Ends: " + formatVietnamTime(endingTime);
+        java.time.Duration remaining = java.time.Duration.between(now, endingTime);
+        if (remaining.compareTo(java.time.Duration.ofHours(24)) >= 0) {
+            return (auction.isAntiSnipeExtended() ? "Extended: " : "Ends: ") + formatVietnamTime(endingTime);
         }
-        return formatRemainingDuration(remaining) + " Remaining";
+        String prefix = auction.isAntiSnipeExtended() ? "Extended  " : "";
+        return prefix + formatRemainingDuration(remaining) + " Remaining";
     }
 
-    private static String formatRemainingDuration(Duration remaining) {
+    private static String formatRemainingDuration(java.time.Duration remaining) {
         long seconds = remaining.getSeconds();
         long hours = seconds / 3600;
         long minutes = (seconds % 3600) / 60;
@@ -198,19 +217,33 @@ public class AuctionCardController {
             .format(DISPLAY_TIME_FORMATTER);
     }
 
-    private static double calculateProgress(LocalDateTime startingTime, LocalDateTime endingTime) {
-        if (startingTime == null || endingTime == null) {
+    private static double calculateProgress(Auction auction) {
+        if (isClosedStatus(auction.getStatus())) {
             return 0.0;
         }
 
-        long totalMillis = Duration.between(startingTime, endingTime).toMillis();
+        LocalDateTime now = utcNow();
+        LocalDateTime startingTime = auction.getStartingTime();
+        if ("SCHEDULED".equals(auction.getStatus())) {
+            return startingTime != null && now.isBefore(startingTime) ? 1.0 : 0.0;
+        }
+
+        LocalDateTime endingTime = auction.getEndingTime();
+        if (startingTime == null || endingTime == null) {
+            return 0.0;
+        }
+        long totalMillis = java.time.Duration.between(startingTime, endingTime).toMillis();
         if (totalMillis <= 0) {
             return 1.0;
         }
 
-        long remainingMillis = Duration.between(utcNow(), endingTime).toMillis();
+        long remainingMillis = java.time.Duration.between(now, endingTime).toMillis();
         double progress = (double) remainingMillis / totalMillis;
         return Math.max(0.0, Math.min(1.0, progress));
+    }
+
+    private static boolean isClosedStatus(String status) {
+        return "ENDED".equals(status) || "FAILED".equals(status) || "SOLD".equals(status) || "CANCELLED".equals(status);
     }
 
     private static LocalDateTime utcNow() {

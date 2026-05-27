@@ -26,8 +26,8 @@ public final class LoggingUtils {
             }
 
             try {
-                //Create folder : "logs"
-                Path logDirectory = Path.of("logs");
+                //Create folder : "<project-root>/log"
+                Path logDirectory = resolveLogDirectory();
                 Files.createDirectories(logDirectory);
 
                 //Identify :"root Logger"
@@ -49,7 +49,7 @@ public final class LoggingUtils {
                 FileHandler fileHandler = new FileHandler(
                     logDirectory.resolve(applicationName + ".log").toString(),
                     true
-                ); //--> Distribute to client.logs or server.logs
+                );
                 fileHandler.setLevel(Level.ALL); //
                 fileHandler.setFormatter(formatter);
                 rootLogger.addHandler(fileHandler);
@@ -65,6 +65,32 @@ public final class LoggingUtils {
 
     public static Logger getLogger(Class<?> type) {
         return Logger.getLogger(type.getName());
+    }
+
+    private static Path resolveLogDirectory() {
+        String configuredLogDirectory = System.getProperty("vbay.log.dir");
+        if (configuredLogDirectory != null && !configuredLogDirectory.isBlank()) {
+            return Path.of(configuredLogDirectory).toAbsolutePath().normalize();
+        }
+
+        return resolveProjectRoot().resolve("log");
+    }
+
+    private static Path resolveProjectRoot() {
+        Path currentDirectory = Path.of(System.getProperty("user.dir")).toAbsolutePath().normalize();
+        Path directory = currentDirectory;
+
+        while (directory != null) {
+            if (Files.isRegularFile(directory.resolve("pom.xml"))
+                && Files.isDirectory(directory.resolve("shared"))
+                && Files.isDirectory(directory.resolve("server"))
+                && Files.isDirectory(directory.resolve("client"))) {
+                return directory;
+            }
+            directory = directory.getParent();
+        }
+
+        return currentDirectory;
     }
 
     private static final class PlainTextFormatter extends Formatter {

@@ -14,6 +14,8 @@
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.SVGPath?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.shape.Circle?>
 
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
@@ -39,6 +41,7 @@
     </top>
 
     <center>
+        <StackPane styleClass="bid-center-stack">
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED" pannable="true" styleClass="bid-scroll">
             <content>
                 <VBox alignment="TOP_CENTER" fillWidth="true" spacing="22" styleClass="bid-page">
@@ -50,38 +53,38 @@
                         <Button text="BACK HOME" onAction="#handleBack" prefWidth="124" prefHeight="50" styleClass="secondary-top-action"/>
                     </HBox>
 
-                    <HBox spacing="18" alignment="TOP_LEFT" prefWidth="1080" maxWidth="1080" styleClass="detail-grid">
-                        <VBox spacing="12" prefWidth="620" minWidth="620" maxWidth="620" styleClass="gallery-column">
-                            <StackPane prefWidth="620" prefHeight="390" minWidth="620" minHeight="390" maxWidth="620" maxHeight="390" styleClass="hero-frame">
-                                <ImageView fx:id="productImageView" fitWidth="620" fitHeight="390" preserveRatio="false" styleClass="hero-image"/>
+                    <HBox spacing="18" alignment="TOP_LEFT" prefWidth="1000" maxWidth="1000" styleClass="detail-grid">
+                        <VBox spacing="12" prefWidth="560" minWidth="560" maxWidth="560" styleClass="gallery-column">
+                            <StackPane prefWidth="560" prefHeight="352" minWidth="560" minHeight="352" maxWidth="560" maxHeight="352" styleClass="hero-frame">
+                                <ImageView fx:id="productImageView" fitWidth="560" fitHeight="352" preserveRatio="false" styleClass="hero-image"/>
                             </StackPane>
 
                             <HBox spacing="10" styleClass="thumbnail-row">
-                                <VBox fx:id="thumbnailOneFrame" onMouseClicked="#handleThumbnailOneSelected" prefWidth="147" prefHeight="96" minWidth="147" minHeight="96" maxWidth="147" maxHeight="96" styleClass="thumb-frame active-thumb">
-                                    <ImageView fx:id="thumbnailOneImageView" fitWidth="137" fitHeight="86" preserveRatio="false"/>
-                                </VBox>
-                                <VBox fx:id="thumbnailTwoFrame" onMouseClicked="#handleThumbnailTwoSelected" prefWidth="147" prefHeight="96" minWidth="147" minHeight="96" maxWidth="147" maxHeight="96" styleClass="thumb-frame">
-                                    <ImageView fx:id="thumbnailTwoImageView" fitWidth="137" fitHeight="86" preserveRatio="false"/>
-                                </VBox>
-                                <VBox fx:id="thumbnailThreeFrame" onMouseClicked="#handleThumbnailThreeSelected" prefWidth="147" prefHeight="96" minWidth="147" minHeight="96" maxWidth="147" maxHeight="96" styleClass="thumb-frame">
-                                    <ImageView fx:id="thumbnailThreeImageView" fitWidth="137" fitHeight="86" preserveRatio="false"/>
-                                </VBox>
-                                <VBox fx:id="thumbnailFourFrame" onMouseClicked="#handleThumbnailFourSelected" prefWidth="147" prefHeight="96" minWidth="147" minHeight="96" maxWidth="147" maxHeight="96" styleClass="thumb-frame">
-                                    <ImageView fx:id="thumbnailFourImageView" fitWidth="137" fitHeight="86" preserveRatio="false"/>
-                                </VBox>
+                                <StackPane fx:id="thumbnailOneFrame" onMouseClicked="#handleThumbnailOneSelected" prefWidth="132" prefHeight="86" minWidth="132" minHeight="86" maxWidth="132" maxHeight="86" styleClass="thumb-frame active-thumb">
+                                    <ImageView fx:id="thumbnailOneImageView" fitWidth="128" fitHeight="82" preserveRatio="false"/>
+                                </StackPane>
+                                <StackPane fx:id="thumbnailTwoFrame" onMouseClicked="#handleThumbnailTwoSelected" prefWidth="132" prefHeight="86" minWidth="132" minHeight="86" maxWidth="132" maxHeight="86" styleClass="thumb-frame">
+                                    <ImageView fx:id="thumbnailTwoImageView" fitWidth="128" fitHeight="82" preserveRatio="false"/>
+                                </StackPane>
+                                <StackPane fx:id="thumbnailThreeFrame" onMouseClicked="#handleThumbnailThreeSelected" prefWidth="132" prefHeight="86" minWidth="132" minHeight="86" maxWidth="132" maxHeight="86" styleClass="thumb-frame">
+                                    <ImageView fx:id="thumbnailThreeImageView" fitWidth="128" fitHeight="82" preserveRatio="false"/>
+                                </StackPane>
+                                <StackPane fx:id="thumbnailFourFrame" onMouseClicked="#handleThumbnailFourSelected" prefWidth="132" prefHeight="86" minWidth="132" minHeight="86" maxWidth="132" maxHeight="86" styleClass="thumb-frame">
+                                    <ImageView fx:id="thumbnailFourImageView" fitWidth="128" fitHeight="82" preserveRatio="false"/>
+                                </StackPane>
                             </HBox>
                         </VBox>
 
-                        <VBox spacing="15" prefWidth="442" minWidth="442" maxWidth="442" styleClass="auction-panel">
+                        <VBox spacing="14" prefWidth="408" minWidth="408" maxWidth="408" styleClass="auction-panel">
                             <VBox spacing="8">
                                 <Label text="LIVE AUCTION" styleClass="eyebrow-label"/>
-                                <Label fx:id="titleLabel" text="Auction title" wrapText="true" styleClass="auction-title"/>
+                                <Label fx:id="titleLabel" text="Auction title" wrapText="true" maxWidth="Infinity" styleClass="auction-title"/>
                                 <Label fx:id="descriptionLabel" text="Product description" wrapText="true" styleClass="summary-copy"/>
                             </VBox>
 
                             <GridPane hgap="44" vgap="24" styleClass="price-grid">
                                 <VBox spacing="7" GridPane.columnIndex="0" GridPane.rowIndex="0">
-                                    <Label text="CURRENT BID" styleClass="metric-label"/>
+                                    <Label fx:id="currentBidTitleLabel" text="CURRENT BID" styleClass="metric-label"/>
                                     <Label fx:id="currentBidLabel" text="\$0.00" styleClass="metric-value highlight-money"/>
                                 </VBox>
                                 <VBox spacing="7" GridPane.columnIndex="1" GridPane.rowIndex="0">
@@ -108,9 +111,15 @@
                                 <TextField fx:id="bidAmountField" onAction="#handlePlaceBid" promptText="4300" styleClass="bid-input"/>
                             </VBox>
 
-                            <VBox spacing="10">
-                                <Button fx:id="placeBidButton" text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn"/>
-                                <Button fx:id="buyNowButton" text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn"/>
+                            <HBox spacing="12">
+                                <Button fx:id="placeBidButton" text="PLACE BID" onAction="#handlePlaceBid" maxWidth="Infinity" prefHeight="50" styleClass="outline-action-btn" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="buyNowButton" text="BUY NOW" onAction="#handleBuyNow" maxWidth="Infinity" prefHeight="50" styleClass="primary-action-btn" HBox.hgrow="ALWAYS"/>
+                            </HBox>
+
+                            <VBox fx:id="bidInfoPanel" spacing="4" styleClass="bid-info-panel">
+                                <Label fx:id="bidInfoStatusLabel" text="YOU ARE LEADING" styleClass="bid-info-status"/>
+                                <Label fx:id="bidInfoLockedLabel" text="Current commitment: $0.00" styleClass="bid-info-copy"/>
+                                <Label fx:id="bidInfoBuyNowDeltaLabel" text="Buy now requires: +$0.00" styleClass="bid-info-copy"/>
                             </VBox>
 
                             <HBox spacing="10" alignment="CENTER_LEFT" styleClass="time-row">
@@ -122,25 +131,49 @@
                             <ProgressBar fx:id="progressBar" progress="0.0" maxWidth="Infinity" styleClass="auction-progress"/>
 
                             <HBox spacing="12">
-                                <Button text="SET PROXY BID" onAction="#handleProxyBid" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="proxyBidButton" text="SET PROXY BID" onAction="#handleProxyBid" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
                                 <Button text="WATCH ASSET" onAction="#handleWatchAsset" maxWidth="Infinity" styleClass="secondary-action-btn" HBox.hgrow="ALWAYS"/>
                             </HBox>
 
                             <HBox spacing="12" alignment="CENTER_LEFT" styleClass="trust-panel">
                                 <SVGPath content="M10 1L17 4V9C17 13.5 14 17 10 19C6 17 3 13.5 3 9V4Z M7 10L9 12L13 7" styleClass="verified-icon"/>
                                 <VBox spacing="2">
-                                    <Label text="Trusted seller" styleClass="trust-title"/>
-                                    <Label text="99% positive feedback across completed transactions." styleClass="trust-copy"/>
+                                    <Label fx:id="sellerUsernameLabel" text="Trusted seller" styleClass="trust-title"/>
+                                    <Label fx:id="sellerEmailLabel" text="99% positive feedback across completed transactions." styleClass="trust-copy"/>
                                 </VBox>
                             </HBox>
                         </VBox>
                     </HBox>
 
-                    <VBox spacing="18" prefWidth="1080" maxWidth="1080" styleClass="info-section">
+                    <GridPane fx:id="analyticsPanel" hgap="16" vgap="16" styleClass="analytics-panel" visible="false" managed="false" prefWidth="1000" maxWidth="1000">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="66.6" />
+                            <ColumnConstraints percentWidth="33.4" />
+                        </columnConstraints>
+                        
+                        <!-- Left Column: Price Activity Chart (2/3) -->
+                        <VBox GridPane.columnIndex="0" spacing="12" styleClass="panel-card">
+                            <HBox alignment="CENTER_LEFT" spacing="8">
+                                <Label text="Price Activity Chart" styleClass="panel-title"/>
+                                <Circle fx:id="pulseCircle" radius="4" fill="#22C55E" styleClass="pulse-dot"/>
+                            </HBox>
+                            <StackPane fx:id="chartCanvasContainer" prefHeight="220" minHeight="220" styleClass="chart-canvas-container"/>
+                        </VBox>
+                        
+                        <!-- Right Column: Live Bids (1/3) -->
+                        <VBox GridPane.columnIndex="1" spacing="12" styleClass="panel-card">
+                            <Label text="Live Bids" styleClass="panel-title"/>
+                            <ScrollPane fx:id="historyScrollPane" fitToWidth="true" vbarPolicy="AS_NEEDED" hbarPolicy="NEVER" prefHeight="220" maxHeight="220" styleClass="history-scroll">
+                                <VBox fx:id="historyListContainer" spacing="8" styleClass="history-list"/>
+                            </ScrollPane>
+                        </VBox>
+                    </GridPane>
+
+                    <VBox spacing="18" prefWidth="1000" maxWidth="1000" styleClass="info-section">
                         <HBox spacing="10" styleClass="tabs-row">
                             <Button fx:id="productInfoTabButton" text="PRODUCT INFORMATION" onAction="#handleProductInformationTab" styleClass="tab-label"/>
                             <Button fx:id="auctionDetailsTabButton" text="AUCTION DETAILS" onAction="#handleAuctionDetailsTab" styleClass="tab-label"/>
-                            <Button fx:id="bidHistoryTabButton" text="BID HISTORY" onAction="#handleBidHistoryTab" styleClass="tab-label"/>
+                            <Button fx:id="bidHistoryTabButton" text="BID HISTORY" onAction="#handleBidHistoryTab" styleClass="tab-label" visible="false" managed="false"/>
                             <Button fx:id="shippingTabButton" text="SHIPPING" onAction="#handleShippingTab" styleClass="tab-label"/>
                         </HBox>
 
@@ -171,7 +204,7 @@
                         </HBox>
                     </VBox>
 
-                    <VBox fx:id="historySection" spacing="14" prefWidth="1080" maxWidth="1080" styleClass="history-section">
+                    <VBox fx:id="historySection" spacing="14" prefWidth="1000" maxWidth="1000" styleClass="history-section">
                         <Label text="Recent bid history" styleClass="section-title"/>
                         <HBox alignment="CENTER_LEFT" styleClass="history-row">
                             <Label fx:id="historyBidderOneLabel" text="Bidder 1" styleClass="history-bidder"/>
@@ -192,5 +225,49 @@
                 </VBox>
             </content>
         </ScrollPane>
+
+        <StackPane fx:id="proxyBidOverlay" visible="false" managed="false" styleClass="modal-backdrop">
+            <VBox spacing="14" prefWidth="440" minWidth="440" maxWidth="440" prefHeight="440" minHeight="440" maxHeight="440" styleClass="proxy-bid-dialog">
+                <HBox alignment="CENTER_LEFT" spacing="14" styleClass="proxy-dialog-header">
+                    <VBox spacing="4" HBox.hgrow="ALWAYS">
+                        <Label fx:id="proxyBidTitleLabel" text="Set Proxy Bid" styleClass="proxy-title"/>
+                        <Label text="Your maximum stays private." styleClass="proxy-subtitle"/>
+                    </VBox>
+                    <StackPane styleClass="proxy-icon-frame">
+                        <SVGPath content="M10 2L18 17H2Z M10 7V11 M10 14V15" styleClass="proxy-alert-icon"/>
+                    </StackPane>
+                </HBox>
+
+                <VBox spacing="8" styleClass="proxy-summary">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label text="Current bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyCurrentBidLabel" text="\$0.00" styleClass="proxy-value"/>
+                    </HBox>
+                    <HBox alignment="CENTER_LEFT">
+                        <Label fx:id="proxyMinimumTextLabel" text="Minimum proxy bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyMinimumLabel" text="\$0.00" styleClass="proxy-value"/>
+                    </HBox>
+                    <HBox fx:id="proxyCurrentMaxRow" alignment="CENTER_LEFT" visible="false" managed="false">
+                        <Label text="Current max bid" styleClass="proxy-copy"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="proxyCurrentMaxLabel" text="\$0.00" styleClass="proxy-value highlight-money"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="8">
+                    <Label text="MAX PROXY BID" styleClass="input-label"/>
+                    <TextField fx:id="proxyBidAmountField" onAction="#handleProxyBidConfirm" promptText="Not lower than \$0.00" styleClass="bid-input proxy-input"/>
+                    <Label fx:id="proxyHintLabel" text="We will bid automatically up to this max." wrapText="true" styleClass="proxy-hint"/>
+                </VBox>
+
+                <HBox spacing="12" alignment="CENTER">
+                    <Button fx:id="proxyConfirmButton" text="SET PROXY BID" onAction="#handleProxyBidConfirm" prefWidth="184" prefHeight="44" styleClass="primary-action-btn"/>
+                    <Button text="Cancel" onAction="#handleProxyBidCancel" prefWidth="118" prefHeight="44" styleClass="secondary-action-btn"/>
+                </HBox>
+            </VBox>
+        </StackPane>
+        </StackPane>
     </center>
 </BorderPane>
