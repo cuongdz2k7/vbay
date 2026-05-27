@@ -237,10 +237,10 @@ Hệ thống được tài liệu hóa vô cùng công phu và đầy đủ tạ
 
 *   **Nhánh nộp bài cuối cùng**: `main`
 *   **Hạn cuối commit nộp bài**: `23:59, ngày 31/05/2026`
-*   **Video demo hệ thống**: [Liên kết video demo (Drive/Youtube)](https://youtube.com/placeholder-vbay-demo) *(Vui lòng chèn link video demo của bạn vào đây trước khi nộp bài)*
+*   **Video demo hệ thống**: [Liên kết video demo (Drive)](https://drive.google.com/file/d/1ui9NWuPbY3npHJlPQPkxt-HQdJoPS5AN/view?usp=sharing)
 
 ### Task Board Tiến Độ
-- [x] Chuẩn hóa README theo checklist nộp bài và cập nhật thông tin thành viên chính xác.
-- [x] Bổ sung cấu hình build executable JAR shading dependencies cho server/client.
-- [ ] Tích hợp và lưu trữ báo cáo PDF tổng hợp trong repo.
-- [x] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
+- [v] Chuẩn hóa README theo checklist nộp bài và cập nhật thông tin thành viên chính xác.
+- [v] Bổ sung cấu hình build executable JAR shading dependencies cho server/client.
+- [v] Tích hợp và lưu trữ báo cáo PDF tổng hợp trong repo.
+- [v] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
