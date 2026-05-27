@@ -105,17 +105,17 @@ mvn clean verify
 
 ## 6. Khởi Chạy Hệ Thống
 
-Đảm bảo dịch vụ MySQL Server của bạn đã khởi động và thông tin cấu hình kết nối trong lớp `DatabaseConfig.java` (`server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java`) đã chính xác (mặc định: DB `vbay` chạy tại Host `localhost`, Port `1638` hoặc `3306`, User `root`, Pass `1234`). Khi chạy Server lần đầu tiên, hệ thống sẽ tự động tạo cơ sở dữ liệu `vbay`, dựng toàn bộ bảng từ schema `data_init.sql` và tạo các chỉ mục cơ sở dữ liệu (Indexes) hỗ trợ tăng tốc truy vấn.
+Đảm bảo dịch vụ MySQL Server của bạn đã khởi động và thông tin cấu hình kết nối trong lớp `DatabaseConfig.java` (`server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java`) đã chính xác (mặc định: DB `vbay` chạy tại Host `localhost`, Port `1638`, User `root`, Pass `1234`). Khi chạy Server lần đầu tiên, hệ thống sẽ tự động tạo cơ sở dữ liệu `vbay`, dựng toàn bộ bảng từ schema `data_init.sql` và tạo các chỉ mục cơ sở dữ liệu (Indexes) hỗ trợ tăng tốc truy vấn.
 
 ### Bước 1: Chạy TCP Socket Server
 Mở một cửa sổ Terminal mới tại thư mục gốc dự án và thực hiện lệnh chạy Server JAR:
 ```bash
 java -jar server/target/server.jar
 ```
-*(Trong quá trình phát triển, bạn có thể chạy nhanh qua Maven: `cd server` -> `mvn exec:java -Dexec.mainClass="com.vbay.server.ServerApplication"`)*
+*(Hoặc chạy nhanh qua Maven: `cd server` -> `mvn exec:java`)*
 
 Khi chạy thành công, màn hình console sẽ báo dòng log:
-`Server listening on port 3618` và `Image HTTP Server started on port 1639`.
+`Server listening on port 3618`.
 
 ### Bước 2: Chạy Client Đấu Giá (JavaFX Application)
 Mở một cửa sổ Terminal tiếp theo tại thư mục gốc dự án và chạy Client:
