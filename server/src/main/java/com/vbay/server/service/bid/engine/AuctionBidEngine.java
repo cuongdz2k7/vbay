@@ -122,6 +122,12 @@ public class AuctionBidEngine {
             "BUY_NOW_PAYMENT"
         ));
 
+        resolution.addBalanceChange(new BalanceChange(
+            auction.getSellerId(),
+            buyNowPrice,
+            BalanceChangeType.DEPOSIT_AVAILABLE,
+            "BUY_NOW_SELLER_RECEIPT"
+        ));
         /*
         * 4. Tạo bid Buy Now.
         *    Bid này sau applier.save sẽ có id.
