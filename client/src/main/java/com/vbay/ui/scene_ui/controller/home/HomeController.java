@@ -883,6 +883,10 @@ public class HomeController {
             if (disposed) {
                 return;
             }
+            MyBidListItemPayload existing = myBidItemsByAuctionId.get(item.getAuctionId());
+            String oldStatus = existing != null ? existing.getAuctionStatus() : null;
+            String newStatus = item.getAuctionStatus();
+
             if (!mergeMyBidItem(item)) {
                 return;
             }
@@ -891,6 +895,29 @@ public class HomeController {
             }
             if (VIEW_HOME.equals(activeView) && isHomeShellVisible()) {
                 renderMyBidPreview();
+            }
+
+            boolean isViewingAuction = activeBidController != null && activeBidController.getCurrentAuctionId() == item.getAuctionId();
+            if (!isViewingAuction && oldStatus != null && !oldStatus.equals(newStatus)) {
+                if ("STOPPED".equals(newStatus)) {
+                    NotificationManager.show(
+                        NotificationManager.NotificationType.WARNING,
+                        "Auction Suspended",
+                        "The auction \"" + item.getAuctionTitle() + "\" you bid on has been suspended by the administrator."
+                    );
+                } else if ("CANCELLED".equals(newStatus)) {
+                    NotificationManager.show(
+                        NotificationManager.NotificationType.ERROR,
+                        "Auction Cancelled",
+                        "The auction \"" + item.getAuctionTitle() + "\" you bid on has been cancelled by the administrator."
+                    );
+                } else if ("ACTIVE".equals(newStatus) && "STOPPED".equals(oldStatus)) {
+                    NotificationManager.show(
+                        NotificationManager.NotificationType.SUCCESS,
+                        "Auction Resumed",
+                        "The auction \"" + item.getAuctionTitle() + "\" you bid on has been resumed by the administrator."
+                    );
+                }
             }
         });
     }

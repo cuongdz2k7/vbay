@@ -198,6 +198,7 @@ public class AdminService {
             auctionRepository.updateStatus(request.getAuctionId(), AuctionStatus.STOPPED);
             logAdminAction(connection, session.getUserId(), null, request.getAuctionId(), "STOP_AUCTION", request.getReason());
             broadcastEvent(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, RoomType.AUCTION_LIST, 0L, null);
+            broadcastAuctionStateChange(connection, request.getAuctionId());
         }
     }
 
@@ -208,6 +209,7 @@ public class AdminService {
             auctionRepository.updateStatus(request.getAuctionId(), AuctionStatus.ACTIVE);
             logAdminAction(connection, session.getUserId(), null, request.getAuctionId(), "CONTINUE_AUCTION", request.getReason());
             broadcastEvent(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, RoomType.AUCTION_LIST, 0L, null);
+            broadcastAuctionStateChange(connection, request.getAuctionId());
         }
     }
 
@@ -218,6 +220,7 @@ public class AdminService {
             auctionRepository.updateStatus(request.getAuctionId(), AuctionStatus.CANCELLED);
             logAdminAction(connection, session.getUserId(), null, request.getAuctionId(), "DELETE_AUCTION", request.getReason());
             broadcastEvent(RealtimeEventType.AUCTION_LIST_ITEM_UPDATED, RoomType.AUCTION_LIST, 0L, null);
+            broadcastAuctionStateChange(connection, request.getAuctionId());
         }
     }
 
@@ -240,6 +243,78 @@ public class AdminService {
         room.setType(roomType);
         room.setTargetId(targetId);
         realtimeBroadcaster.broadcast(new RealtimeEvent<>(type, room, payload));
+    }
+
+    private void broadcastAuctionStateChange(Connection connection, long auctionId) throws SQLException {
+        AuctionRepository auctionRepository = repositoryFactory.createAuctionRepository(connection);
+        Optional<Auction> auctionOpt = auctionRepository.findById(auctionId);
+        if (auctionOpt.isEmpty()) {
+            return;
+        }
+        Auction auction = auctionOpt.get();
+
+        // 1. Broadcast AUCTION_STATE_UPDATED to room auction:auctionId
+        com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload statePayload = new com.vbay.shared.dto.realtimeDTO.payload.AuctionStatePayload();
+        statePayload.setAuctionId(auction.getId());
+        statePayload.setAuctionVersion(auction.getVersion());
+        statePayload.setStatus(auction.getStatus().name());
+        statePayload.setCurrentPrice(auction.getCurrentPrice());
+        statePayload.setWinnerUserId(auction.getWinnerUserId());
+        statePayload.setStartingTime(auction.getStartingTime());
+        statePayload.setEndingTime(auction.getEndingTime());
+        statePayload.setUpdatedAt(LocalDateTime.now());
+        boolean reserveMet = auction.getReservePrice() == null || (auction.getCurrentPrice() != null && auction.getCurrentPrice().compareTo(auction.getReservePrice()) >= 0);
+        statePayload.setReserveMet(reserveMet);
+        statePayload.setAntiSnipeExtended(auction.getAntiSnipeExtensionCount() > 0);
+
+        broadcastEvent(RealtimeEventType.AUCTION_STATE_UPDATED, RoomType.AUCTION, auction.getId(), statePayload);
+
+        // 2. Broadcast MY_BID_LIST_ITEM_UPDATED to room user:userId of every user who has bid on this auction.
+        com.vbay.server.repository.BidRepository bidRepository = repositoryFactory.createBidRepository(connection);
+        com.vbay.server.repository.ProductImageRepository productImageRepository = repositoryFactory.createProductImageRepository(connection);
+        com.vbay.server.repository.AutobidRepository autobidRepository = repositoryFactory.createAutobidRepository(connection);
+
+        String thumbnailUrl = productImageRepository.findThumbnailUrlByProductId(auction.getProductId()).orElse(null);
+        List<com.vbay.server.model.Bid> latestBids = bidRepository.findLatestBidPerBidderByAuctionId(auction.getId());
+
+        for (com.vbay.server.model.Bid bid : latestBids) {
+            BigDecimal maxBidAmount = null;
+            if (bid.getBidSource() == com.vbay.shared.enums.bid.BidSource.AUTO_BID && bid.getStatus() == com.vbay.shared.enums.bid.BidStatus.WINNING) {
+                maxBidAmount = autobidRepository.findByAuctionIdAndUserId(bid.getAuctionId(), bid.getBidderId())
+                    .map(com.vbay.server.model.Autobid::getMaxBidAmount)
+                    .orElse(null);
+            }
+
+            com.vbay.server.service.result.UserMyBidListItemResult res = com.vbay.server.service.result.mapper.ResultMapper.toUserMyBidListItemResult(
+                auction,
+                thumbnailUrl,
+                bid,
+                maxBidAmount,
+                bid.getStatus(),
+                LocalDateTime.now()
+            );
+
+            com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload myBidPayload = new com.vbay.shared.dto.realtimeDTO.payload.MyBidListItemPayload(
+                res.getBidId(),
+                res.getAuctionId(),
+                res.getAuctionVersion(),
+                res.getAuctionTitle(),
+                res.getThumbnailUrl(),
+                res.getCurrentPrice(),
+                res.getAuctionStatus().name(),
+                res.isAntiSnipeExtended(),
+                res.getMyBidAmount(),
+                res.getMyMaxBidAmount(),
+                res.getBidStatus(),
+                res.getBidSource(),
+                res.getBidTime(),
+                res.getStartingTime(),
+                res.getEndingTime(),
+                res.getUpdatedAt()
+            );
+
+            broadcastEvent(RealtimeEventType.MY_BID_LIST_ITEM_UPDATED, RoomType.USER, bid.getBidderId(), myBidPayload);
+        }
     }
 
     public Respond<AdminUserListResponse> handleAdminGetAllUsers(String requestId, ClientSession session) throws SQLException {

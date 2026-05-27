@@ -222,6 +222,9 @@ public class BidController implements SceneDataReceiver<Auction> {
     private Button proxyConfirmButton;
 
     @FXML
+    private Label balanceLabel;
+
+    @FXML
     private GridPane analyticsPanel;
     @FXML
     private Circle pulseCircle;
@@ -244,6 +247,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     private RealtimeEventListener<AuctionStatePayload> auctionStateListener;
     private RealtimeEventListener<BidHistoryItemPayload> bidHistoryListener;
     private RealtimeEventListener<AutobidUpdatedPayload> autobidUpdatedListener;
+    private RealtimeEventListener<com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload> userBalanceListener;
     private Long subscribedAuctionId;
     private Long viewerAutobidId;
     private BigDecimal viewerMaxBidAmount;
@@ -279,6 +283,8 @@ public class BidController implements SceneDataReceiver<Auction> {
 
         // Start pulsing status animation
         startPulseAnimation();
+
+        updateBalanceDisplay(UserData.getAvailableBalance());
     }
 
     private void applyRoundedClip(ImageView imageView, double width, double height, double arc) {
@@ -363,6 +369,16 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     public void setOnBack(Runnable onBack) {
         this.onBack = onBack;
+    }
+
+    public long getCurrentAuctionId() {
+        return currentAuction != null ? currentAuction.getId() : -1L;
+    }
+
+    private void updateBalanceDisplay(BigDecimal balance) {
+        if (balanceLabel != null) {
+            balanceLabel.setText("BALANCE: " + (balance != null ? formatCurrency(balance) : "$0.00"));
+        }
     }
 
     public void dispose() {
@@ -741,6 +757,32 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (currentAuction == null || payload.getAuctionVersion() <= currentAuction.getVersion()) {
             return;
         }
+
+        String oldStatus = currentAuction.getStatus();
+        String newStatus = payload.getStatus();
+
+        if (newStatus != null && !newStatus.equals(oldStatus)) {
+            if ("STOPPED".equals(newStatus)) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.WARNING,
+                    "Auction Suspended",
+                    "The auction \"" + currentAuction.getTitle() + "\" has been suspended by the administrator."
+                );
+            } else if ("CANCELLED".equals(newStatus)) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.ERROR,
+                    "Auction Cancelled",
+                    "The auction \"" + currentAuction.getTitle() + "\" has been cancelled by the administrator."
+                );
+            } else if ("ACTIVE".equals(newStatus) && "STOPPED".equals(oldStatus)) {
+                NotificationManager.show(
+                    NotificationManager.NotificationType.SUCCESS,
+                    "Auction Resumed",
+                    "The auction \"" + currentAuction.getTitle() + "\" has been resumed by the administrator."
+                );
+            }
+        }
+
         BigDecimal currentPrice = valueOrZero(payload.getCurrentPrice());
         boolean ended = isAuctionEnded(payload);
         nextMinimumBid = ended
@@ -837,10 +879,20 @@ public class BidController implements SceneDataReceiver<Auction> {
         auctionStateListener = this::handleAuctionStateEvent;
         bidHistoryListener = this::handleBidHistoryEvent;
         autobidUpdatedListener = this::handleAutobidUpdatedEvent;
+        userBalanceListener = event -> {
+            com.vbay.shared.dto.realtimeDTO.payload.UserBalanceUpdatedPayload payload = event.getPayload();
+            Long userId = UserData.getUserId();
+            if (payload != null && userId != null && payload.getUserId() == userId.longValue()) {
+                Platform.runLater(() -> {
+                    updateBalanceDisplay(payload.getAvailableBalance());
+                });
+            }
+        };
 
         dispatcher.subscribe(RealtimeEventType.AUCTION_STATE_UPDATED, auctionStateListener);
         dispatcher.subscribe(RealtimeEventType.BID_HISTORY_ITEM_ADDED, bidHistoryListener);
         dispatcher.subscribe(RealtimeEventType.AUTOBID_UPDATED, autobidUpdatedListener);
+        dispatcher.subscribe(RealtimeEventType.USER_BALANCE_UPDATED, userBalanceListener);
     }
 
 
@@ -885,6 +937,10 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (autobidUpdatedListener != null) {
             dispatcher.unsubscribe(RealtimeEventType.AUTOBID_UPDATED, autobidUpdatedListener);
             autobidUpdatedListener = null;
+        }
+        if (userBalanceListener != null) {
+            dispatcher.unsubscribe(RealtimeEventType.USER_BALANCE_UPDATED, userBalanceListener);
+            userBalanceListener = null;
         }
         unsubscribeAuctionRoom();
     }
