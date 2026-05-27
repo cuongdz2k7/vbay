@@ -50,7 +50,7 @@ classDiagram
 
 ### A. Phân Loại Phòng (`RoomType`)
 1.  **`AUCTION_LIST`**: Phòng toàn cục. Bất kỳ sự thay đổi giá thầu hay trạng thái nào ngoài trang chủ đều được phát vào phòng này để tất cả các Client đang duyệt danh sách cập nhật trực tiếp Card hiển thị.
-2.  **`AUCTION_DETAIL` (Mã phiên)**: Phòng đấu giá chi tiết. Khi người dùng bấm vào xem một sản phẩm, Client gửi yêu cầu `SUBSCRIBE_ROOM` với mã phiên đấu giá. Mọi sự kiện liên quan đến phiên (lượt thầu mới, watcher count, chống bắn tỉa anti-snipe) chỉ được phát tới những người trong phòng này.
+2.  **`AUCTION` (Mã phiên)**: Phòng đấu giá chi tiết. Khi người dùng bấm vào xem một sản phẩm, Client gửi yêu cầu `SUBSCRIBE_ROOM` với mã phiên đấu giá. Mọi sự kiện liên quan đến phiên (lượt thầu mới, watcher count, chống bắn tỉa anti-snipe) chỉ được phát tới những người trong phòng này.
 3.  **`USER` (Mã người dùng)**: Phòng cá nhân. Chỉ phát các thông tin bảo mật, riêng tư như thay đổi số dư ví, phê duyệt nạp tiền, hoặc cảnh cáo từ admin đến đúng Client của người dùng đó.
 
 ### B. Thực Thi `SubscriptionRegistry`
@@ -65,7 +65,7 @@ Phiên đấu giá phải tự động đổi trạng thái từ lên lịch (`S
 *   **Động Cơ Lập Lịch (`ScheduledExecutorService`)**: Sử dụng một Thread Pool cố định gồm **4 luồng nền** để chuyên trách việc lập lịch và đếm ngược thời gian.
 *   **Lập Lịch Chờ (`scheduleStart` & `scheduleEnd`)**:
     *   Khi một phiên đấu giá mới được tạo, hệ thống tính toán khoảng thời gian delay từ hiện tại đến giờ mở/đóng cửa và đưa vào hàng chờ lập lịch.
-    *   Hai bản đồ luồng an toàn (`ConcurrentHashMap`) là `startTasks` và `endTasks` được dùng để lưu vết các `ScheduledFuture<?>` đang đếm ngược. Nếu Seller cập nhật lại thời gian đấu giá hoặc Admin hủy phiên thầu, hệ thống dễ dàng hủy (`cancel`) tiến trình lập lịch cũ để tránh chạy sai giờ.
+    *   Hai bản đồ luồng an toàn (`ConcurrentHashMap`) là `startTasks` và `endTasks` được dùng để lưu vết các `ScheduledFuture<?>` đang đếm ngược. Nếu seller cập nhật lại thời gian đấu giá hoặc Admin hủy phiên thầu, hệ thống dễ dàng hủy (`cancel`) tiến trình lập lịch cũ để tránh chạy sai giờ.
 *   **Cơ Chế Tự Phục Hồi Lỗi (Self-Healing Recovery Engine)**:
     *   Cứ mỗi **30 giây**, một luồng nền định kỳ (`scheduleAtFixedRate`) sẽ quét cơ sở dữ liệu để kiểm tra xem có phiên đấu giá nào bị trôi qua giờ mở/đóng mà chưa được đổi trạng thái hay không (ví dụ: do Server bị mất điện, crash đột ngột dẫn đến mất hàng đếm ngược trong RAM).
     *   Lớp phục hồi (`recoverMissedAuctions`) tự động đồng bộ hóa trạng thái phiên đấu giá về đúng thực tế và lập lịch lại các phiên đang dang dở, giúp hệ thống phục hồi 100% dữ liệu sạch sau sự cố.

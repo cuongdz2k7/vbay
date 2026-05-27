@@ -34,7 +34,7 @@ Trong quá trình khởi chạy hoặc lập trình phát triển hệ thống, 
 ---
 
 ### C. Lỗi không tải được hình ảnh sản phẩm (Image Upload/Write Failure)
-*   **Triệu chứng**: Khi Seller tạo phiên đấu giá và đính kèm ảnh sản phẩm, hệ thống báo lỗi không thể lưu ảnh hoặc Client không hiển thị được ảnh sản phẩm (ảnh trắng).
+*   **Triệu chứng**: Khi người bán (seller) tạo phiên đấu giá và đính kèm ảnh sản phẩm, hệ thống báo lỗi không thể lưu ảnh hoặc Client không hiển thị được ảnh sản phẩm (ảnh trắng).
 *   **Nguyên nhân**: 
     1.  Thư mục lưu trữ hình ảnh tải lên (`uploads/`) ở thư mục gốc dự án chưa được tạo hoặc không có quyền ghi tệp (Write Permissions).
     2.  Máy chủ HTTP tải ảnh (`ImageHttpServer`) khởi chạy thất bại trên cổng `1639`.
