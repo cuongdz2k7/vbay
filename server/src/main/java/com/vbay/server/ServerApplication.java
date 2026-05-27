@@ -28,19 +28,19 @@ public class ServerApplication {
         AuctionTaskScheduler auctionScheduler = appConfig.getAuctionScheduler();
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.info("Server is shutting down. Ensuring all data is saved to database.");
+            System.out.println("[SHUTDOWN] Server is shutting down. Ensuring all data is saved to database.");
 
             try {
                 imageHttpServer.stop();
                 auctionScheduler.shutdown();
 
-                LOGGER.info("Database connections closed successfully.");
-                LOGGER.info("All pending data saved to database.");
+                System.out.println("[SHUTDOWN] Database connections closed successfully.");
+                System.out.println("[SHUTDOWN] All pending data saved to database.");
             } catch (Exception exception) {
-                LOGGER.log(Level.SEVERE, "Error during database shutdown.", exception);
+                System.err.println("[SHUTDOWN] Error during database shutdown: " + exception.getMessage());
             }
 
-            LOGGER.info("Server shutdown complete. All data persisted.");
+            System.out.println("[SHUTDOWN] Server shutdown complete. All data persisted.");
         }));
 
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {

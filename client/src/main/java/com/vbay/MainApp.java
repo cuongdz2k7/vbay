@@ -75,14 +75,14 @@ public class MainApp extends Application {
         LoggingUtils.configure("client");
         //ShutDownHook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.warning("App shutting down. Emergency shutdown detected.");
+            System.out.println("[SHUTDOWN] App shutting down. Emergency shutdown detected.");
             try {
                 SocketClient client = SocketClient.getClient();
                 if (client.isConnected()) {
                     client.disconnect();
                 }
             } catch (Exception exception) {
-                LOGGER.log(Level.WARNING, "Error during emergency shutdown.", exception);
+                System.err.println("[SHUTDOWN] Error during emergency shutdown: " + exception.getMessage());
             }
         }));
         //Start FXApplication-->start()
