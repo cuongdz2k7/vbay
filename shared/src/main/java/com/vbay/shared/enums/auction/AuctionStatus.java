@@ -3,7 +3,7 @@ package com.vbay.shared.enums.auction;
 public enum AuctionStatus {
     SCHEDULED(false),
     ACTIVE(false),
-    STOPPED(false),
+    STOPPED(true),
     ENDED(true),
     FAILED(true),
     CANCELLED(true);

@@ -431,6 +431,36 @@ class AuctionServiceIntegrationTest {
             () -> bidService.placeBid(new PlaceBidRequest(1L, new BigDecimal("120.00")), new ClientSession()));
     }
 
+    @Test
+    void placeBid_whenAuctionStopped_rejectsAndDoesNotHoldBalance() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.STOPPED, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        
+        assertThrows(ValidationException.class,
+            () -> bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder")));
+        
+        assertDecimal("1000.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+    }
+
+    @Test
+    void placeBid_whenSelfOutbidding_replacesOldWinningBidAndAdjustsBalance() throws SQLException {
+        seedUser(SELLER_ID);
+        seedUser(2L, "bidder", UserStatus.ACTIVE, new BigDecimal("1000.00"), BigDecimal.ZERO);
+        long auctionId = seedAuction(AuctionStatus.ACTIVE, new BigDecimal("100.00"), new BigDecimal("10.00"), new BigDecimal("200.00"));
+        
+        // Place first bid ($120)
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("120.00")), sessionFor(2L, "bidder"));
+        assertDecimal("880.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("120.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+        
+        // Place second bid ($150) (self-outbid)
+        bidService.placeBid(new PlaceBidRequest(auctionId, new BigDecimal("150.00")), sessionFor(2L, "bidder"));
+        assertDecimal("850.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
+        assertDecimal("150.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
+    }
+
     private CreateProductRequest validProduct() {
         return new CreateProductRequest(
             "iPhone 15",

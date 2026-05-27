@@ -69,7 +69,6 @@ public class BidResolutionApplier {
                 vì tiền không còn là “đặt cọc có thể release do outbid” nữa. Nó chuyển sang payment HELD.
         */
 
-        Map<Long, String> affectedBalanceReasons = new LinkedHashMap<>();
         for (BalanceChange change : resolution.getBalanceChanges()) {
             if (change.getAmount() == null || change.getAmount().signum() <= 0) {
                 throw new ValidationException("Balance change amount must be positive");
@@ -83,14 +82,10 @@ public class BidResolutionApplier {
                 default -> throw new ValidationException("Unknown balance change type");
             }
 
-            affectedBalanceReasons.put(change.getUserId(), change.getReason());
-        }
-
-        for (Map.Entry<Long, String> entry : affectedBalanceReasons.entrySet()) {
             balanceResults.add(readUserBalanceResult(
                 userRepository,
-                entry.getKey(),
-                entry.getValue(),
+                change.getUserId(),
+                change.getReason(),
                 dbNow
             ));
         }
