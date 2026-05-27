@@ -61,11 +61,11 @@ jobs:
         mkdir -p release/log
 
         # Copy các file JAR và đổi tên cho ngắn gọn, dễ chạy
-        if [ -f client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
-          cp client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar release/client.jar
+        if [ -f client/target/client.jar ]; then
+          cp client/target/client.jar release/client.jar
         fi
-        if [ -f server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
-          cp server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar release/server.jar
+        if [ -f server/target/server.jar ]; then
+          cp server/target/server.jar release/server.jar
         fi
 
         # Copy nhạc nền vào release/music
