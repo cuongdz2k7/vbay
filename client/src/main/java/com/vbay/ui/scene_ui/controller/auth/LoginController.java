@@ -60,8 +60,8 @@ public class LoginController {
         if (UserData.isKicked()) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Login failed",
-                "You have just been kicked, please relaunch the app again"
+                "Login Failed",
+                "You have just been kicked. Please relaunch the app again."
             );
             return;
         }
@@ -70,33 +70,33 @@ public class LoginController {
         String password = passwordField.getText();
 
         if (username.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing username", "Please enter your username.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Username", "Please enter your username.");
             usernameField.requestFocus();
             return;
         }
 
         if (password.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing password", "Please enter your password.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Password", "Please enter your password.");
             passwordField.requestFocus();
             return;
         }
         try {
             loginUser(username, password);
             if (UserData.getWarningCount() > 0) {
-                NotificationManager.show(NotificationManager.NotificationType.WARNING, "Warning", "You have " + UserData.getWarningCount() + " warning(s). 3 warnings will result in a permanent ban.");
+                NotificationManager.show(NotificationManager.NotificationType.WARNING, "Warning", "You have " + UserData.getWarningCount() + " warning(s). Having 3 warnings will result in a permanent ban.");
             } 
             else {
                 if(Position.ADMIN.equals(UserData.getPosition())){
-                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Entering the ADMIN Dashboard");
+                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Entering the admin dashboard.");
                 }
                 else{
-                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to home...");
+                    NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Login Successful", "Welcome back! Redirecting to the home screen...");
                 }
             }
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Login failed",
+                "Login Failed",
                 exception.getMessage()
             );
             return; // Stop switch scene improperly
@@ -152,8 +152,8 @@ public class LoginController {
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Navigation failed",
-                "Could not open the register screen."
+                "Navigation Failed",
+                "Could not open the registration screen."
             );
         }
     }
