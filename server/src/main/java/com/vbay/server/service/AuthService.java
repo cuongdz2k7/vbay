@@ -25,6 +25,7 @@ import com.vbay.shared.dto.authDTO.RegisterRequest;
 import com.vbay.shared.protocol.Respond;
 import com.vbay.shared.enums.auth.Position;
 import com.vbay.shared.enums.auth.UserStatus;
+import java.time.LocalDateTime;
 
 public class AuthService {
     private static final Logger LOGGER = LoggingUtils.getLogger(AuthService.class);
@@ -168,7 +169,7 @@ public class AuthService {
             User user = userOptional.get();
             if (user.isBanned()) {
                 if (user.getUserStatus() == UserStatus.BANNED) {
-                    if (user.getLockUntil() != null && java.time.LocalDateTime.now().isAfter(user.getLockUntil())) {
+                    if (user.getLockUntil() != null && LocalDateTime.now().isAfter(user.getLockUntil())) {
                         userRepository.updateStatus(user.getId(), UserStatus.ACTIVE);
                         userRepository.setLockUntil(user.getId(), null);
                         user.setStatus(UserStatus.ACTIVE);
@@ -176,7 +177,7 @@ public class AuthService {
                     } else {
                         String durationStr = "indefinitely";
                         if (user.getLockUntil() != null) {
-                            durationStr = formatRemainingDuration(java.time.LocalDateTime.now(), user.getLockUntil());
+                            durationStr = formatRemainingDuration(LocalDateTime.now(), user.getLockUntil());
                         }
                         logError("LOGIN_FAILED", "username=" + username + ", reason: user_banned_until_" + user.getLockUntil());
                         throw new AuthenticationException("Log in failed : You have been banned for " + durationStr);
@@ -268,12 +269,12 @@ public class AuthService {
         return new Respond<>(requestId, true, "Register successful", null);
     }
 
-    private String formatRemainingDuration(java.time.LocalDateTime start, java.time.LocalDateTime end) {
+    private String formatRemainingDuration(LocalDateTime start, LocalDateTime end) {
         if (start == null || end == null || start.isAfter(end)) {
             return "0 seconds";
         }
         
-        java.time.LocalDateTime temp = java.time.LocalDateTime.from(start);
+        LocalDateTime temp = LocalDateTime.from(start);
 
         long years = temp.until(end, java.time.temporal.ChronoUnit.YEARS);
         temp = temp.plusYears(years);

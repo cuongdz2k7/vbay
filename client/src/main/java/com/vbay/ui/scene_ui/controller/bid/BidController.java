@@ -70,6 +70,10 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.scene.Scene;
+import javafx.scene.paint.Color;
 
 
 /*
@@ -351,8 +355,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         else {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Navigation failed",
-                "Back action is not configured."
+                "Navigation Failed",
+                "The back action is not configured."
             );
         }
     }
@@ -383,7 +387,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void handlePlaceBid(ActionEvent event) {
         if (currentAuction == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded for bidding.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Auction", "No auction is loaded for bidding.");
             return;
         }
 
@@ -391,7 +395,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         try {
             enteredBid = MoneyInput.parseRequired(bidAmountField, "Bid amount");
         } catch (IllegalArgumentException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Amount", exception.getMessage());
             bidAmountField.requestFocus();
             return;
         }
@@ -411,8 +415,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (enteredBid.compareTo(nextMinimumBid) < 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Bid too low",
-                "Minimum valid bid for this auction is " + formatCurrency(nextMinimumBid) + "."
+                "Bid Too Low",
+                "The minimum valid bid for this auction is " + formatCurrency(nextMinimumBid) + "."
             );
             bidAmountField.requestFocus();
             return;
@@ -434,7 +438,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void handleProxyBid(ActionEvent event) {
         if (!canCurrentUserBid(currentAuction)) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy bid unavailable", proxyUnavailableMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy Bid Unavailable", proxyUnavailableMessage());
             return;
         }
         if (hasActiveWinningAutobid()) {
@@ -452,7 +456,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void handleProxyBidConfirm(ActionEvent event) {
         if (currentAuction == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Auction", "No auction is loaded.");
             return;
         }
 
@@ -460,7 +464,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         try {
             maxBidAmount = MoneyInput.parseRequired(proxyBidAmountField, "Max proxy bid");
         } catch (IllegalArgumentException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Amount", exception.getMessage());
             proxyBidAmountField.requestFocus();
             return;
         }
@@ -480,7 +484,7 @@ public class BidController implements SceneDataReceiver<Auction> {
     @FXML
     private void handleWatchAsset(ActionEvent event) {
         if (currentAuction == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "No auction", "No active auction to watch.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "No Auction", "There is no active auction to watch.");
             return;
         }
 
@@ -1372,7 +1376,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (buyNowPrice != null && nextMinimumBid.compareTo(buyNowPrice) >= 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Proxy bid unavailable",
+                "Proxy Bid Unavailable",
                 "The next valid proxy bid has reached the Buy Now price."
             );
             return;
@@ -1420,7 +1424,7 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private boolean validateProxyBidAmount(BigDecimal maxBidAmount) {
         if (maxBidAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid amount", "Max proxy bid must be greater than zero.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Amount", "The maximum proxy bid must be greater than zero.");
             return false;
         }
 
@@ -1428,8 +1432,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (buyNowPrice != null && maxBidAmount.compareTo(buyNowPrice) >= 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Proxy bid too high",
-                "Max proxy bid must be lower than the Buy Now price " + formatCurrency(buyNowPrice) + "."
+                "Proxy Bid Too High",
+                "The maximum proxy bid must be lower than the Buy Now price " + formatCurrency(buyNowPrice) + "."
             );
             return false;
         }
@@ -1444,8 +1448,8 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (maxBidAmount.compareTo(nextMinimumBid) < 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Proxy bid too low",
-                "Minimum proxy bid for this auction is " + formatCurrency(nextMinimumBid) + "."
+                "Proxy Bid Too Low",
+                "The minimum proxy bid for this auction is " + formatCurrency(nextMinimumBid) + "."
             );
             return false;
         }
@@ -1458,14 +1462,14 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private boolean validateIncreaseProxyBidAmount(BigDecimal maxBidAmount) {
         if (viewerMaxBidAmount == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy bid unavailable", "No active proxy bid was found.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Proxy Bid Unavailable", "No active proxy bid was found.");
             return false;
         }
         if (maxBidAmount.compareTo(viewerMaxBidAmount) <= 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Proxy bid too low",
-                "New max proxy bid must be higher than " + formatCurrency(viewerMaxBidAmount) + "."
+                "Proxy Bid Too Low",
+                "The new maximum proxy bid must be higher than " + formatCurrency(viewerMaxBidAmount) + "."
             );
             return false;
         }
@@ -1473,7 +1477,7 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (requiredDelta.compareTo(availableBalance()) > 0) {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING,
-                "Insufficient balance",
+                "Insufficient Balance",
                 "Increasing this proxy bid requires " + formatCurrency(requiredDelta)
                     + ", but your available balance is " + formatCurrency(availableBalance()) + "."
             );
@@ -1507,15 +1511,15 @@ public class BidController implements SceneDataReceiver<Auction> {
             if (response == null || !response.isStatus()) {
                 NotificationManager.show(
                     NotificationManager.NotificationType.ERROR,
-                    "Proxy bid failed",
-                    response != null ? response.getMessage() : "No response from server."
+                    "Proxy Bid Failed",
+                    response != null ? response.getMessage() : "No response from the server."
                 );
                 return;
             }
             closeProxyBidModal();
             NotificationManager.show(NotificationManager.NotificationType.SUCCESS, successTitle, successMessage);
         } catch (IOException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Proxy bid failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Proxy Bid Failed", exception.getMessage());
         }
     }
 
@@ -1543,12 +1547,33 @@ public class BidController implements SceneDataReceiver<Auction> {
 
     private boolean confirmBuyNowFromBid(BigDecimal buyNowPrice) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("VBay");
-        alert.setHeaderText("Bid reaches Buy Now price");
-        alert.setContentText("Your bid is at least the Buy Now price (" + formatCurrency(buyNowPrice) + "). Do you want to buy the product now?");
-        alert.getButtonTypes().setAll(ButtonType.YES, ButtonType.NO);
+        alert.setTitle("Confirm Buy Now");
+        alert.setHeaderText(null);
+        alert.setGraphic(null);
+
+        Label title = new Label("Bid Reaches Buy Now Price");
+        title.getStyleClass().add("buy-now-title");
+
+        Label message = new Label(
+            "Your bid is at least the Buy Now price (" + formatCurrency(buyNowPrice) + "). Do you want to buy the product now? This will complete the auction immediately."
+        );
+        message.setWrapText(true);
+        message.setMaxWidth(420);
+        message.getStyleClass().add("buy-now-copy");
+
+        Label price = new Label("Buy now price: " + formatCurrency(buyNowPrice));
+        price.getStyleClass().add("buy-now-price");
+
+        VBox content = new VBox(10, title, message, price);
+        content.getStyleClass().add("buy-now-content");
+
+        ButtonType yesButtonType = new ButtonType("Yes", ButtonBar.ButtonData.YES);
+        alert.getButtonTypes().setAll(yesButtonType, ButtonType.NO);
+        alert.getDialogPane().setContent(content);
+        styleBuyNowDialog(alert);
+        
         Optional<ButtonType> result = alert.showAndWait();
-        return result.isPresent() && result.get() == ButtonType.YES;
+        return result.isPresent() && result.get() == yesButtonType;
     }
 
     private void sendPlaceBid(BigDecimal bidAmount) {
@@ -1557,23 +1582,23 @@ public class BidController implements SceneDataReceiver<Auction> {
                 new Request<>(RequestType.PLACE_BID, new PlaceBidRequest(currentAuction.getId(), bidAmount))
             );
             if (response == null || !response.isStatus()) {
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid Failed", response != null ? response.getMessage() : "No response from the server.");
                 return;
             }
-            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Bid placed", "Your bid was placed successfully.");
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Bid Placed", "Your bid was placed successfully.");
         } catch (IOException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Bid Failed", exception.getMessage());
         }
     }
 
     private void performBuyNow(boolean requireConfirmation) {
         if (currentAuction == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing auction", "No auction is loaded.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Auction", "No auction is loaded.");
             return;
         }
         BigDecimal buyNowPrice = currentAuction.getBuyNowPrice();
         if (buyNowPrice == null) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Buy Now unavailable", "This auction does not have a Buy Now price.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Buy Now Unavailable", "This auction does not have a Buy Now price.");
             return;
         }
         if (buyNowPrice.compareTo(buyingPowerForCurrentAuction()) > 0) {
@@ -1589,12 +1614,12 @@ public class BidController implements SceneDataReceiver<Auction> {
                 new Request<>(RequestType.BUY_NOW, new BuyNowRequest(currentAuction.getId()))
             );
             if (response == null || !response.isStatus()) {
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now Failed", response != null ? response.getMessage() : "No response from the server.");
                 return;
             }
-            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Buy Now complete", "You bought " + currentAuction.getTitle() + ".");
+            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Buy Now Complete", "You bought \"" + currentAuction.getTitle() + "\" successfully.");
         } catch (IOException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Buy Now Failed", exception.getMessage());
         }
     }
 
@@ -1639,13 +1664,38 @@ public class BidController implements SceneDataReceiver<Auction> {
         if (stylesheet != null) {
             dialogPane.getStylesheets().add(stylesheet.toExternalForm());
         }
+
+        // Set stage style to TRANSPARENT to hide default Windows title bar
+        alert.initStyle(StageStyle.TRANSPARENT);
+
+        // Configure Scene and Window once the dialog starts showing
+        alert.setOnShowing(event -> {
+            Scene scene = dialogPane.getScene();
+            if (scene != null) {
+                scene.setFill(Color.TRANSPARENT);
+                Stage stage = (Stage) scene.getWindow();
+                if (stage != null) {
+                    // Mouse drag handlers so users can move the frameless window naturally
+                    final double[] xOffset = new double[1];
+                    final double[] yOffset = new double[1];
+                    dialogPane.setOnMousePressed(me -> {
+                        xOffset[0] = me.getSceneX();
+                        yOffset[0] = me.getSceneY();
+                    });
+                    dialogPane.setOnMouseDragged(me -> {
+                        stage.setX(me.getScreenX() - xOffset[0]);
+                        stage.setY(me.getScreenY() - yOffset[0]);
+                    });
+                }
+            }
+        });
     }
 
     private void showInsufficientBalance(BigDecimal amount) {
         NotificationManager.show(
             NotificationManager.NotificationType.WARNING,
-            "Insufficient balance",
-            "Buying power for this auction is " + formatCurrency(buyingPowerForCurrentAuction())
+            "Insufficient Balance",
+            "The buying power for this auction is " + formatCurrency(buyingPowerForCurrentAuction())
                 + ", but this action requires " + formatCurrency(amount) + "."
         );
     }

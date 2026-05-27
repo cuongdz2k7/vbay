@@ -118,7 +118,7 @@ public class AuctionBidEngine {
         resolution.addBalanceChange(new BalanceChange(
             buyerId,
             buyNowPrice,
-            BalanceChangeType.DECREASE_AVAILABLE,///DEcREASE_AVAILABLE vì tiền sẽ chuyển sang payment HELD, không còn là “đặt cọc có thể release do outbid” nữa.
+            BalanceChangeType.DECREASE_AVAILABLE,///DECREASE_AVAILABLE vì tiền sẽ chuyển sang payment HELD, không còn là “đặt cọc có thể release do outbid” nữa.
             "BUY_NOW_PAYMENT"
         ));
 
