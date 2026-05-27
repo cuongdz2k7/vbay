@@ -99,4 +99,4 @@ Di chuyển vào thư mục `client/target` và chạy tệp JAR ứng dụng:
 java -jar client-1.0-SNAPSHOT-jar-with-dependencies.jar
 ```
 
-Bạn có thể khởi chạy nhiều terminal để mở **nhiều Client song song**, giúp demo các kịch bản đấu giá realtime giữa các tài khoản khác nhau (ví dụ: Seller tạo phòng đấu giá, Bidder 1 đặt giá thầu, Bidder 2 đặt giá thầu cạnh tranh hoặc cài đặt Auto-bid).
+Bạn có thể khởi chạy nhiều terminal để mở **nhiều Client song song**, giúp demo các kịch bản đấu giá realtime giữa các tài khoản khác nhau (ví dụ: một tài khoản tạo phiên đấu giá làm seller, các tài khoản khác tham gia đặt giá thầu làm bidder cạnh tranh hoặc cài đặt Auto-bid).

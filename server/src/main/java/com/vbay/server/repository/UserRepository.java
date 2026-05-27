@@ -28,6 +28,5 @@ public interface UserRepository {
     void resetWarningCount(long userId) throws SQLException;
     void deleteById(long userId) throws SQLException;
     Optional<String> findLatestBanReason(long userId) throws SQLException;
-    void softDeleteUser(long userId) throws SQLException;
     boolean existsBannedUserByUsername(String username) throws SQLException;
 }

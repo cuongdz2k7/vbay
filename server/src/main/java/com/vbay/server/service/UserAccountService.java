@@ -10,7 +10,6 @@ import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.User;
 import com.vbay.server.network_connection.ClientSession;
-import com.vbay.server.realtime.domain.UserBalanceUpdatedDomainEvent;
 import com.vbay.server.realtime.publisher.DomainEventPublisher;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
@@ -21,25 +20,34 @@ import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.dto.userDTO.DepositBalanceRequest;
 import com.vbay.shared.dto.userDTO.UserBalanceResponse;
 import com.vbay.shared.protocol.Respond;
-
+import com.vbay.server.realtime.transport.RealtimeBroadcaster;
+import com.vbay.shared.enums.realtime.RealtimeEventType;
+import com.vbay.server.model.DepositRequestRow ;
+import com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload;
+import com.vbay.server.repository.DepositRequestRepository;
+import com.vbay.shared.dto.realtimeDTO.Room;
+import com.vbay.shared.enums.realtime.RoomType;
+import com.vbay.shared.protocol.*;
 public class UserAccountService {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final DomainEventPublisher domainEventPublisher;
-    private final com.vbay.server.realtime.transport.RealtimeBroadcaster realtimeBroadcaster;
-
+    private final RealtimeBroadcaster realtimeBroadcaster;
     public UserAccountService(
-            ConnectionProvider connectionProvider,
-            RepositoryFactory repositoryFactory,
-            DomainEventPublisher domainEventPublisher) {
-        this(connectionProvider, repositoryFactory, domainEventPublisher, null);
-    }
+        ConnectionProvider connectionProvider,
+        RepositoryFactory repositoryFactory,
+        DomainEventPublisher domainEventPublisher){
+            this(connectionProvider, 
+                repositoryFactory, 
+                domainEventPublisher, 
+                null);
+        }
 
     public UserAccountService(
             ConnectionProvider connectionProvider,
             RepositoryFactory repositoryFactory,
             DomainEventPublisher domainEventPublisher,
-            com.vbay.server.realtime.transport.RealtimeBroadcaster realtimeBroadcaster) {
+            RealtimeBroadcaster realtimeBroadcaster) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.domainEventPublisher = domainEventPublisher;
@@ -56,14 +64,14 @@ public class UserAccountService {
             connection.setAutoCommit(false);
             try {
                 UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-                com.vbay.server.repository.DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
+                DepositRequestRepository depositRepo = repositoryFactory.createDepositRequestRepository(connection);
                 
                 User user = userRepository.findById(session.getUserId()).orElseThrow(
                     () -> new ValidationException("User not found")
                 );
 
                 // Create a PENDING deposit request in DB
-                com.vbay.server.model.DepositRequestRow row = new com.vbay.server.model.DepositRequestRow(
+                DepositRequestRow row = new DepositRequestRow(
                     0L,
                     user.getId(),
                     user.getUserName(),
@@ -78,7 +86,7 @@ public class UserAccountService {
                 connection.commit();
 
                 // Broadcast ADMIN_DEPOSIT_REQUESTED event to the AUCTION_LIST lobby room so admins can receive it
-                com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload adminPayload = new com.vbay.shared.dto.realtimeDTO.payload.DepositRequestPayload(
+                DepositRequestPayload adminPayload = new DepositRequestPayload(
                     row.getId(),
                     row.getUserId(),
                     row.getUsername(),
@@ -87,17 +95,15 @@ public class UserAccountService {
                     "New deposit request from " + row.getUsername()
                 );
                 
-                com.vbay.shared.dto.realtimeDTO.Room adminRoom = new com.vbay.shared.dto.realtimeDTO.Room();
-                adminRoom.setType(com.vbay.shared.enums.realtime.RoomType.AUCTION_LIST);
+                Room adminRoom = new Room();
+                adminRoom.setType(RoomType.AUCTION_LIST);
                 adminRoom.setTargetId(0L);
                 
-                if (realtimeBroadcaster != null) {
-                    realtimeBroadcaster.broadcast(new com.vbay.shared.protocol.RealtimeEvent<>(
-                        com.vbay.shared.enums.realtime.RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
-                        adminRoom,
-                        adminPayload
-                    ));
-                }
+                realtimeBroadcaster.broadcast(new RealtimeEvent<>(
+                    RealtimeEventType.ADMIN_DEPOSIT_REQUESTED,
+                    adminRoom,
+                    adminPayload
+                ));
 
                 // Return current unchanged balance
                 return ResultMapper.toUserBalanceResult(

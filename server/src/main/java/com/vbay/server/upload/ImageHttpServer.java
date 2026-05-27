@@ -44,7 +44,6 @@ public class ImageHttpServer {
         server.createContext(URL_PREFIX, this::handleImageRequest);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
-        LOGGER.info(() -> "Image HTTP server started at http://localhost:" + port + URL_PREFIX);
     }
 
     public void stop() {

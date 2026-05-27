@@ -126,8 +126,23 @@ public class AdminService {
         try (Connection connection = connectionProvider.getConnection()) {
             UserRepository userRepository = repositoryFactory.createUserRepository(connection);
             validateAdminTarget(userRepository, request.getTargetUserId(), session);
-            userRepository.softDeleteUser(request.getTargetUserId());
-            logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "BAN_USER", request.getReason());
+            
+            // Calculate ban duration
+            LocalDateTime lockUntil = LocalDateTime.now();
+            int amount = request.getDuration() != null ? request.getDuration() : 0;
+            String unit = request.getDurationUnit() != null ? request.getDurationUnit().toUpperCase() : "MINUTE";
+            switch (unit) {
+                case "MINUTE" -> lockUntil = lockUntil.plusMinutes(amount);
+                case "HOUR" -> lockUntil = lockUntil.plusHours(amount);
+                case "DAY" -> lockUntil = lockUntil.plusDays(amount);
+                case "YEAR" -> lockUntil = lockUntil.plusYears(amount);
+                default -> throw new ValidationException("Invalid ban duration unit: " + unit);
+            }
+            
+            userRepository.updateStatus(request.getTargetUserId(), UserStatus.BANNED);
+            userRepository.setLockUntil(request.getTargetUserId(), lockUntil);
+            
+            logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "BAN_USER", request.getReason() + " - Duration: " + amount + " " + unit);
             connectionRegistry.disconnectUser(request.getTargetUserId());
             broadcastEvent(RealtimeEventType.ADMIN_USER_KICKED, RoomType.USER, request.getTargetUserId(), null);
             broadcastEvent(RealtimeEventType.ADMIN_USER_STATUS_CHANGED, RoomType.USER, request.getTargetUserId(), null);
@@ -154,7 +169,8 @@ public class AdminService {
             if (userOpt.isPresent()) {
                 User user = userOpt.get();
                 if (user.getWarningCount() >= 2) { // Will reach 3
-                    userRepository.softDeleteUser(request.getTargetUserId());
+                    userRepository.updateStatus(request.getTargetUserId(), UserStatus.BANNED);
+                    userRepository.setLockUntil(request.getTargetUserId(), LocalDateTime.now().plusYears(1));
                     userRepository.incrementWarningCount(request.getTargetUserId());
                     logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "BAN_USER", "Auto-banned due to 3 warnings. Reason: " + request.getReason());
                     connectionRegistry.disconnectUser(request.getTargetUserId());
@@ -172,20 +188,6 @@ public class AdminService {
                     );
                 }
             }
-        }
-    }
-
-    public void lockUser(AdminLockUserRequest request, ClientSession session) throws SQLException {
-        validateAdmin(session);
-        try (Connection connection = connectionProvider.getConnection()) {
-            UserRepository userRepository = repositoryFactory.createUserRepository(connection);
-            validateAdminTarget(userRepository, request.getTargetUserId(), session);
-            userRepository.updateStatus(request.getTargetUserId(), UserStatus.LOCKED);
-            LocalDateTime lockUntil = LocalDateTime.now().plusMinutes(request.getLockDurationMinutes());
-            userRepository.setLockUntil(request.getTargetUserId(), lockUntil);
-            logAdminAction(connection, session.getUserId(), request.getTargetUserId(), null, "LOCK_USER", request.getReason() + " - Duration: " + request.getLockDurationMinutes() + " mins");
-            connectionRegistry.disconnectUser(request.getTargetUserId());
-            broadcastEvent(RealtimeEventType.ADMIN_USER_KICKED, RoomType.USER, request.getTargetUserId(), null);
         }
     }
 
@@ -263,10 +265,7 @@ public class AdminService {
         return new Respond<>(requestId, true, "User warned", null);
     }
 
-    public Respond<Void> handleAdminLockUser(String requestId, JsonElement payload, ClientSession session) throws SQLException {
-        lockUser(JsonUtils.fromJson(payload, AdminLockUserRequest.class), session);
-        return new Respond<>(requestId, true, "User locked", null);
-    }
+
 
     public Respond<Void> handleAdminDeleteAuction(String requestId, JsonElement payload, ClientSession session) throws SQLException {
         deleteAuction(JsonUtils.fromJson(payload, AdminAuctionActionRequest.class), session);

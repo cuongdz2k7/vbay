@@ -9,8 +9,12 @@ permissions:
 
 jobs:
   build-and-upload-assets:
-    name: Build & Upload Binaries to Release
-    runs-on: ubuntu-latest
+    name: Build & Upload Binaries to Release (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
 
     steps:
     # 1. Checkout mã nguồn
@@ -29,12 +33,49 @@ jobs:
     - name: Build and Package with Maven
       run: mvn clean package -DskipTests
 
-    # 4. Tự động đính kèm các file JAR vào trang Release
-    - name: Upload Executable JARs to Release
+    # 3.5 Tạo cấu trúc thư mục phát hành phẳng và nén lưu trữ (ZIP/TAR)
+    - name: Package Full Release
+      shell: bash
+      run: |
+        # Tạo thư mục phẳng
+        mkdir -p release
+        mkdir -p release/music
+        mkdir -p release/uploads/products/thumbnails
+        mkdir -p release/log
+
+        # Copy các file JAR và đổi tên cho ngắn gọn, dễ chạy
+        if [ -f client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar release/client.jar
+        fi
+        if [ -f server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar ]; then
+          cp server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar release/server.jar
+        fi
+
+        # Copy nhạc nền vào release/music
+        if [ -d "music" ]; then
+          cp -r music/* release/music/
+        fi
+
+        # Tạo file giữ chỗ trong log và uploads
+        echo "placeholder" > release/log/.gitkeep
+        echo "placeholder" > release/uploads/products/.gitkeep
+        echo "placeholder" > release/uploads/products/thumbnails/.gitkeep
+
+        # Nén thư mục theo từng hệ điều hành
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          powershell.exe -Command "Compress-Archive -Path release -DestinationPath vbay-release-windows-latest.zip"
+        elif [ "${{ matrix.os }}" = "macos-latest" ]; then
+          zip -r vbay-release-macos-latest.zip release
+        else
+          tar -czf vbay-release-ubuntu-latest.tar.gz release
+        fi
+
+    # 4. Tự động đính kèm file nén của hệ điều hành vào trang Release
+    - name: Upload Executable Packages to Release
       uses: softprops/action-gh-release@v2
       with:
-        files: |
-          server/target/*-jar-with-dependencies.jar
-          client/target/*-jar-with-dependencies.jar
+        files: vbay-release-${{ matrix.os }}.*
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

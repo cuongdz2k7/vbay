@@ -60,6 +60,7 @@
                     <mainClass>com.vbay.MainApp</mainClass>
                     <options>
                         <option>--enable-native-access=javafx.graphics</option>
+                        <option>--enable-native-access=javafx.media</option>
                     </options>
                 </configuration>
             </plugin>
@@ -76,6 +77,8 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.7.1</version>
                 <configuration>
+                    <finalName>client</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>

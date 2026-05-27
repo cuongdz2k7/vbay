@@ -21,14 +21,16 @@ public class DatabaseInitializer {
     }
 
     public static void init() {
+        LOGGER.info("Initializing database...");
         createDatabase();
         createTables();
         createIndexes();
+        LOGGER.info("Database initialized successfully.");
     }
 
     private static void createDatabase() {
         // Chú ý: Ở đây chúng ta dùng DriverManager kết nối với DB_HOST_URL (không có tên DB)'
-        LOGGER.info(() -> "Connecting to " + DatabaseConfig.getDbHostUrl());
+        LOGGER.info("Connecting to Database...");
         try (Connection connection = DriverManager.getConnection(DatabaseConfig.getDbHostUrl(), DatabaseConfig.getUsername(), DatabaseConfig.getPassword());
              Statement statement = connection.createStatement()) {
             
@@ -89,12 +91,9 @@ public class DatabaseInitializer {
             for (String query : indexQueries) {
                 try {
                     statement.execute(query);
-                    LOGGER.info(() -> "Executed: " + query);
                 } catch (SQLException e) {
                     // Mã lỗi 1061: Duplicate key name (Index đã tồn tại)
-                    if (e.getErrorCode() == 1061) {
-                        LOGGER.info("Index already exists, skipping...");
-                    } else {
+                    if (e.getErrorCode() != 1061) {
                         // Các lỗi khác (sai tên cột, sai bảng...) thì vẫn cần in ra
                         LOGGER.log(Level.SEVERE, "Failed to create index: " + e.getMessage(), e);
                     }

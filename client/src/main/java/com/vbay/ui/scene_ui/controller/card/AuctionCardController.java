@@ -2,7 +2,6 @@ package com.vbay.ui.scene_ui.controller.card;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -24,6 +23,7 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 public class AuctionCardController {
     private static final NumberFormat CURRENCY_FORMAT = NumberFormat.getCurrencyInstance(Locale.US);
@@ -118,7 +118,7 @@ public class AuctionCardController {
 
     private void startTimeUpdater() {
         updateTimeState();
-        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeState()));
+        timeUpdater = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTimeState()));
         timeUpdater.setCycleCount(Timeline.INDEFINITE);
         timeUpdater.play();
     }
@@ -184,8 +184,8 @@ public class AuctionCardController {
             if (!now.isBefore(startingTime)) {
                 return "Starting...";
             }
-            Duration remainingUntilStart = Duration.between(now, startingTime);
-            if (remainingUntilStart.compareTo(Duration.ofHours(24)) >= 0) {
+            java.time.Duration remainingUntilStart = java.time.Duration.between(now, startingTime);
+            if (remainingUntilStart.compareTo(java.time.Duration.ofHours(24)) >= 0) {
                 return "Starts: " + formatVietnamTime(startingTime);
             }
             return "Starts in " + formatRemainingDuration(remainingUntilStart);
@@ -194,15 +194,15 @@ public class AuctionCardController {
             return "-";
         }
 
-        Duration remaining = Duration.between(now, endingTime);
-        if (remaining.compareTo(Duration.ofHours(24)) >= 0) {
+        java.time.Duration remaining = java.time.Duration.between(now, endingTime);
+        if (remaining.compareTo(java.time.Duration.ofHours(24)) >= 0) {
             return (auction.isAntiSnipeExtended() ? "Extended: " : "Ends: ") + formatVietnamTime(endingTime);
         }
         String prefix = auction.isAntiSnipeExtended() ? "Extended  " : "";
         return prefix + formatRemainingDuration(remaining) + " Remaining";
     }
 
-    private static String formatRemainingDuration(Duration remaining) {
+    private static String formatRemainingDuration(java.time.Duration remaining) {
         long seconds = remaining.getSeconds();
         long hours = seconds / 3600;
         long minutes = (seconds % 3600) / 60;
@@ -232,12 +232,12 @@ public class AuctionCardController {
         if (startingTime == null || endingTime == null) {
             return 0.0;
         }
-        long totalMillis = Duration.between(startingTime, endingTime).toMillis();
+        long totalMillis = java.time.Duration.between(startingTime, endingTime).toMillis();
         if (totalMillis <= 0) {
             return 1.0;
         }
 
-        long remainingMillis = Duration.between(now, endingTime).toMillis();
+        long remainingMillis = java.time.Duration.between(now, endingTime).toMillis();
         double progress = (double) remainingMillis / totalMillis;
         return Math.max(0.0, Math.min(1.0, progress));
     }

@@ -364,3 +364,43 @@
     -fx-font-weight: 800;
     -fx-text-fill: #ffb5a0;
 }
+
+/* Premium Glassmorphic ComboBox Styling */
+.custom-dialog .combo-box {
+    -fx-background-color: rgba(10, 10, 10, 0.7);
+    -fx-border-color: rgba(255, 181, 160, 0.16);
+    -fx-border-width: 1.2px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 4px 8px;
+    -fx-font-size: 14px;
+}
+
+.custom-dialog .combo-box:focused {
+    -fx-border-color: #ff5f2e;
+    -fx-effect: dropshadow(gaussian, rgba(255, 95, 46, 0.25), 10, 0, 0, 0);
+}
+
+.custom-dialog .combo-box .cell {
+    -fx-text-fill: #ffffff;
+    -fx-background-color: transparent;
+}
+
+.custom-dialog .combo-box .list-view {
+    -fx-background-color: #131111;
+    -fx-border-color: rgba(255, 95, 46, 0.45);
+    -fx-border-width: 1.2px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+}
+
+.custom-dialog .combo-box .list-view .list-cell {
+    -fx-text-fill: #ffb5a0;
+    -fx-background-color: transparent;
+    -fx-padding: 8px 12px;
+}
+
+.custom-dialog .combo-box .list-view .list-cell:hover {
+    -fx-background-color: rgba(255, 95, 46, 0.2);
+    -fx-text-fill: #ffffff;
+}

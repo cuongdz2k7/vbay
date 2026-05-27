@@ -34,7 +34,7 @@ Trong quá trình khởi chạy hoặc lập trình phát triển hệ thống, 
 ---
 
 ### C. Lỗi không tải được hình ảnh sản phẩm (Image Upload/Write Failure)
-*   **Triệu chứng**: Khi Seller tạo phiên đấu giá và đính kèm ảnh sản phẩm, hệ thống báo lỗi không thể lưu ảnh hoặc Client không hiển thị được ảnh sản phẩm (ảnh trắng).
+*   **Triệu chứng**: Khi người bán (seller) tạo phiên đấu giá và đính kèm ảnh sản phẩm, hệ thống báo lỗi không thể lưu ảnh hoặc Client không hiển thị được ảnh sản phẩm (ảnh trắng).
 *   **Nguyên nhân**: 
     1.  Thư mục lưu trữ hình ảnh tải lên (`uploads/`) ở thư mục gốc dự án chưa được tạo hoặc không có quyền ghi tệp (Write Permissions).
     2.  Máy chủ HTTP tải ảnh (`ImageHttpServer`) khởi chạy thất bại trên cổng `1639`.
@@ -63,8 +63,8 @@ Sau khi Maven chạy hoàn tất thông báo `BUILD SUCCESS`, bạn có thể t�
 
 | Module | Tệp tin thực thi (Artifact JAR) | Vai trò vận hành |
 | :--- | :--- | :--- |
-| **Server** | `server/target/server-1.0-SNAPSHOT-jar-with-dependencies.jar` | Chạy máy chủ TCP Socket và MySQL Service |
-| **Client** | `client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar` | Ứng dụng Desktop JavaFX dành cho người dùng |
+| **Server** | `server/target/server.jar` | Chạy máy chủ TCP Socket và MySQL Service |
+| **Client** | `client/target/client.jar` | Ứng dụng Desktop JavaFX dành cho người dùng |
 
 Các tệp tin JAR này đã được "shade" (đóng gói gộp) toàn bộ các thư viện bổ trợ cần thiết (như Gson, Jackson, băm mật khẩu Argon2, MySQL Driver...) nên có thể chạy độc lập trên bất kỳ máy tính nào có cài đặt môi trường chạy Java (JRE) mà không cần cấu hình thêm thư viện mạng.
 
@@ -75,11 +75,11 @@ Các tệp tin JAR này đã được "shade" (đóng gói gộp) toàn bộ cá
 
 #### Chạy Server:
 ```bash
-java -jar server-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar server.jar
 ```
 
 #### Chạy Client:
 ```bash
-java -jar client-1.0-SNAPSHOT-jar-with-dependencies.jar
+java -jar client.jar
 ```
 *(Đảm bảo đã tạo thư mục `uploads` nằm cùng cấp với tệp JAR của Server để lưu trữ hình ảnh đăng tải của người dùng).*

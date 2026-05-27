@@ -2,7 +2,7 @@ package com.vbay.ui.scene_ui.controller.bid;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.time.Duration;
+import javafx.util.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -409,9 +409,9 @@ public class MyBidController {
         if (bidTime == null) {
             return "-";
         }
-        Duration elapsed = Duration.between(bidTime, LocalDateTime.now(UTC_ZONE));
+        java.time.Duration elapsed = java.time.Duration.between(bidTime, LocalDateTime.now(UTC_ZONE));
         if (elapsed.isNegative()) {
-            elapsed = Duration.ZERO;
+            elapsed = java.time.Duration.ZERO;
         }
         long seconds = elapsed.getSeconds();
         if (seconds < 60) {
@@ -442,7 +442,7 @@ public class MyBidController {
         if (endingTime == null) {
             return "-";
         }
-        Duration remaining = Duration.between(LocalDateTime.now(UTC_ZONE), endingTime);
+        java.time.Duration remaining = java.time.Duration.between(LocalDateTime.now(UTC_ZONE), endingTime);
         if (remaining.isNegative() || remaining.isZero()) {
             return "Ended";
         }
@@ -503,7 +503,7 @@ public class MyBidController {
 
     private void startTimeUpdater() {
         updateTimeLabels();
-        timeUpdater = new Timeline(new KeyFrame(javafx.util.Duration.seconds(1), event -> updateTimeLabels()));
+        timeUpdater = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTimeLabels()));
         timeUpdater.setCycleCount(Timeline.INDEFINITE);
         timeUpdater.play();
     }

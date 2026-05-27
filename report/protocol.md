@@ -74,7 +74,7 @@ Có 3 loại gói tin chính được luân chuyển, phân loại dựa trên t
   "eventId": "evt_5cb812a3-f02d",
   "type": "BID_HISTORY_ITEM_ADDED",
   "room": {
-    "type": "AUCTION_DETAIL",
+    "type": "AUCTION",
     "id": "10"
   },
   "payload": {
@@ -92,7 +92,7 @@ Có 3 loại gói tin chính được luân chuyển, phân loại dựa trên t
 *   `messageType`: Luôn là `"EVENT"`.
 *   `eventId`: Định danh duy nhất của sự kiện.
 *   `type`: Loại sự kiện (ví dụ: `AUCTION_STATE_UPDATED`, `BID_HISTORY_ITEM_ADDED`, `USER_BALANCE_UPDATED`).
-*   `room`: Xác định phạm vi đăng ký nhận tin (`RoomType`: `AUCTION_DETAIL`, `USER`, `AUCTION_LIST`).
+*   `room`: Xác định phạm vi đăng ký nhận tin (`RoomType`: `AUCTION`, `USER`, `AUCTION_LIST`).
 *   `payload`: Dữ liệu sự kiện thời gian thực để cập nhật giao diện.
 *   `occurredAt`: Thời điểm sự kiện phát sinh ở Server.
 
@@ -127,13 +127,13 @@ Các yêu cầu được chia thành 5 nhóm chức năng nghiệp vụ chính:
 
 | `RealtimeEventType` | Phạm vi Phòng (`RoomType`) | Dữ liệu phát đi (Payload) | Tác động giao diện Client |
 | :--- | :--- | :--- | :--- |
-| `AUCTION_STATE_UPDATED` | `AUCTION_DETAIL` | `AuctionStatePayload` | Cập nhật giá hiện tại, đếm ngược thời gian, người dẫn đầu và anti-snipe |
-| `BID_HISTORY_ITEM_ADDED`| `AUCTION_DETAIL` | `BidHistoryItemPayload` | Thêm một dòng thầu mới vào bảng lịch sử thầu và vẽ lại biểu đồ giá thầu realtime |
-| `WATCHER_COUNT_CHANGED` | `AUCTION_DETAIL` | `WatcherCountPayload` | Cập nhật nhãn số lượng người đang theo dõi phiên đấu giá trực tuyến |
+| `AUCTION_STATE_UPDATED` | `AUCTION` | `AuctionStatePayload` | Cập nhật giá hiện tại, đếm ngược thời gian, người dẫn đầu và anti-snipe |
+| `BID_HISTORY_ITEM_ADDED`| `AUCTION` | `BidHistoryItemPayload` | Thêm một dòng thầu mới vào bảng lịch sử thầu và vẽ lại biểu đồ giá thầu realtime |
+| `WATCHER_COUNT_CHANGED` | `AUCTION` | `WatcherCountPayload` | Cập nhật nhãn số lượng người đang theo dõi phiên đấu giá trực tuyến |
 | `USER_BALANCE_UPDATED` | `USER` | `UserBalanceUpdatedPayload` | Thay đổi lập tức số tiền khả dụng và tiền bị phong tỏa hiển thị ở góc màn hình |
 | `AUCTION_LIST_ITEM_UPDATED`| `AUCTION_LIST`| `AuctionListItemPayload` | Cập nhật tức thời trạng thái, giá thầu hiện tại của card đấu giá ngoài màn hình chủ |
 | `DEPOSIT_REQUEST_UPDATED`| `USER` | `DepositRequestPayload` | Thông báo trạng thái phê duyệt yêu cầu nạp tiền (Thành công / Từ chối) |
-| `AUTOBID_UPDATED` | `AUCTION_DETAIL` | `AutobidUpdatedPayload` | Cập nhật cấu hình và mức giá tối đa của hệ thống Auto-bid của người chơi |
+| `AUTOBID_UPDATED` | `AUCTION` | `AutobidUpdatedPayload` | Cập nhật cấu hình và mức giá tối đa của hệ thống Auto-bid của người chơi |
 
 ---
 
@@ -150,7 +150,7 @@ Khi một Bidder đặt giá thầu, chuỗi thông điệp truyền tải tuầ
        |                                                      |
        | <----------- [RESPONSE: PLACE_BID] ----------------- |  (2) Trả về kết quả: Thành công
        |                                                      |
-       | <=== BROADCAST EVENT: BID_HISTORY_ITEM_ADDED === [Room: AUCTION_DETAIL] (3) Cập nhật bảng thầu
-       | <=== BROADCAST EVENT: AUCTION_STATE_UPDATED ==== [Room: AUCTION_DETAIL] (4) Cập nhật giá & đếm ngược
+       | <=== BROADCAST EVENT: BID_HISTORY_ITEM_ADDED === [Room: AUCTION] (3) Cập nhật bảng thầu
+       | <=== BROADCAST EVENT: AUCTION_STATE_UPDATED ==== [Room: AUCTION] (4) Cập nhật giá & đếm ngược
        |                                                      |
 ```
