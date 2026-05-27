@@ -1,12 +1,12 @@
 # Hướng Dẫn Sử Dụng Nền Tảng Đấu Giá vBay
 
-Chào mừng bạn đến với hướng dẫn sử dụng chi tiết hệ thống vBay. Nền tảng được tối ưu hóa giao diện đồ họa hiện đại trên JavaFX, cung cấp trải nghiệm mượt mà cho cả 3 đối tượng người dùng: **Người Bán (Seller)**, **Người Mua (Bidder)** và **Quản Trị Viên (Admin)**.
+Chào mừng bạn đến với hướng dẫn sử dụng chi tiết hệ thống vBay. Nền tảng được tối ưu hóa giao diện đồ họa hiện đại trên JavaFX, cung cấp trải nghiệm mượt mà với 2 vai trò tài khoản chính: **Người Dùng (USER)** và **Quản Trị Viên (ADMIN)**, trong đó người dùng thông thường có thể tự do đóng vai trò **Người Bán (seller)** hoặc **Người Đấu Giá (bidder)** tùy theo từng phiên.
 
 ---
 
-## 1. Hướng Dẫn Dành Cho Người Đấu Giá (Bidder Manual)
+## 1. Hướng Dẫn Dành Cho Người Đấu Giá (bidder)
 
-Khi đăng nhập với vai trò mặc định là người dùng thông thường, bạn sẽ có các quyền năng của một Bidder:
+Khi đăng nhập bằng tài khoản người dùng thông thường (`Position.USER`), bạn sẽ có các quyền năng của một bidder trong các phiên đấu giá của người khác:
 
 ### A. Giao diện trang chủ & Tìm kiếm phiên đấu giá
 *   **Danh sách phiên**: Màn hình chính hiển thị danh sách các phiên đấu giá trực quan dưới dạng các thẻ (Card). Mỗi thẻ hiển thị ảnh sản phẩm, tên, tình trạng, giá hiện tại, người dẫn đầu và đồng hồ đếm ngược.
@@ -40,12 +40,12 @@ Khi đăng nhập với vai trò mặc định là người dùng thông thườ
 
 ---
 
-## 2. Hướng Dẫn Dành Cho Người Bán (Seller Manual)
+## 2. Hướng Dẫn Dành Cho Người Bán (seller)
 
 Người bán chịu trách nhiệm quản lý sản phẩm và điều hành các phiên đấu giá của mình:
 
 ### A. Đăng bán sản phẩm mới (Tạo phiên đấu giá)
-1.  Truy cập mục **Tạo phiên đấu giá** (Create Auction) từ thanh thực đơn của Seller.
+1.  Truy cập mục **Tạo phiên đấu giá** (Create Auction) từ thanh thực đơn của ứng dụng (trong tài khoản `USER`).
 2.  Điền các thông tin bắt buộc:
     *   **Tên sản phẩm & Mô tả chi tiết**.
     *   **Danh mục & Tình trạng sản phẩm** (Mới/Cũ).
@@ -64,9 +64,9 @@ Người bán chịu trách nhiệm quản lý sản phẩm và điều hành c�
 
 ---
 
-## 3. Hướng Dẫn Dành Cho Quản Trị Viên (Admin Manual)
+## 3. Hướng Dẫn Dành Cho Quản Trị Viên (ADMIN)
 
-Tài khoản Admin mặc định có quyền kiểm soát toàn bộ hệ thống để đảm bảo tính minh bạch và an toàn tài chính:
+Tài khoản Admin (`Position.ADMIN`) có quyền kiểm soát toàn bộ hệ thống để đảm bảo tính minh bạch và an toàn tài chính:
 
 ### A. Phê duyệt yêu cầu nạp tiền (Approve Deposits)
 1.  Vào bảng điều khiển **Admin Dashboard**, chọn tab **Yêu cầu nạp tiền** (Pending Deposits).

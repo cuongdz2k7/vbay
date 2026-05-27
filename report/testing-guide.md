@@ -52,10 +52,10 @@ mvn test -pl server -Dtest=AntiSnipePolicyTest
 
 ### Kịch Bản 1: Đăng ký, Đăng nhập & Nạp tiền ví điện tử
 1.  Khởi chạy Server và 2 Client JavaFX song song.
-2.  Trên **Client 1**: Chọn **Đăng ký** tài khoản Seller (`seller1`), sau đó tiến hành **Đăng nhập**.
-3.  Trên **Client 2**: Chọn **Đăng ký** tài khoản Bidder (`buyer1`), tiến hành **Đăng nhập**.
+2.  Trên **Client 1**: Chọn **Đăng ký** tài khoản người dùng thông thường (`Position.USER`, ví dụ: `seller1`), sau đó tiến hành **Đăng nhập**.
+3.  Trên **Client 2**: Chọn **Đăng ký** tài khoản người dùng thông thường (`Position.USER`, ví dụ: `buyer1`), tiến hành **Đăng nhập**.
 4.  Trên **Client 2**: Vào mục **Ví tiền** (Wallet), gửi yêu cầu nạp thêm `10,000,000đ` (Deposit Balance).
-5.  Khởi chạy **Client 3** và đăng nhập tài khoản Admin mặc định (`admin`/`1234`).
+5.  Khởi chạy **Client 3** và đăng nhập tài khoản Admin mặc định (`admin`/`admin`).
 6.  Trên giao diện **Admin Dashboard**: Chọn mục **Yêu cầu nạp tiền**, bấm **Phê duyệt** (Approve) yêu cầu của `buyer1`.
 7.  Quan sát màn hình **Client 2 (buyer1)**: Số dư ví khả dụng hiển thị lập tức cập nhật lên `10,000,000đ` theo thời gian thực mà không cần tải lại trang.
 
@@ -74,8 +74,8 @@ mvn test -pl server -Dtest=AntiSnipePolicyTest
 ---
 
 ### Kịch Bản 3: Đấu giá tự động (Auto-bid Proxy Engine)
-1.  Khởi chạy **Client 4**, đăng ký và đăng nhập tài khoản Bidder thứ hai (`buyer2`), nạp tiền ví `5,000,000đ` qua Admin.
-2.  Trên **Client 4 (buyer2)**: Vào cùng phòng đấu giá sản phẩm của `seller1` ở trên.
+1.  Khởi chạy **Client 4**, đăng ký và đăng nhập tài khoản người dùng (`Position.USER`, ví dụ: `buyer2`), nạp tiền ví `5,000,000đ` qua Admin.
+2.  Trên **Client 4 (buyer2)**: Vào cùng phòng đấu giá sản phẩm của `seller1` ở trên (với vai trò bidder).
 3.  Cấu hình chức năng **Auto-Bid**: Điền mức giới hạn tối đa mong muốn là `500,000đ` và bấm **Kích hoạt** (Activate Auto-bid).
 4.  Quan sát tức thì:
     *   Server tự động tính toán đặt giá thay cho `buyer2` mức thầu tiếp theo: `140,000đ` (Giá thầu cao nhất của buyer1 `120,000` + bước giá `20,000`).

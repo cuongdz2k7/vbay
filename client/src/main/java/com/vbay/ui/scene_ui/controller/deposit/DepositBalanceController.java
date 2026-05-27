@@ -77,13 +77,13 @@ public class DepositBalanceController {
         try {
             amount = MoneyInput.parseRequired(amountField, "Deposit amount");
         } catch (IllegalArgumentException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Deposit Amount", exception.getMessage());
             amountField.requestFocus();
             return;
         }
 
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid deposit amount", "Deposit amount must be greater than 0.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Deposit Amount", "The deposit amount must be greater than zero.");
             amountField.requestFocus();
             return;
         }
@@ -93,17 +93,17 @@ public class DepositBalanceController {
                 new Request<>(RequestType.DEPOSIT_BALANCE, new DepositBalanceRequest(amount))
             );
             if (response == null || !response.isStatus()) {
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", response != null ? response.getMessage() : "No response from server.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit Failed", response != null ? response.getMessage() : "No response from the server.");
                 return;
             }
 
-            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit Request Sent", "waiting for the admin to accept");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Deposit Request Sent", "Waiting for the administrator to approve your request.");
             if (statusLabel != null) {
-                statusLabel.setText("waiting for the admin to accept");
+                statusLabel.setText("Waiting for the administrator to approve your request.");
             }
             amountField.clear();
         } catch (Exception exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Deposit Failed", exception.getMessage());
         }
     }
 

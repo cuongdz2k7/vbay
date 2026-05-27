@@ -766,6 +766,39 @@ public class HomeController {
             }
             UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
+            String reason = payload.getReason();
+                if (reason != null) {
+                    switch (reason) {
+                        case "AUCTION_SOLD_RECEIPT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Auction Sold!",
+                                "Congratulations! Your auction has ended successfully. The sale proceeds have been credited to your balance."
+                            );
+                            break;
+                        case "BUY_NOW_SELLER_RECEIPT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Item Sold!",
+                                "A buyer has purchased your item via 'Buy Now'. The payment has been credited to your balance."
+                            );
+                            break;
+                        case "AUCTION_WIN_PAYMENT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Auction Won!",
+                                "Congratulations! You won the auction. The advance payment has been deducted from your balance."
+                            );
+                            break;
+                        case "BUY_NOW_PAYMENT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Purchase Completed!",
+                                "You have successfully purchased the item via 'Buy Now'."
+                            );
+                            break;
+                    }
+                }
         });
     }
 
@@ -782,19 +815,19 @@ public class HomeController {
                 NotificationManager.show(
                     NotificationManager.NotificationType.SUCCESS, 
                     "Deposit Approved", 
-                    "admin has accepted your deposit request"
+                    "The administrator has approved your deposit request."
                 );
                 if (activeDepositController != null) {
-                    activeDepositController.updateStatusLabel("admin has accepted your deposit request");
+                    activeDepositController.updateStatusLabel("The administrator has approved your deposit request.");
                 }
             } else if ("REJECTED".equals(payload.getStatus())) {
                 NotificationManager.show(
                     NotificationManager.NotificationType.ERROR, 
                     "Deposit Rejected", 
-                    "admin has rejected your deposit request"
+                    "The administrator has rejected your deposit request."
                 );
                 if (activeDepositController != null) {
-                    activeDepositController.updateStatusLabel("admin has rejected your deposit request");
+                    activeDepositController.updateStatusLabel("The administrator has rejected your deposit request.");
                 }
             }
         });
@@ -808,7 +841,7 @@ public class HomeController {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR, 
                 "Account Kicked", 
-                "You have been permanently kicked and logged out by the administrator!"
+                "You have been permanently kicked and logged out by the administrator."
             );
             try {
                 disposed = true;
@@ -836,7 +869,7 @@ public class HomeController {
             NotificationManager.show(
                 NotificationManager.NotificationType.WARNING, 
                 "Account Warning", 
-                "You have been warned by the administrator! Reason: " + payload.getReason() + " (Warnings: " + payload.getWarningCount() + "/3)"
+                "You have been warned by the administrator. Reason: " + payload.getReason() + " (Warnings: " + payload.getWarningCount() + "/3)"
             );
         });
     }
@@ -1704,8 +1737,8 @@ public class HomeController {
             exception.printStackTrace();
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Navigation failed",
-                "Could not open the my auction screen."
+                "Navigation Failed",
+                "Could not open your auctions screen."
             );
         }
     }
@@ -1732,11 +1765,11 @@ public class HomeController {
         } catch (Exception exception) {
             exception.printStackTrace();
             NotificationManager.show(
-            NotificationManager.NotificationType.ERROR,
-            "Navigation failed",
-            "Could not open the personal bid screen."
-        );
-    }
+                NotificationManager.NotificationType.ERROR,
+                "Navigation Failed",
+                "Could not open your personal bids screen."
+            );
+        }
     }
 
     private void refreshMyBidItemsAsync() {

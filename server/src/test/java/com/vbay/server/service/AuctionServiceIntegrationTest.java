@@ -421,9 +421,8 @@ class AuctionServiceIntegrationTest {
         assertEquals(AutobidStatus.WON.name(), scalarString("SELECT status FROM autobids WHERE auction_id = " + auctionId));
         assertDecimal("850.00", scalarDecimal("SELECT available_balance FROM users WHERE id = 2"));
         assertDecimal("0.00", scalarDecimal("SELECT hold_balance FROM users WHERE id = 2"));
-        assertEquals(PaymentStatus.HELD.name(), scalarString("SELECT status FROM payments WHERE auction_id = " + auctionId));
-        assertEquals(PaymentType.AUCTION_WIN.name(), scalarString("SELECT type FROM payments WHERE auction_id = " + auctionId));
-        assertDecimal("150.00", scalarDecimal("SELECT amount FROM payments WHERE auction_id = " + auctionId));
+        assertDecimal("150.00", scalarDecimal("SELECT available_balance FROM users WHERE id = " + SELLER_ID));
+        assertEquals(0, countRows(keepAliveConnection, "payments"));
     }
 
     @Test

@@ -146,7 +146,7 @@ public class CreateAuctionController {
     private void handleCancel() {
         try {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
-            NotificationManager.show(NotificationManager.NotificationType.INFO,"Cancelation", "Cancelled auction creation");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Cancellation", "The auction creation was cancelled.");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -172,7 +172,7 @@ public class CreateAuctionController {
         try {
             SceneManager.switchScene("/jfx/scene/Home.fxml");
         } catch (Exception exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation failed", "Could not return to the home scene.");
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Navigation Failed", "Could not return to the home scene.");
         }
     }
 
@@ -189,14 +189,14 @@ public class CreateAuctionController {
 
 
             if (response == null || !response.isStatus()) {
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create auction failed", response.getMessage());
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create Auction Failed", response.getMessage());
                 return;
             }
 
             NotificationManager.show(
                 NotificationManager.NotificationType.INFO,
-                "Auction created",
-                "Auction created successfully."
+                "Auction Created",
+                "The auction was created successfully."
             );
             Runnable auctionCreatedAction = onAuctionCreated;
             dispose();
@@ -204,16 +204,16 @@ public class CreateAuctionController {
                 auctionCreatedAction.run();
             }
         } catch (IllegalArgumentException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid auction data", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Auction Data", exception.getMessage());
         } catch (IOException exception) {
-            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create auction failed", exception.getMessage());
+            NotificationManager.show(NotificationManager.NotificationType.ERROR, "Create Auction Failed", exception.getMessage());
         }
     }
 
     @FXML
     private void handleUploadAsset() {
         if (selectedImageFiles.size() >= MAX_IMAGES) {
-            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image limit reached", "You can select up to 4 images.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image Limit Reached", "You can select up to 4 images.");
             return;
         }
 
@@ -231,7 +231,7 @@ public class CreateAuctionController {
 
         int remainingSlots = MAX_IMAGES - selectedImageFiles.size();
         if (files.size() > remainingSlots) {
-            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image limit", "Only the first " + remainingSlots + " image(s) were added.");
+            NotificationManager.show(NotificationManager.NotificationType.INFO, "Image Limit", "Only the first " + remainingSlots + " image(s) were added.");
         }
 
         files.stream()

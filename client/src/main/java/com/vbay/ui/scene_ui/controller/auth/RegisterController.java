@@ -41,49 +41,49 @@ public class RegisterController {
         String confirmPassword = confirmPasswordField.getText();
 
         if (fullName.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing full name", "Please enter your full name.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Full Name", "Please enter your full name.");
             fullNameField.requestFocus();
             return;
         }
 
         if (fullName.length() < 2) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid full name", "Full name must be at least 2 characters.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Full Name", "The full name must be at least 2 characters long.");
             fullNameField.requestFocus();
             return;
         }
 
         if (email.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing email", "Please enter your email address.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Email", "Please enter your email address.");
             emailField.requestFocus();
             return;
         }
 
         if (!EMAIL_PATTERN.matcher(email).matches()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid email", "Please enter a valid email address.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Invalid Email", "Please enter a valid email address.");
             emailField.requestFocus();
             return;
         }
 
         if (password.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing password", "Please create a password.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Password", "Please create a password.");
             passwordField.requestFocus();
             return;
         }
 
         if (password.length() < 8) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Weak password", "Password must be at least 8 characters.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Weak Password", "The password must be at least 8 characters long.");
             passwordField.requestFocus();
             return;
         }
 
         if (confirmPassword.isBlank()) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing confirmation", "Please confirm your password.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Missing Confirmation", "Please confirm your password.");
             confirmPasswordField.requestFocus();
             return;
         }
 
         if (!password.equals(confirmPassword)) {
-            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Password mismatch", "Password and confirmation do not match.");
+            NotificationManager.show(NotificationManager.NotificationType.WARNING, "Password Mismatch", "The password and its confirmation do not match.");
             confirmPasswordField.requestFocus();
             return;
         }
@@ -92,14 +92,14 @@ public class RegisterController {
             registerUser(fullName, email, password);
             NotificationManager.show(
                 NotificationManager.NotificationType.SUCCESS,
-                "Registration complete",
-                "Your account has been created. Redirecting to login..."
+                "Registration Complete",
+                "Your account has been created successfully. Redirecting to login..."
             );
             goToLogin();
         } catch (IOException exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Register failed",
+                "Registration Failed",
                 exception.getMessage()
             );
         }
@@ -136,7 +136,7 @@ public class RegisterController {
         } catch (Exception exception) {
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
-                "Navigation failed",
+                "Navigation Failed",
                 "Could not open the login screen."
             );
         }

@@ -203,7 +203,7 @@ public class AdminDashboardController {
                     Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                 }
             } catch (IOException e) {
-                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch users"));
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch user list from the server."));
             }
         }).start();
     }
@@ -223,7 +223,7 @@ public class AdminDashboardController {
                     Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                 }
             } catch (IOException e) {
-                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch auctions"));
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch auction list from the server."));
             }
         }).start();
     }
@@ -436,14 +436,14 @@ public class AdminDashboardController {
                     Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(type, req));
                     if (response.isStatus()) {
                         Platform.runLater(() -> {
-                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "Action completed");
+                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "The action was completed successfully.");
                             refreshUsers();
                         });
                     } else {
                         Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                     }
                 } catch (IOException e) {
-                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send request"));
+                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send the request to the server."));
                 }
             }).start();
         }
@@ -513,7 +513,7 @@ public class AdminDashboardController {
             try {
                 duration = Integer.parseInt(durationText);
             } catch (NumberFormatException e) {
-                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Invalid Input", "Please enter a valid number for duration.");
+                NotificationManager.show(NotificationManager.NotificationType.ERROR, "Invalid Input", "Please enter a valid number for the duration.");
                 return;
             }
 
@@ -541,14 +541,14 @@ public class AdminDashboardController {
                     Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(RequestType.ADMIN_BAN_USER, req));
                     if (response.isStatus()) {
                         Platform.runLater(() -> {
-                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "User banned successfully.");
+                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "The user was banned successfully.");
                             refreshUsers();
                         });
                     } else {
                         Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                     }
                 } catch (IOException e) {
-                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send request"));
+                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send the ban request to the server."));
                 }
             }).start();
         }
@@ -569,14 +569,14 @@ public class AdminDashboardController {
                     Respond<?> response = SocketClient.getClient().sendMessage(new Request<>(type, req));
                     if (response.isStatus()) {
                         Platform.runLater(() -> {
-                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "Action completed");
+                            NotificationManager.show(NotificationManager.NotificationType.SUCCESS, "Success", "The action was completed successfully.");
                             refreshAuctions();
                         });
                     } else {
                         Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                     }
                 } catch (IOException e) {
-                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send request"));
+                    Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Failed to send the action request to the server."));
                 }
             }).start();
         }
@@ -667,7 +667,7 @@ public class AdminDashboardController {
                     Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                 }
             } catch (IOException e) {
-                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch deposit requests"));
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not fetch deposit requests from the server."));
             }
         }).start();
     }
@@ -685,7 +685,7 @@ public class AdminDashboardController {
                     Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Error", response.getMessage()));
                 }
             } catch (IOException e) {
-                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not perform action"));
+                Platform.runLater(() -> NotificationManager.show(NotificationManager.NotificationType.ERROR, "Network Error", "Could not perform the deposit action."));
             }
         }).start();
     }
@@ -703,7 +703,7 @@ public class AdminDashboardController {
             DepositRequestPayload payload = event.getPayload();
             if (payload == null) return;
             Platform.runLater(() -> {
-                NotificationManager.show(NotificationManager.NotificationType.INFO, "New Deposit Request", "User " + payload.getUsername() + " requested a deposit of $" + payload.getAmount());
+                NotificationManager.show(NotificationManager.NotificationType.INFO, "New Deposit Request", "User " + payload.getUsername() + " requested a deposit of $" + payload.getAmount() + ".");
                 if (depositManagementView.isVisible()) {
                     refreshDeposits();
                 }

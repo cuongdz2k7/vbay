@@ -11,9 +11,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.google.gson.JsonElement;
-import com.vbay.shared.Utils.JsonUtils;
-import com.vbay.shared.protocol.Respond;
-
 import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
@@ -21,7 +18,6 @@ import com.vbay.server.mapper.dtomapper.ProductImageMapper;
 import com.vbay.server.model.Auction;
 import com.vbay.server.model.Autobid;
 import com.vbay.server.model.Bid;
-import com.vbay.server.model.Payment;
 import com.vbay.server.model.Product;
 import com.vbay.server.model.ProductImage;
 import com.vbay.server.network_connection.ClientSession;
@@ -50,6 +46,7 @@ import com.vbay.server.service.result.UserBalanceResult;
 import com.vbay.server.service.result.UserMyBidListItemResult;
 import com.vbay.server.service.result.mapper.ResultMapper;
 import com.vbay.server.service.validation.ValidateAuctionDTO;
+import com.vbay.shared.Utils.JsonUtils;
 import com.vbay.shared.Utils.LoggingUtils;
 import com.vbay.shared.dto.auctionDTO.AuctionDetailRequest;
 import com.vbay.shared.dto.auctionDTO.AuctionListRequest;
@@ -62,8 +59,7 @@ import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidStatePayload;
 import com.vbay.shared.dto.realtimeDTO.payload.ViewerAuctionBidSummaryPayload;
 import com.vbay.shared.enums.auction.AuctionStatus;
 import com.vbay.shared.enums.bid.BidStatus;
-import com.vbay.shared.enums.payment.PaymentStatus;
-import com.vbay.shared.enums.payment.PaymentType;
+import com.vbay.shared.protocol.Respond;
 
  /*
 * Business rules:
@@ -495,19 +491,20 @@ public class AuctionService {
 
         BigDecimal finalPrice = auction.getCurrentPrice();
         userRepository.decreaseAvailableBalance(winningBid.getBidderId(), finalPrice);
-        paymentRepository.save(new Payment(
-            auction.getId(),
-            winningBid.getBidderId(),
-            auction.getSellerId(),
-            winningBid.getId(),
-            finalPrice,
-            PaymentType.AUCTION_WIN,
-            PaymentStatus.HELD
-        ));
+        
+        userRepository.depositAvailableBalance(auction.getSellerId(), finalPrice);
+
         results.add(readUserBalanceResult(
             userRepository,
             winningBid.getBidderId(),
             "AUCTION_WIN_PAYMENT",
+            closedAt
+        ));
+
+        results.add(readUserBalanceResult(
+            userRepository,
+            auction.getSellerId(),
+            "AUCTION_SOLD_RECEIPT",
             closedAt
         ));
         return results;

@@ -1,101 +1,109 @@
 # vBay - Hệ Thống Đấu Giá Trực Tuyến Thời Gian Thực
 
-vBay là một nền tảng đấu giá trực tuyến được xây dựng theo kiến trúc Client-Server mạnh mẽ, sử dụng giao tiếp TCP Socket thời gian thực trên nền tảng Java và cơ sở dữ liệu MySQL. Hệ thống được thiết kế để giải quyết các bài toán phức tạp về concurrency (đồng thời), quản lý phòng đấu giá trực tiếp, đặt giá thầu tự động (auto-bid) và cơ chế khóa số dư ví điện tử an toàn.
+vBay là ứng dụng đấu giá trực tuyến desktop được xây dựng bằng Java, JavaFX, TCP Socket và MySQL. Hệ thống tập trung vào các bài toán cốt lõi của đấu giá: đặt giá realtime, quản lý ví nội bộ, auto-bid, buy now, lập lịch auction và xử lý đồng thời an toàn.
 
-Dự án tuân thủ cấu trúc đa module (Multi-Module Maven Project), tách biệt rõ ràng giữa các tầng dữ liệu dùng chung (Shared Protocol & DTOs), logic nghiệp vụ ở phía Server và giao diện tương tác người dùng JavaFX hiện đại ở phía Client.
-
----
-
-## 1. Phạm Vi Hệ Thống
-
-vBay tập trung cung cấp giải pháp đấu giá trực tuyến toàn diện bao gồm:
-
-*   **Quản Lý Tài Khoản & Phân Quyền**: Hỗ trợ 3 vai trò người dùng chính:
-    *   `BIDDER` (Người mua/Người đấu giá): Xem danh sách phòng đấu giá, nạp tiền vào ví, tham gia đấu giá trực tiếp, đặt giá thủ công hoặc cấu hình đấu giá tự động (auto-bid).
-    *   `SELLER` (Người bán): Quản lý sản phẩm, tạo phòng đấu giá mới, theo dõi trạng thái các phiên đấu giá của mình.
-    *   `ADMIN` (Quản trị viên): Kiểm duyệt và phê duyệt yêu cầu nạp tiền, quản lý trạng thái tài khoản người dùng (khóa/mở khóa), hủy/kết thúc phiên đấu giá khi có tranh chấp hoặc vi phạm, kiểm tra lịch sử thao tác qua log hệ thống.
-*   **Ví Điện Tử Nội Bộ (Internal Digital Wallet)**:
-    *   Quản lý hai loại số dư: Số dư khả dụng (`available_balance`) và Số dư bị phong tỏa (`hold_balance`).
-    *   Khi một Bidder dẫn đầu phiên đấu giá, hệ thống sẽ phong tỏa số tiền tương ứng (`hold_balance`) để đảm bảo khả năng thanh toán. Khi bị người khác trả giá cao hơn hoặc phiên đấu giá bị hủy, số tiền phong tỏa ngay lập tức được hoàn lại vào số dư khả dụng.
-*   **Phòng Đấu Giá Trực Tiếp (Real-time Live Bidding Room)**:
-    *   Kết nối thời gian thực qua giao thức TCP Socket.
-    *   Hiển thị biểu đồ lịch sử thay đổi giá thầu trực quan.
-    *   Cập nhật số lượng người đang theo dõi phòng đấu giá (Watcher Count).
-    *   Cơ chế chống bắn tỉa phút chót (**Anti-Snipe Extension**): Tự động kéo dài thời gian kết thúc phiên đấu giá thêm một khoảng thời gian quy định (ví dụ: 30 giây) nếu có lượt đặt giá hợp lệ được gửi lên sát thời điểm kết thúc.
-*   **Đấu Giá Tự Động (Auto-Bid / Proxy Bidding Engine)**:
-    *   Người dùng cấu hình mức giá tối đa (`max_bid_amount`) mong muốn chi trả cho sản phẩm.
-    *   Hệ thống sẽ tự động đặt giá thay cho người dùng với bước giá tối thiểu ngay khi có người khác trả giá cao hơn, đảm bảo người dùng luôn dẫn đầu cho đến khi vượt quá giới hạn đã cấu hình.
-
----
-
-## 2. Kiến Trúc Dự Án (Module Structure)
-
-Dự án được cấu trúc thành **3 module Maven chính**:
+Dự án được tổ chức thành multi-module Maven project:
 
 ```text
 vbay/
-├── shared/   - Định nghĩa DTOs, Enums, Protocol và Utility dùng chung
-├── server/   - Socket Server, DAO/Repository MySQL, Scheduler, Real-time Rooms
-└── client/   - JavaFX Desktop Application, Socket Client, FXML & Controllers
+├── shared/   - DTO, enum, protocol, utility dùng chung
+├── server/   - TCP server, service nghiệp vụ, repository JDBC, scheduler, realtime
+└── client/   - JavaFX app, socket client, FXML controller, CSS
 ```
 
-| Module | Vai Trò & Chức Năng |
+## 1. Phạm Vi Hệ Thống
+
+### Người Dùng Và Phân Quyền
+
+App hiện tại có 2 role tài khoản:
+
+- `USER`: tài khoản người dùng thông thường. Một `USER` có thể tạo auction của mình và cũng có thể bid auction của người khác.
+- `ADMIN`: tài khoản quản trị hệ thống, có dashboard riêng để quản lý user, auction và deposit request.
+
+Vai trò `seller` và `bidder` không phải role tài khoản riêng. Chúng được xác định theo dữ liệu nghiệp vụ:
+
+- Seller của auction là `auctions.seller_id`.
+- Bidder của một lượt đặt giá là `bids.bidder_id`.
+
+### Tính Năng Chính
+
+- Đăng ký, đăng nhập, logout và quản lý session socket.
+- Tạo auction kèm product, image, starting price, minimum bid step, reserve price, buy now price và thời gian chạy.
+- Hiển thị danh sách auction, chi tiết auction, lịch sử bid và danh sách bid của user.
+- Đặt giá thủ công, auto-bid/proxy bid, tăng max auto-bid và buy now.
+- Ví nội bộ với `available_balance` và `hold_balance`.
+- Deposit request cho user, admin approve/reject deposit.
+- Admin ban, kick, lock, warn user và stop/continue/delete auction.
+- Realtime update qua TCP event room.
+- Scheduler tự động start/end auction và có cơ chế recover missed schedules.
+
+## 2. Yêu Cầu Chức Năng
+
+| Nhóm | Yêu cầu |
 | :--- | :--- |
-| **`shared`** | Chứa các lớp định nghĩa cấu trúc yêu cầu (`Request`) và phản hồi (`Respond`), các lớp truyền dữ liệu (`DTO`), các hằng số phân loại trạng thái (`Enums`) và các tiện ích dùng chung (như định dạng JSON `JsonUtils` hay log `LoggingUtils`). Đảm bảo tính đồng bộ hoàn hảo về mặt dữ liệu và giao thức giao tiếp giữa Client và Server. |
-| **`server`** | Trái tim logic của hệ thống. Nhận kết nối TCP từ các Client, điều phối yêu cầu qua `RequestDistributor`, quản lý các kết nối qua `ClientConnectionRegistry`, tương tác trực tiếp với MySQL Database thông qua mô hình JDBC DAO/Repository, điều khiển luồng đấu giá bằng `AuctionTaskScheduler` và duy trì các phòng đấu giá thời gian thực thông qua `SubscriptionService`. Ngoài ra, server cũng tích hợp một HTTP server thu nhỏ (`ImageHttpServer`) để quản lý việc tải ảnh sản phẩm lên. |
-| **`client`** | Ứng dụng Desktop chạy JavaFX phong phú và mượt mà. Kết nối tới Server thông qua một tiến trình nền duy nhất `SocketClient` để duy trì kết nối TCP bền bỉ. Client sử dụng mô hình MVC (Model-View-Controller) kết hợp các tệp FXML định hình giao diện hiện đại và các CSS tùy chỉnh cao cấp nhằm mang lại trải nghiệm người dùng tối ưu nhất. |
+| Authentication | Đăng ký, đăng nhập, tự động tạo/restore admin mặc định, băm mật khẩu bằng `Argon2PasswordHasher` |
+| Auction | Tạo auction, xem danh sách, xem chi tiết, đồng bộ trạng thái theo thời gian |
+| Bidding | Place bid, buy now, auto-bid, increase auto-bid max, xem bid history |
+| Wallet | Deposit request, hold/release balance, cập nhật balance realtime |
+| Admin | Quản lý user, auction, deposit request và ghi `admin_actions_log` |
+| Realtime | Subscribe/unsubscribe room, broadcast auction state, bid history, balance, autobid, admin event |
 
----
+## 3. Bảo Mật Và Session
 
-## 3. Các Tính Năng Cốt Lõi Chi Tiết
+Server dùng `ClientSession` gắn với từng socket connection để xác định user hiện tại. Sau khi login thành công, `AuthService` set `userId`, `username` và `Position` vào session; khi logout hoặc socket đóng, session được clear.
+
+Nguyên tắc chính:
+
+- Service không giao quyền validate định danh hoặc quyền sở hữu dữ liệu cho client.
+- Các flow nghiệp vụ lấy user hiện tại từ `session.getUserId()`, ví dụ tạo auction dùng session làm seller, place bid dùng session làm bidder, deposit dùng session làm owner của deposit request.
+- Các request cần đăng nhập đều gọi `checkSession(...)` hoặc validate tương đương trước khi xử lý.
+- Admin flow kiểm tra `session.getPosition() == ADMIN`, không chỉ dựa vào request client gửi.
+- Room `USER` là room riêng tư; `targetId` của room phải bằng `session.getUserId()`, nếu không server từ chối subscribe.
+- `maxBidAmount`, balance và my-bid state chỉ được gửi qua response riêng của user hoặc room `USER`, không gửi vào public room.
+
+Client chỉ gửi intent và input cho thao tác; mọi kiểm tra định danh, phân quyền, quyền sở hữu dữ liệu và rule nghiệp vụ đều được validate ở server. Server xem `ClientSession` là nguồn identity tin cậy trong request lifecycle, còn payload từ client luôn phải đi qua validation trước khi được xử lý.
+
+## 4. Business Rules & Invariants
+
+- User không được bid auction do chính mình tạo.
+- Khi tạo auction, `reserve_price` nếu có phải lớn hơn `starting_price`; `buy_now_price` nếu có và có reserve thì phải lớn hơn hoặc bằng `reserve_price`.
+- Auction chỉ nhận bid khi đang mở: `SCHEDULED` chưa tới giờ start bị từ chối, auction đã closed bị từ chối.
+- Bid đầu tiên có thể bằng `starting_price`; các bid tiếp theo phải đạt tối thiểu `current_price + minimum_bid_step`.
+- Bid thấp hơn reserve vẫn có thể được ghi nhận là bid đang thắng tạm thời, nhưng chưa đủ điều kiện thắng cuối cùng.
+- `reserveMet` là trạng thái suy ra từ `reserve_price` và `current_price`: `null` nếu không có reserve, `true` nếu `current_price >= reserve_price`, ngược lại là `false`.
+- Buy now chỉ hợp lệ khi auction có `buy_now_price` và chưa đóng; buy now tạo payment `HELD` theo `PaymentType.BUY_NOW`.
+- Khi có winning bid thủ công, server hold đúng `bid_amount`.
+- Khi auto-bid đang thắng, server hold `max_bid_amount`; khi auction kết thúc, release max trước rồi charge đúng `final_price`.
+- Nếu max auto-bid chạm hoặc vượt reserve, engine có thể đẩy bid thực tế lên `reserve_price` để chuyển auction sang trạng thái reserve met.
+- Khi bị outbid, hold của người thắng cũ phải được release trong cùng transaction.
+- Khi auction hết giờ mà không có winner hoặc `reserve_price` không đạt, auction kết thúc ở trạng thái `FAILED`; bid tạm thắng bị mark lost và hold liên quan được release.
+- Khi auction hết giờ và reserve đã đạt hoặc không có reserve, auction kết thúc ở trạng thái `ENDED`; winning bid chuyển `WON`, payment `AUCTION_WIN` được tạo ở trạng thái `HELD`.
+- Mọi flow bid/buy now/auto-bid lock auction bằng `FOR UPDATE` để tránh double-spending và race condition.
+- Public realtime room không được expose maxBidAmount.
+
+## 5. Kiến Trúc Tổng Quan
 
 ```mermaid
 graph TD
-    subgraph Client Module (JavaFX App)
-        UI[Giao diện JavaFX Controllers] <--> SC[SocketClient Singleton]
-    end
-
-    subgraph Server Module (TCP Engine)
-        CH[ClientHandler Thread] <--> RD[RequestDistributor]
-        RD <--> Services[Service Layer: Auth, Auction, Bid, Wallet]
-        Services <--> Repos[JDBC Repositories]
-        
-        Scheduler[AuctionTaskScheduler] -.->|Theo dõi thời gian| Services
-        SubService[SubscriptionService] -.->|Broadcast sự kiện| CH
-    end
-
-    subgraph Database Layer
-        MySQL[(MySQL Server: Port 1638)]
-    end
-
-    SC <-->|TCP Socket: Port 3618| CH
-    Repos <-->|JDBC Connections| MySQL
+    Client[JavaFX Client] -->|Request JSON qua TCP 3618| Server[ServerApplication]
+    Server --> Distributor[RequestDistributor]
+    Distributor --> Services[Service Layer]
+    Services --> Repos[JDBC Repositories]
+    Repos --> MySQL[(MySQL)]
+    Services --> DomainEvents[Domain Events]
+    DomainEvents --> Realtime[Realtime Broadcaster]
+    Realtime -->|Event JSON| Client
+    Scheduler[AuctionTaskScheduler] --> Services
+    ImageHttp[ImageHttpServer 1639] --> Client
 ```
 
-### A. Quy Trình Xác Thực & Phân Quyền
-Hệ thống sử dụng cơ chế băm mật khẩu bảo mật `BCrypt`. Khi đăng nhập thành công, một thực thể `UserDTO` chứa thông tin vai trò (`position`: `BIDDER`, `SELLER`, `ADMIN`) và trạng thái tài khoản (`status`: `ACTIVE`, `LOCKED`) được duy trì để phân quyền giao diện và chức năng phía Client.
+## 6. Công Nghệ
 
-### B. Luồng Đấu Giá An Toàn & Giao Dịch Tài Chính (Wallet Flow)
-1.  **Đặt Giá (Place Bid)**: Khi Bidder đặt một mức giá thầu mới:
-    *   Hệ thống kiểm tra số dư khả dụng (`available_balance`) của Bidder xem có lớn hơn hoặc bằng mức giá thầu đề xuất cộng với bước giá không.
-    *   Thực hiện phong tỏa số tiền tương ứng bằng cách trừ `available_balance` và cộng vào `hold_balance` của người đặt giá mới.
-    *   Hoàn trả số tiền phong tỏa của người dẫn đầu cũ (nếu có) từ `hold_balance` về lại `available_balance` của họ.
-    *   Tất cả các hành động này được thực hiện trong một giao dịch cơ sở dữ liệu (Database Transaction) cô lập để đảm bảo tính nguyên tử (Atomicity).
-2.  **Đấu Giá Thành Công (Auction Won)**: Khi phiên đấu giá kết thúc chính thức:
-    *   Người chiến thắng được xác định. Số tiền bị phong tỏa (`hold_balance`) của họ được chuyển thành hóa đơn thực tế: trừ khỏi `hold_balance` và chuyển thẳng vào `available_balance` của Seller (sau khi trừ phí hệ thống nếu có).
-    *   Sản phẩm được đánh dấu trạng thái đã bán, và tạo bản ghi lưu vết thanh toán trong bảng `payments`.
-3.  **Mua Ngay (Buy Now)**: Đối với các phiên đấu giá có cấu hình giá mua đứt (`buy_now_price`):
-    *   Người dùng có thể chọn mua ngay để lập tức kết thúc phiên đấu giá.
-    *   Số tiền bằng mức giá mua đứt được chuyển trực tiếp từ số dư khả dụng của người mua sang người bán, không trải qua quy trình đặt thầu và phong tỏa.
-    *   Tất cả các lệnh đặt thầu trước đó của các bidders khác lập tức được giải tỏa tiền phong tỏa và cập nhật trạng thái thầu thành thất bại (`LOST`).
-
----
-
-## 4. Công Nghệ & Môi Trường Hoạt Động
-
-*   **Ngôn ngữ lập trình**: Java 25 (tận dụng các tính năng mới nhất về hiệu năng và quản lý bộ nhớ).
-*   **Quản lý mã nguồn & Build**: Maven 3.9+.
-*   **Môi trường đồ họa phía Client**: JavaFX 25.0.2 kết hợp FXML và các thư viện hỗ trợ giao diện hiện đại.
-*   **Hệ quản trị cơ sở dữ liệu**: MySQL 9.4.0 (phục vụ lưu trữ bền vững cấu trúc cao, hỗ trợ tối ưu hóa giao dịch).
-*   **Giao thức truyền thông**: TCP Socket truyền thống kết hợp thư viện Gson để chuyển đổi các đối tượng Java thành định dạng chuỗi JSON nhanh chóng qua đường truyền mạng.
-*   **Ghi log hệ thống**: SLF4J + Java Util Logging cung cấp thông tin gỡ lỗi đầy đủ cả ở phía client lẫn server.
+- Java 25, Maven 3.9+.
+- JavaFX 25.0.2 cho client desktop.
+- TCP Socket line-delimited JSON cho request/response/event.
+- Gson/Jackson cho JSON.
+- MySQL Connector/J và JDBC repository.
+- H2 in-memory `MODE=MySQL` cho integration test.
+- Argon2 cho password hashing.
+- JUnit 5 cho test.

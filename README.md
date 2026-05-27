@@ -105,28 +105,75 @@ mvn clean verify
 
 ## 6. Khởi Chạy Hệ Thống
 
-Đảm bảo dịch vụ MySQL Server của bạn đã khởi động và thông tin cấu hình kết nối trong lớp `DatabaseConfig.java` (`server/src/main/java/com/vbay/server/databaseManager/DatabaseConfig.java`) đã chính xác (mặc định: DB `vbay` chạy tại Host `localhost`, Port `1638`, User `root`, Pass `1234`). Khi chạy Server lần đầu tiên, hệ thống sẽ tự động tạo cơ sở dữ liệu `vbay`, dựng toàn bộ bảng từ schema `data_init.sql` và tạo các chỉ mục cơ sở dữ liệu (Indexes) hỗ trợ tăng tốc truy vấn.
-
-### Bước 1: Chạy TCP Socket Server
-Mở một cửa sổ Terminal mới tại thư mục gốc dự án và thực hiện lệnh chạy Server JAR:
-```bash
-java -jar server/target/server.jar
-```
-*(Hoặc chạy nhanh qua Maven: `cd server` -> `mvn exec:java`)*
-
-Khi chạy thành công, màn hình console sẽ báo dòng log:
-`Server listening on port 3618`.
-
-### Bước 2: Chạy Client Đấu Giá (JavaFX Application)
-Mở một cửa sổ Terminal tiếp theo tại thư mục gốc dự án và chạy Client:
-```bash
-java -jar client/target/client.jar
-```
-*(Hoặc chạy nhanh qua Maven: `cd client` -> `mvn javafx:run`)*
-
-Để chạy thử nghiệm các kịch bản đấu giá realtime giữa nhiều người chơi, hãy mở thêm các Terminal khác và chạy lại lệnh trên để mở thêm các cửa sổ Client song song.
+## Yêu Cầu Môi Trường Cực Tiểu
+Trước khi khởi chạy ứng dụng, máy tính của bạn cần cài đặt sẵn:
+1.  **Java Runtime Environment (JRE) hoặc JDK 25**: Đảm bảo lệnh `java -version` hiển thị phiên bản 25 khi gõ trong Terminal/Command Prompt.
+2.  **Hệ Quản Trị CSDL MySQL Server**: Phiên bản 8.0+ hoặc 9.4.0 đang hoạt động.
+3.  **Hệ Điều Hành**: Windows, macOS hoặc Linux desktop có môi trường đồ họa để hiển thị giao diện Client.
 
 ---
+
+## Cấu Trúc Thư Mục Triển Khai (Deployment Folder Layout)
+
+```text
+release/
+├── server.jar         - File máy chủ TCP Socket Server & MySQL Service
+├── client.jar         - File giao diện người dùng Desktop Client
+├── run-server.bat     - Script click-đúp chạy nhanh Server (Windows)
+├── run-client.bat     - Script click-đúp chạy nhanh Client (Windows)
+├── uploads/           - Thư mục chứa hình ảnh sản phẩm (BẮT BUỘC PHẢI TẠO TRƯỚC!)
+├── music/             - Thư mục chứa các file âm thanh thông báo của hệ thống
+└── log/               - Thư mục tự động sinh ra để ghi nhật ký hệ thống (.log)
+```
+
+---
+
+## Cấu Hình Cơ Sở Dữ Liệu MySQL
+Cần đảm bảo:
+*   Dịch vụ MySQL Server đang chạy trên máy tính.
+*   Thông số tài khoản kết nối mặc định được biên dịch cứng trong file JAR:
+    *   **Host**: `localhost`
+    *   **Port**: `1638`
+    *   **Username**: `root`
+    *   **Password**: `1234`
+
+*   *Lưu ý*: Nếu mật khẩu MySQL trên máy của bạn khác `1234`, hãy cấu hình lại mật khẩu root của MySQL cục bộ thành `1234` hoặc đổi cổng kết nối của MySQL về trùng khớp để Server kết nối thành công.
+
+---
+
+## Quy Trình Khởi Chạy Từng Bước (Step-by-Step)
+
+### Bước 1: Khởi chạy Máy chủ (vBay Server)
+1.  Mở thư mục `release/`.
+2.  **Khởi chạy nhanh**: Click đúp vào file **`server`**.
+    *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java -jar server.jar`)*.
+3.  **Xác nhận trạng thái**: Màn hình Console hiển thị dòng log thông báo thành công:
+    *   `Initializing database...` -> `Database initialized successfully.`
+    *   `Server listening on port 3618` (Cổng kết nối TCP Socket).
+
+---
+
+### Bước 2: Khởi chạy Giao diện người dùng (vBay Client)
+1.  **Khởi chạy nhanh**: Click đúp vào file **`client`**.
+    *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java --enable-native-access=ALL-UNNAMED -jar client.jar`)*.
+    > [!TIP]
+    > Việc sử dụng cờ `--enable-native-access=ALL-UNNAMED` (được tích hợp sẵn trong file `.bat`) giúp cấp quyền native đồ họa cho JavaFX, làm **sạch 100% các dòng log cảnh báo đỏ** trên console.
+2.  **Mở nhiều Client song song**: Để demo luồng đấu giá cạnh tranh giữa nhiều người dùng, bạn chỉ cần click đúp tiếp vào file **`run-client.bat`** để mở thêm cửa sổ Client 2, Client 3 chạy song song độc lập.
+
+---
+
+## Xử Lý Sự Cố Thường Gặp (Troubleshooting)
+
+*   **Lỗi `Address already in use: bind` khi chạy Server**:
+    *   *Nguyên nhân*: Cổng `3618` đã bị chiếm dụng bởi tiến trình chạy ngầm từ trước.
+    *   *Khắc phục*: Tắt hết các tab console Server đang chạy ngầm hoặc khởi động lại máy tính để giải phóng cổng mạng.
+*   **Lỗi Server không kết nối được Database**:
+    *   *Nguyên nhân*: Sai mật khẩu MySQL hoặc MySQL Server chưa khởi động.
+    *   *Khắc phục*: Kiểm tra dịch vụ MySQL trong Task Manager (Windows) xem đã chạy chưa, và đảm bảo mật khẩu root là `1234`.
+*   **Ảnh sản phẩm bị trắng (Không tải được ảnh)**:
+    *   *Nguyên nhân*: Bạn chưa tạo thư mục `uploads/` cùng cấp với file `server.jar`.
+    *   *Khắc phục*: Tạo folder trống tên là `uploads` nằm cùng cấp với tệp `server.jar` 
+
 
 ## 7. Cơ Chế Tài Khoản Demo & Đăng Ký Người Dùng
 
@@ -182,6 +229,7 @@ Hệ thống được tài liệu hóa vô cùng công phu và đầy đủ tạ
 7.  **[Hướng Dẫn Kiểm Thử & Kiểm Định](report/testing-guide.md)**: Hướng dẫn viết và chạy các bộ Unit Test, Integration Test tự động với JUnit 5/Mockito và kịch bản kiểm thử thủ công từng bước.
 8.  **[Hướng Dẫn Sử Dụng Ứng Dụng](report/user-manual.md)**: Cẩm nang hướng dẫn vận hành chi tiết dành cho cả 3 nhóm người dùng tương tác trực tiếp với giao diện desktop JavaFX.
 9.  **[Xử Lý Sự Cố & Hướng Dẫn Đóng Gói JAR](report/troubleshooting-release.md)**: Tổng hợp các lỗi kết nối DB, lỗi xung đột cổng, cảnh báo System.load native-access trên JDK 25 và quy trình đóng gói fat JAR.
+10. **[Kiến trúc & nền tảng cơ sở bidding](report/troubleshooting-release.md)**: Mô tả kiến trúc nghiệp vụ của bidding trong vBay, là phần có nhiều nhánh quyết định nhất (vừa thay đổi giá auction, vừa thay đổi ví, bid history, auto-bid, payment và realtime event trong cùng một transaction).
 
 ---
 
@@ -195,4 +243,4 @@ Hệ thống được tài liệu hóa vô cùng công phu và đầy đủ tạ
 - [x] Chuẩn hóa README theo checklist nộp bài và cập nhật thông tin thành viên chính xác.
 - [x] Bổ sung cấu hình build executable JAR shading dependencies cho server/client.
 - [ ] Tích hợp và lưu trữ báo cáo PDF tổng hợp trong repo.
-- [ ] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
+- [x] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
