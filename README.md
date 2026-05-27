@@ -104,103 +104,75 @@ mvn clean verify
 ---
 
 ## 6. Khởi Chạy Hệ Thống
-    ## 1. Yêu Cầu Môi Trường Cực Tiểu
-    Trước khi khởi chạy ứng dụng, máy tính của bạn cần cài đặt sẵn:
-    1.  **Java Runtime Environment (JRE) hoặc JDK 25**: Đảm bảo lệnh `java -version` hiển thị phiên bản 25 khi gõ trong Terminal/Command Prompt.
-    2.  **Hệ Quản Trị CSDL MySQL Server**: Phiên bản 8.0+ hoặc 9.4.0 đang hoạt động.
-    3.  **Hệ Điều Hành**: Windows, macOS hoặc Linux desktop có môi trường đồ họa để hiển thị giao diện Client.
 
-    ---
+## Yêu Cầu Môi Trường Cực Tiểu
+Trước khi khởi chạy ứng dụng, máy tính của bạn cần cài đặt sẵn:
+1.  **Java Runtime Environment (JRE) hoặc JDK 25**: Đảm bảo lệnh `java -version` hiển thị phiên bản 25 khi gõ trong Terminal/Command Prompt.
+2.  **Hệ Quản Trị CSDL MySQL Server**: Phiên bản 8.0+ hoặc 9.4.0 đang hoạt động.
+3.  **Hệ Điều Hành**: Windows, macOS hoặc Linux desktop có môi trường đồ họa để hiển thị giao diện Client.
 
-    ## 2. Cấu Trúc Thư Mục Triển Khai (Deployment Folder Layout)
-    Để ứng dụng hoạt động ổn định nhất và tự động nhận diện đầy đủ các tài nguyên âm thanh, hình ảnh và tệp ghi nhật ký, bạn hãy tạo và sắp xếp cấu trúc thư mục triển khai sạch sẽ giống như mô hình dưới đây (tương tự thư mục `release` của bạn):
+---
 
-    ```text
-    release/
-    ├── server.jar         - File máy chủ TCP Socket Server & MySQL Service
-    ├── client.jar         - File giao diện người dùng Desktop Client
-    ├── run-server.bat     - Script click-đúp chạy nhanh Server (Windows)
-    ├── run-client.bat     - Script click-đúp chạy nhanh Client (Windows)
-    ├── uploads/           - Thư mục chứa hình ảnh sản phẩm (BẮT BUỘC PHẢI TẠO TRƯỚC!)
-    ├── music/             - Thư mục chứa các file âm thanh thông báo của hệ thống
-    └── log/               - Thư mục tự động sinh ra để ghi nhật ký hệ thống (.log)
-    ```
+## Cấu Trúc Thư Mục Triển Khai (Deployment Folder Layout)
 
-    > [!IMPORTANT]
-    > *   Thư mục **`uploads/`** là bắt buộc phải tạo thủ công từ trước để tránh lỗi ghi tệp khi người bán đăng tải ảnh sản phẩm.
-    > *   Thư mục **`music/`** nên chứa các file âm thanh nhạc nền và âm thanh thông báo để Client có thể phát nhạc mượt mà.
+```text
+release/
+├── server.jar         - File máy chủ TCP Socket Server & MySQL Service
+├── client.jar         - File giao diện người dùng Desktop Client
+├── run-server.bat     - Script click-đúp chạy nhanh Server (Windows)
+├── run-client.bat     - Script click-đúp chạy nhanh Client (Windows)
+├── uploads/           - Thư mục chứa hình ảnh sản phẩm (BẮT BUỘC PHẢI TẠO TRƯỚC!)
+├── music/             - Thư mục chứa các file âm thanh thông báo của hệ thống
+└── log/               - Thư mục tự động sinh ra để ghi nhật ký hệ thống (.log)
+```
 
-    ---
+---
 
-    ## 3. Cấu Hình Cơ Sở Dữ Liệu MySQL
-    Hệ thống vBay sở hữu động cơ tự động khởi tạo dữ liệu (`DatabaseInitializer`). Khi `server.jar` chạy lần đầu tiên, nó sẽ tự động kết nối với MySQL để tạo Database, chạy schema bảng dữ liệu và lập các chỉ mục tối ưu hóa.
+## Cấu Hình Cơ Sở Dữ Liệu MySQL
+Cần đảm bảo:
+*   Dịch vụ MySQL Server đang chạy trên máy tính.
+*   Thông số tài khoản kết nối mặc định được biên dịch cứng trong file JAR:
+    *   **Host**: `localhost`
+    *   **Port**: `1638`
+    *   **Username**: `root`
+    *   **Password**: `1234`
 
-    Bạn chỉ cần đảm bảo:
-    *   Dịch vụ MySQL Server đang chạy trên máy tính.
-    *   Thông số tài khoản kết nối mặc định được biên dịch cứng trong file JAR:
-        *   **Host**: `localhost`
-        *   **Port**: `1638`
-        *   **Username**: `root`
-        *   **Password**: `1234`
-    *   *Lưu ý*: Nếu mật khẩu MySQL trên máy của bạn khác `1234`, hãy cấu hình lại mật khẩu root của MySQL cục bộ thành `1234` hoặc đổi cổng kết nối của MySQL về trùng khớp để Server kết nối thành công.
+*   *Lưu ý*: Nếu mật khẩu MySQL trên máy của bạn khác `1234`, hãy cấu hình lại mật khẩu root của MySQL cục bộ thành `1234` hoặc đổi cổng kết nối của MySQL về trùng khớp để Server kết nối thành công.
 
-    ---
+---
 
-    ## 4. Quy Trình Khởi Chạy Từng Bước (Step-by-Step)
+## Quy Trình Khởi Chạy Từng Bước (Step-by-Step)
 
-    ### Bước 1: Khởi chạy Máy chủ (vBay Server)
-    1.  Mở thư mục `release/`.
-    2.  **Khởi chạy nhanh**: Click đúp vào file **`server`**.
-        *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java -jar server.jar`)*.
-    3.  **Xác nhận trạng thái**: Màn hình Console hiển thị dòng log thông báo thành công:
-        *   `Initializing database...` -> `Database initialized successfully.`
-        *   `Server listening on port 3618` (Cổng kết nối TCP Socket).
+### Bước 1: Khởi chạy Máy chủ (vBay Server)
+1.  Mở thư mục `release/`.
+2.  **Khởi chạy nhanh**: Click đúp vào file **`server`**.
+    *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java -jar server.jar`)*.
+3.  **Xác nhận trạng thái**: Màn hình Console hiển thị dòng log thông báo thành công:
+    *   `Initializing database...` -> `Database initialized successfully.`
+    *   `Server listening on port 3618` (Cổng kết nối TCP Socket).
 
-    ---
+---
 
-    ### Bước 2: Khởi chạy Giao diện người dùng (vBay Client)
-    1.  **Khởi chạy nhanh**: Click đúp vào file **`client`**.
-        *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java --enable-native-access=ALL-UNNAMED -jar client.jar`)*.
-        > [!TIP]
-        > Việc sử dụng cờ `--enable-native-access=ALL-UNNAMED` (được tích hợp sẵn trong file `.bat`) giúp cấp quyền native đồ họa cho JavaFX, làm **sạch 100% các dòng log cảnh báo đỏ** trên console.
-    2.  **Mở nhiều Client song song**: Để demo luồng đấu giá cạnh tranh giữa nhiều người dùng, bạn chỉ cần click đúp tiếp vào file **`run-client.bat`** để mở thêm cửa sổ Client 2, Client 3 chạy song song độc lập.
+### Bước 2: Khởi chạy Giao diện người dùng (vBay Client)
+1.  **Khởi chạy nhanh**: Click đúp vào file **`client`**.
+    *(Hoặc chạy thủ công bằng cách mở Terminal tại thư mục `release/` và gõ lệnh: `java --enable-native-access=ALL-UNNAMED -jar client.jar`)*.
+    > [!TIP]
+    > Việc sử dụng cờ `--enable-native-access=ALL-UNNAMED` (được tích hợp sẵn trong file `.bat`) giúp cấp quyền native đồ họa cho JavaFX, làm **sạch 100% các dòng log cảnh báo đỏ** trên console.
+2.  **Mở nhiều Client song song**: Để demo luồng đấu giá cạnh tranh giữa nhiều người dùng, bạn chỉ cần click đúp tiếp vào file **`run-client.bat`** để mở thêm cửa sổ Client 2, Client 3 chạy song song độc lập.
 
-    ---
+---
 
-    ## 5. Kịch Bản Chạy Demo Thực Tế Cho Nhóm
+## Xử Lý Sự Cố Thường Gặp (Troubleshooting)
 
-    Khi giao diện Client mở ra, bạn có thể thực hiện chạy demo theo quy trình chuyên nghiệp sau:
-
-    ### 1. Đăng ký tài khoản mới:
-    *   Trên Client 1: Bấm **Register**, đăng ký tài khoản Seller (ví dụ: `seller01`).
-    *   Trên Client 2: Bấm **Register**, đăng ký tài khoản Bidder 1 (ví dụ: `bidder01`).
-    *   Trên Client 3: Bấm **Register**, đăng ký tài khoản Bidder 2 (ví dụ: `bidder02`).
-
-    ### 2. Gửi yêu cầu nạp tiền và Duyệt tiền:
-    *   Đăng nhập tài khoản `bidder01` và `bidder02` trên Client 2 và Client 3. Vào biểu tượng **Ví tiền**, gửi yêu cầu nạp lần lượt `20,000,000đ` và `30,000,000đ` (Số dư lúc này sẽ ở trạng thái `PENDING`).
-    *   Trên một Client mới: Đăng nhập tài khoản **Admin mặc định**:
-        *   **Username**: `admin`
-        *   **Password**: `admin`
-    *   Vào mục **Pending Deposits** trong Admin Dashboard, bấm **Approve** (Duyệt) cho cả hai yêu cầu. Lập tức số dư ví khả dụng của hai Bidder sẽ được cộng tiền thời gian thực!
-
-    ### 3. Tạo phòng và Đấu giá trực tiếp:
-    *   Đăng nhập tài khoản `seller01` trên Client 1, vào tab **Create Auction**, chọn một hình ảnh sản phẩm từ máy tính, đặt tên sản phẩm, đặt Giá khởi điểm = `1,000,000đ`, Bước giá = `200,000đ`, Giá mua ngay = `15,000,000đ`. Bấm tạo phiên đấu giá.
-    *   Hai Bidder trên Client 2 & Client 3 cùng tham gia vào phòng đấu giá sản phẩm đó.
-    *   Tiến hành đặt thầu cạnh tranh trực tiếp, cài đặt đấu thầu tự động (**Auto-bid**) hoặc bấm chốt quyền sở hữu sản phẩm lập tức bằng nút **Buy Now** (Mua ngay). Biểu đồ biến động giá sẽ vẽ realtime cực kỳ sinh động trên màn hình!
-
-    ---
-
-    ## 6. Xử Lý Sự Cố Thường Gặp (Troubleshooting)
-
-    *   **Lỗi `Address already in use: bind` khi chạy Server**:
-        *   *Nguyên nhân*: Cổng `3618` đã bị chiếm dụng bởi tiến trình chạy ngầm từ trước.
-        *   *Khắc phục*: Tắt hết các tab console Server đang chạy ngầm hoặc khởi động lại máy tính để giải phóng cổng mạng.
-    *   **Lỗi Server không kết nối được Database**:
-        *   *Nguyên nhân*: Sai mật khẩu MySQL hoặc MySQL Server chưa khởi động.
-        *   *Khắc phục*: Kiểm tra dịch vụ MySQL trong Task Manager (Windows) xem đã chạy chưa, và đảm bảo mật khẩu root là `1234`.
-    *   **Ảnh sản phẩm bị trắng (Không tải được ảnh)**:
-        *   *Nguyên nhân*: Bạn chưa tạo thư mục `uploads/` cùng cấp với file `server.jar`.
-        *   *Khắc phục*: Tạo folder trống tên là `uploads` nằm cùng cấp với tệp `server.jar` 
+*   **Lỗi `Address already in use: bind` khi chạy Server**:
+    *   *Nguyên nhân*: Cổng `3618` đã bị chiếm dụng bởi tiến trình chạy ngầm từ trước.
+    *   *Khắc phục*: Tắt hết các tab console Server đang chạy ngầm hoặc khởi động lại máy tính để giải phóng cổng mạng.
+*   **Lỗi Server không kết nối được Database**:
+    *   *Nguyên nhân*: Sai mật khẩu MySQL hoặc MySQL Server chưa khởi động.
+    *   *Khắc phục*: Kiểm tra dịch vụ MySQL trong Task Manager (Windows) xem đã chạy chưa, và đảm bảo mật khẩu root là `1234`.
+*   **Ảnh sản phẩm bị trắng (Không tải được ảnh)**:
+    *   *Nguyên nhân*: Bạn chưa tạo thư mục `uploads/` cùng cấp với file `server.jar`.
+    *   *Khắc phục*: Tạo folder trống tên là `uploads` nằm cùng cấp với tệp `server.jar` 
 
 
 ## 7. Cơ Chế Tài Khoản Demo & Đăng Ký Người Dùng
@@ -248,17 +220,16 @@ Dưới đây là kịch bản chạy thử nghiệm (demo) thực tế giúp m�
 
 Hệ thống được tài liệu hóa vô cùng công phu và đầy đủ tại thư mục [report/](file:///d:/vbay/report). Vui lòng nhấn vào các liên kết dưới đây để khám phá chi tiết cấu trúc kỹ thuật:
 
-1.  **[Hướng Dẫn Tài Liệu Kỹ Thuật (guide.md)](report/guide.md)**: Bản đồ đọc hiểu tài liệu, trạng thái đồng bộ và quy ước nghiệp vụ quan trọng (Position.USER/ADMIN, seller/bidder, room AUCTION/USER/AUCTION_LIST, hold_balance).
-2.  **[Tổng Quan Hệ Thống & Phạm Vi](report/overview.md)**: Định nghĩa nghiệp vụ, phân quyền vai trò (`USER`, `ADMIN`), cơ chế xử lý ví và sơ đồ kiến trúc module tổng quát.
-3.  **[Hướng Dẫn Cài Đặt & Khởi Chạy](report/setup.md)**: Chi tiết cấu hình môi trường JDK 25, MySQL 9.4.0, cấu hình DatabaseConfig tĩnh và quy trình khởi chạy từng tiến trình.
-4.  **[Đặc Tả Giao Thức TCP Socket & JSON Protocol](report/protocol.md)**: Đặc tả cấu trúc gói tin mạng (Request - Respond - Event), liệt kê danh sách 62 mã nghiệp vụ `RequestType` và 12 sự kiện realtime `RealtimeEventType` (room `AUCTION`, `USER`, `AUCTION_LIST`) kèm gói JSON mẫu.
-5.  **[Thiết Kế Cơ Sở Dữ Liệu MySQL](report/database-erd.md)**: Sơ đồ ERD trực quan (dựng trên Mermaid), chi tiết kiểu dữ liệu ràng buộc 9 bảng, cơ chế khóa hàng loạt **Pessimistic Locking (`FOR UPDATE`)** và **Optimistic Locking (`version`)** hỗ trợ concurrency.
-6.  **[Bản Đồ Thiết Kế Lớp & Sơ Đồ Sequence](report/class-diagram.md)**: Bản đồ phân gói (packages) trong 3 module Maven, Composition Root (`AppConfig`), và sơ đồ sequence chi tiết luồng đặt giá.
-7.  **[Kiến Trúc Bidding & Bid Resolution](report/bidding-architecture.md)**: Động cơ đấu giá (manual bid, auto-bid, buy now), xử lý resolution, applier, result pipeline, chính sách anti-snipe và decision model cho auto-bid.
-8.  **[Kiến Trúc Concurrency & Real-time Engines](report/realtime-architecture.md)**: Thiết kế của Phòng Đăng Ký Đấu Giá (`SubscriptionService`), cơ chế lập lịch tự phục hồi **Auction Task Scheduler** và quản lý concurrency đa luồng.
-9.  **[Hướng Dẫn Kiểm Thử & Kiểm Định](report/testing-guide.md)**: Hướng dẫn viết và chạy các bộ Unit Test, Integration Test tự động với JUnit 5/Mockito/H2 Database và kịch bản kiểm thử thủ công từng bước.
-10. **[Hướng Dẫn Sử Dụng Ứng Dụng](report/user-manual.md)**: Cẩm nang hướng dẫn vận hành chi tiết dành cho vai trò người dùng Position.USER (seller/bidder) và quản trị Position.ADMIN trên JavaFX.
-11. **[Xử Lý Sự Cố & Hướng Dẫn Đóng Gói JAR](report/troubleshooting-release.md)**: Tổng hợp các lỗi kết nối DB, lỗi xung đột cổng, cảnh báo native-access trên JDK 25 và quy trình đóng gói/phát hành fat JAR.
+1.  **[Tổng Quan Hệ Thống & Phạm Vi](report/overview.md)**: Định nghĩa nghiệp vụ, phân quyền vai trò (`BIDDER`, `SELLER`, `ADMIN`), cơ chế xử lý ví và sơ đồ kiến trúc module tổng quát.
+2.  **[Hướng Dẫn Cài Đặt & Khởi Chạy](report/setup.md)**: Chi tiết cấu hình môi trường JDK 25, MySQL 9.4.0, cấu hình DatabaseConfig tĩnh và quy trình khởi chạy từng tiến trình.
+3.  **[Đặc Tả Giao Thức TCP Socket & JSON Protocol](report/protocol.md)**: Đặc tả cấu trúc gói tin mạng (Request - Respond - Event), liệt kê danh sách 62 mã nghiệp vụ `RequestType` và 12 sự kiện realtime `RealtimeEventType` kèm gói JSON mẫu.
+4.  **[Thiết Kế Cơ Sở Dữ Liệu MySQL](report/database-erd.md)**: Sơ đồ ERD trực quan (dựng trên Mermaid), chi tiết kiểu dữ liệu ràng buộc 9 bảng, cơ chế khóa hàng loạt **Pessimistic Locking (`FOR UPDATE`)** và **Optimistic Locking (`version`)**.
+5.  **[Bản Đồ Thiết Kế Lớp & Sơ Đồ Sequence](report/class-diagram.md)**: Bản đồ phân gói (packages) trong 3 module Maven và sơ đồ sequence chi tiết luồng cộng tác giữa Client Controller, SocketClient, Server ClientHandler, Services và Repositories khi đấu giá.
+6.  **[Kiến Trúc Concurrency & Real-time Engines](report/realtime-architecture.md)**: Thiết kế của Phòng Đăng Ký Đấu Giá (`SubscriptionService`), cơ chế lập lịch tự phục hồi **Auction Task Scheduler** và động cơ đấu giá tự động **Auto-Bid Proxy Bidding Engine**.
+7.  **[Hướng Dẫn Kiểm Thử & Kiểm Định](report/testing-guide.md)**: Hướng dẫn viết và chạy các bộ Unit Test, Integration Test tự động với JUnit 5/Mockito và kịch bản kiểm thử thủ công từng bước.
+8.  **[Hướng Dẫn Sử Dụng Ứng Dụng](report/user-manual.md)**: Cẩm nang hướng dẫn vận hành chi tiết dành cho cả 3 nhóm người dùng tương tác trực tiếp với giao diện desktop JavaFX.
+9.  **[Xử Lý Sự Cố & Hướng Dẫn Đóng Gói JAR](report/troubleshooting-release.md)**: Tổng hợp các lỗi kết nối DB, lỗi xung đột cổng, cảnh báo System.load native-access trên JDK 25 và quy trình đóng gói fat JAR.
+10. **[Kiến trúc & nền tảng cơ sở bidding](report/troubleshooting-release.md)**: Mô tả kiến trúc nghiệp vụ của bidding trong vBay, là phần có nhiều nhánh quyết định nhất (vừa thay đổi giá auction, vừa thay đổi ví, bid history, auto-bid, payment và realtime event trong cùng một transaction).
 
 ---
 
@@ -272,4 +243,4 @@ Hệ thống được tài liệu hóa vô cùng công phu và đầy đủ tạ
 - [x] Chuẩn hóa README theo checklist nộp bài và cập nhật thông tin thành viên chính xác.
 - [x] Bổ sung cấu hình build executable JAR shading dependencies cho server/client.
 - [ ] Tích hợp và lưu trữ báo cáo PDF tổng hợp trong repo.
-- [ ] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
+- [x] Upload video demo cuối cùng và chèn liên kết chính thức vào mục video demo ở README.
