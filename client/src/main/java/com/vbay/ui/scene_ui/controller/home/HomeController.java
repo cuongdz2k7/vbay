@@ -766,6 +766,39 @@ public class HomeController {
             }
             UserData.setBalances(payload.getAvailableBalance(), payload.getHoldBalance());
             updateBalanceDisplay(payload.getAvailableBalance());
+            String reason = payload.getReason();
+                if (reason != null) {
+                    switch (reason) {
+                        case "AUCTION_SOLD_RECEIPT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Auction Sold!",
+                                "Congratulations! Your auction has ended successfully. The sale proceeds have been credited to your balance."
+                            );
+                            break;
+                        case "BUY_NOW_SELLER_RECEIPT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Item Sold!",
+                                "A buyer has purchased your item via 'Buy Now'. The payment has been credited to your balance."
+                            );
+                            break;
+                        case "AUCTION_WIN_PAYMENT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Auction Won!",
+                                "Congratulations! You won the auction. The advance payment has been deducted from your balance."
+                            );
+                            break;
+                        case "BUY_NOW_PAYMENT":
+                            NotificationManager.show(
+                                NotificationManager.NotificationType.SUCCESS,
+                                "Purchase Completed!",
+                                "You have successfully purchased the item via 'Buy Now'."
+                            );
+                            break;
+                    }
+                }
         });
     }
 
