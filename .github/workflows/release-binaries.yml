@@ -15,7 +15,6 @@ jobs:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
 
-
     steps:
     # 1. Checkout mã nguồn
     - name: Checkout Code
@@ -39,7 +38,6 @@ jobs:
       run: |
         # Tạo thư mục phẳng
         mkdir -p release
-        mkdir -p release/music
         mkdir -p release/uploads/products/thumbnails
         mkdir -p release/log
 
@@ -49,11 +47,6 @@ jobs:
         fi
         if [ -f server/target/server.jar ]; then
           cp server/target/server.jar release/server.jar
-        fi
-
-        # Copy nhạc nền vào release/music
-        if [ -d "music" ]; then
-          cp -r music/* release/music/
         fi
 
         # Tạo file giữ chỗ trong log và uploads

@@ -12,9 +12,7 @@ on:
           - all
           - server
           - client
-  push: # Kích hoạt tự động khi push lên nhánh Dhung_Branch để workflow được ghi nhận và hiển thị trên giao diện Actions
-    branches:
-      - Dhung_Branch
+  push:
 
 jobs:
   build-and-package:
@@ -56,7 +54,6 @@ jobs:
         # Tạo thư mục release phẳng cực kỳ chuyên nghiệp
         echo "Creating a flat release directory..."
         mkdir -p release
-        mkdir -p release/music
         mkdir -p release/uploads/products/thumbnails
         mkdir -p release/log
 
