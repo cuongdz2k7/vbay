@@ -47,8 +47,6 @@ public class MainApp extends Application {
         initSocketClient();
         Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
 
-        // Start background music playback
-        // com.vbay.ui.util.MusicManager.playBackgroundMusic();
 
         SceneManager.setStage(primaryStage);
         primaryStage.setScene(SceneManager.createStyledScene("/jfx/scene/auth/Login.fxml"));
