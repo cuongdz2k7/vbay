@@ -128,16 +128,31 @@ release/
 
 ---
 
-## Cấu Hình Cơ Sở Dữ Liệu MySQL
-Cần đảm bảo:
-*   Dịch vụ MySQL Server đang chạy trên máy tính.
-*   Thông số tài khoản kết nối mặc định được biên dịch cứng trong file JAR:
-    *   **Host**: `localhost`
-    *   **Port**: `1638`
-    *   **Username**: `root`
-    *   **Password**: `1234`
+## Cấu Hình Cơ Sở Dữ Liệu (Database Configuration)
 
-*   *Lưu ý*: Nếu mật khẩu MySQL trên máy của bạn khác `1234`, hãy cấu hình lại mật khẩu root của MySQL cục bộ thành `1234` hoặc đổi cổng kết nối của MySQL về trùng khớp để Server kết nối thành công.
+Hệ thống vBay hỗ trợ 2 chế độ kết nối cơ sở dữ liệu cực kỳ linh hoạt và hoàn toàn tự động:
+
+1. **Chế độ H2 Embedded (Mặc định - Zero Setup - Cắm và Chạy)**:
+   * **KHÔNG CẦN CÀI ĐẶT BẤT KỲ CSDL NÀO!**
+   * Nếu máy tính của bạn chưa có MySQL Server, khi chạy Server sẽ tự động phát hiện và kích hoạt chế độ nhúng **H2 Database**.
+   * Dữ liệu sẽ tự động lưu trữ cục bộ vào tệp tin `vbay.mv.db` sinh ra ngay cạnh file `server.jar`.
+
+2. **Chế độ MySQL Server (Phục vụ chấm bài/Production)**:
+   * Khi khởi chạy lần đầu tiên, Server sẽ **tự động sinh ra** tệp tin cấu hình động **`database.properties`** cùng cấp với file `server.jar`.
+   * Bạn chỉ cần mở tệp tin này bằng Notepad (hoặc bất kỳ phần mềm soạn thảo văn bản nào), chỉnh sửa thông số kết nối MySQL của bạn, bấm **Ctrl + S** để lưu lại và khởi chạy lại Server. Không cần chỉnh sửa mã nguồn, không cần build lại file JAR!
+     * `db.type`: `mysql` (để dùng MySQL) hoặc `h2` (để ép dùng H2).
+     * `mysql.port`: Đổi cổng kết nối của bạn (ví dụ: `3306` hoặc cổng mặc định `1638`).
+     * `mysql.password`: Đổi sang mật khẩu root của bạn (ví dụ: `1234`).
+     * `db.recreate`: Cấu hình thành `true` nếu bạn muốn xóa sạch database cũ và tạo lại dữ liệu trắng tinh từ đầu khi khởi chạy Server.
+
+---
+
+### Khởi Chạy Nhanh MySQL Bằng Docker (Tùy chọn cho Dev / Thầy Cô)
+
+Nếu máy tính của bạn đã cài sẵn **Docker Desktop**, bạn chỉ cần mở Terminal tại thư mục gốc của dự án và chạy câu lệnh duy nhất sau để có ngay một cơ sở dữ liệu MySQL 9.4.0 chuẩn chỉ chạy ngầm trên cổng `1638` với mật khẩu root là `1234` chỉ trong 5 giây:
+```bash
+docker compose up -d
+```
 
 ---
 
@@ -168,8 +183,9 @@ Cần đảm bảo:
     *   *Nguyên nhân*: Cổng `3618` đã bị chiếm dụng bởi tiến trình chạy ngầm từ trước.
     *   *Khắc phục*: Tắt hết các tab console Server đang chạy ngầm hoặc khởi động lại máy tính để giải phóng cổng mạng.
 *   **Lỗi Server không kết nối được Database**:
-    *   *Nguyên nhân*: Sai mật khẩu MySQL hoặc MySQL Server chưa khởi động.
-    *   *Khắc phục*: Kiểm tra dịch vụ MySQL trong Task Manager (Windows) xem đã chạy chưa, và đảm bảo mật khẩu root là `1234`.
+    *   *Khắc phục*: 
+        1. **Nếu muốn dùng MySQL**: Mở tệp tin `database.properties` (sinh ra bên cạnh file `server.jar`) kiểm tra xem cổng và mật khẩu (`mysql.port` và `mysql.password`) đã chính xác với MySQL cài trên máy của bạn chưa.
+        2. **Nếu muốn chạy ăn ngay (Zero Setup)**: Mở tệp tin `database.properties` và sửa dòng `db.type=h2` để hệ thống tự động chạy trên Cơ sở dữ liệu nhúng cục bộ cực kỳ tiện lợi mà không cần bật MySQL.
 *   **Ảnh sản phẩm bị trắng (Không tải được ảnh)**:
     *   *Nguyên nhân*: Bạn chưa tạo thư mục `uploads/` cùng cấp với file `server.jar`.
     *   *Khắc phục*: Tạo folder trống tên là `uploads` nằm cùng cấp với tệp `server.jar` 

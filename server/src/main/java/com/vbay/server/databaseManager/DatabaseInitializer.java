@@ -22,15 +22,47 @@ public class DatabaseInitializer {
 
     public static void init() {
         LOGGER.info("Initializing database...");
-        createDatabase();
+        
+        // 1. Kiểm tra tính năng Recreate (xóa đi tạo lại từ đầu nếu được cấu hình)
+        if (!DatabaseConfig.isH2() && DatabaseConfig.isRecreate()) {
+            LOGGER.warning("Database Recreation is enabled in properties! Dropping existing database...");
+            dropDatabase();
+        }
+
+        // 2. Thử tạo database (đối với MySQL) hoặc bắt lỗi để chuyển vùng Fallback
+        try {
+            createDatabase();
+        } catch (Exception e) {
+            LOGGER.warning("MySQL connection failed: " + e.getMessage());
+            LOGGER.warning("Auto-switching to Embedded H2 Database (Zero-Setup)...");
+            DatabaseConfig.triggerH2Fallback();
+        }
+
+        // 3. Khởi tạo bảng và index
         createTables();
         createIndexes();
+        
         LOGGER.info("Database initialized successfully.");
     }
 
+    private static void dropDatabase() {
+        try (Connection connection = DriverManager.getConnection(DatabaseConfig.getDbHostUrl(), DatabaseConfig.getUsername(), DatabaseConfig.getPassword());
+             Statement statement = connection.createStatement()) {
+            String sql = "DROP DATABASE IF EXISTS " + DatabaseConfig.getDatabaseName() + ";";
+            statement.executeUpdate(sql);
+            LOGGER.info("Existing database '" + DatabaseConfig.getDatabaseName() + "' dropped successfully.");
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Failed to drop database: " + e.getMessage(), e);
+        }
+    }
+
     private static void createDatabase() {
-        // Chú ý: Ở đây chúng ta dùng DriverManager kết nối với DB_HOST_URL (không có tên DB)'
-        LOGGER.info("Connecting to Database...");
+        if (DatabaseConfig.isH2()) {
+            LOGGER.info("H2 Database mode active. Skipping database creation step.");
+            return;
+        }
+
+        LOGGER.info("Connecting to MySQL Database...");
         try (Connection connection = DriverManager.getConnection(DatabaseConfig.getDbHostUrl(), DatabaseConfig.getUsername(), DatabaseConfig.getPassword());
              Statement statement = connection.createStatement()) {
             
@@ -38,7 +70,7 @@ public class DatabaseInitializer {
             String sql = "CREATE DATABASE IF NOT EXISTS " + DatabaseConfig.getDatabaseName() + " CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
             statement.executeUpdate(sql);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to create database " + e.getMessage(), e);
+            throw new IllegalStateException("Failed to connect or create MySQL database: " + e.getMessage(), e);
         }
     }
 
@@ -69,38 +101,39 @@ public class DatabaseInitializer {
                         sb.setLength(0);
                     }
                 }
-
             }
         } catch (IOException e) {
             throw new IllegalStateException("Failed to read database initialization script", e);
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to initialize database tables", e);
+            throw new IllegalStateException("Failed to initialize database tables: " + e.getMessage(), e);
         }
     }
 
     private static void createIndexes() {
         try (var connection = DatabaseConnection.getConnection();
              var statement = connection.createStatement()) {
+            String ifNotExists = DatabaseConfig.isH2() ? " IF NOT EXISTS" : "";
             String[] indexQueries = {
-                "CREATE INDEX idx_auctions_status ON auctions(status)",
-                "CREATE INDEX idx_auctions_seller_id ON auctions(seller_id)",
-                "CREATE INDEX idx_auctions_status_starting_time ON auctions(status, starting_time)",
-                "CREATE INDEX idx_auctions_status_ending_time ON auctions(status, ending_time)"
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status ON auctions(status)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_seller_id ON auctions(seller_id)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status_starting_time ON auctions(status, starting_time)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status_ending_time ON auctions(status, ending_time)"
             };
 
             for (String query : indexQueries) {
                 try {
                     statement.execute(query);
                 } catch (SQLException e) {
-                    // Mã lỗi 1061: Duplicate key name (Index đã tồn tại)
-                    if (e.getErrorCode() != 1061) {
-                        // Các lỗi khác (sai tên cột, sai bảng...) thì vẫn cần in ra
+                    // Mã lỗi 1061: Duplicate key name (MySQL)
+                    // Mã lỗi 42111: Index already exists (H2)
+                    int errorCode = e.getErrorCode();
+                    if (errorCode != 1061 && errorCode != 42111) {
                         LOGGER.log(Level.SEVERE, "Failed to create index: " + e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
-            throw new IllegalStateException("Failed to create database " + e.getMessage(), e);
+            throw new IllegalStateException("Failed to create indexes: " + e.getMessage(), e);
         }
     }
 }
