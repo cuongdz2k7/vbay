@@ -112,11 +112,12 @@ public class DatabaseInitializer {
     private static void createIndexes() {
         try (var connection = DatabaseConnection.getConnection();
              var statement = connection.createStatement()) {
+            String ifNotExists = DatabaseConfig.isH2() ? " IF NOT EXISTS" : "";
             String[] indexQueries = {
-                "CREATE INDEX idx_auctions_status ON auctions(status)",
-                "CREATE INDEX idx_auctions_seller_id ON auctions(seller_id)",
-                "CREATE INDEX idx_auctions_status_starting_time ON auctions(status, starting_time)",
-                "CREATE INDEX idx_auctions_status_ending_time ON auctions(status, ending_time)"
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status ON auctions(status)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_seller_id ON auctions(seller_id)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status_starting_time ON auctions(status, starting_time)",
+                "CREATE INDEX" + ifNotExists + " idx_auctions_status_ending_time ON auctions(status, ending_time)"
             };
 
             for (String query : indexQueries) {
