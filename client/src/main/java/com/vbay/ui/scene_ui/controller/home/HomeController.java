@@ -770,6 +770,7 @@ public class HomeController {
                 if (reason != null) {
                     switch (reason) {
                         case "AUCTION_SOLD_RECEIPT":
+                            com.vbay.ui.util.MusicManager.playSound("buynow-auction-success.mp3");
                             NotificationManager.show(
                                 NotificationManager.NotificationType.SUCCESS,
                                 "Auction Sold!",
@@ -777,6 +778,7 @@ public class HomeController {
                             );
                             break;
                         case "BUY_NOW_SELLER_RECEIPT":
+                            com.vbay.ui.util.MusicManager.playSound("buynow-auction-success.mp3");
                             NotificationManager.show(
                                 NotificationManager.NotificationType.SUCCESS,
                                 "Item Sold!",
@@ -784,6 +786,7 @@ public class HomeController {
                             );
                             break;
                         case "AUCTION_WIN_PAYMENT":
+                            com.vbay.ui.util.MusicManager.playSound("buynow-auction-success.mp3");
                             NotificationManager.show(
                                 NotificationManager.NotificationType.SUCCESS,
                                 "Auction Won!",
@@ -791,6 +794,7 @@ public class HomeController {
                             );
                             break;
                         case "BUY_NOW_PAYMENT":
+                            com.vbay.ui.util.MusicManager.playSound("buynow-auction-success.mp3");
                             NotificationManager.show(
                                 NotificationManager.NotificationType.SUCCESS,
                                 "Purchase Completed!",
@@ -812,6 +816,7 @@ public class HomeController {
                 return;
             }
             if ("APPROVED".equals(payload.getStatus())) {
+                com.vbay.ui.util.MusicManager.playSound("deposit-success.mp3");
                 NotificationManager.show(
                     NotificationManager.NotificationType.SUCCESS, 
                     "Deposit Approved", 

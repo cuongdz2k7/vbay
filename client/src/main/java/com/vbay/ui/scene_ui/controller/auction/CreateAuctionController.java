@@ -193,6 +193,8 @@ public class CreateAuctionController {
                 return;
             }
 
+            com.vbay.ui.util.MusicManager.playSound("launch-auction-success.mp3");
+
             NotificationManager.show(
                 NotificationManager.NotificationType.INFO,
                 "Auction Created",
