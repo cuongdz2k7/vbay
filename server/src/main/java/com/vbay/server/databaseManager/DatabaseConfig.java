@@ -25,7 +25,7 @@ public class DatabaseConfig {
     private static String mysqlUsername = "root";
     private static String mysqlPassword = "1234";
 
-    private static String h2Url = "jdbc:h2:./vbay;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=0;TRACE_LEVEL_FILE=0";
+    private static String h2Url = "jdbc:h2:./vbay.db;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=0;TRACE_LEVEL_FILE=0";
     private static String h2Username = "sa";
     private static String h2Password = "";
 
@@ -71,7 +71,7 @@ public class DatabaseConfig {
                 mysqlUsername = props.getProperty("mysql.username", "root").trim();
                 mysqlPassword = props.getProperty("mysql.password", "1234").trim();
 
-                h2Url = props.getProperty("h2.url", "jdbc:h2:./vbay;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=0;TRACE_LEVEL_FILE=0").trim();
+                h2Url = props.getProperty("h2.url", "jdbc:h2:./vbay.db;MODE=MySQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1;TRACE_LEVEL_SYSTEM_OUT=0;TRACE_LEVEL_FILE=0").trim();
                 h2Username = props.getProperty("h2.username", "sa").trim();
                 h2Password = props.getProperty("h2.password", "").trim();
 
