@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 import com.vbay.shared.Utils.LoggingUtils;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.AudioClip;
 
 public class MusicManager {
     private static final Logger LOGGER = LoggingUtils.getLogger(MusicManager.class);
@@ -15,13 +16,13 @@ public class MusicManager {
 
     public static void playBackgroundMusic() {
         try {
-            // Find the music file in the "music" folder at the root or relative paths
-            File file = new File("music/Noi_Nay_Co_Anh_Audio.mp3");
+            // Find the music file in the "audio" folder at the root or relative paths
+            File file = new File("audio/Noi_Nay_Co_Anh_Audio.mp3");
             if (!file.exists()) {
-                file = new File("../music/Noi_Nay_Co_Anh_Audio.mp3");
+                file = new File("../audio/Noi_Nay_Co_Anh_Audio.mp3");
             }
             if (!file.exists()) {
-                LOGGER.warning("Could not find Noi_Nay_Co_Anh_Audio.mp3 inside music/ folder.");
+                LOGGER.warning("Could not find Noi_Nay_Co_Anh_Audio.mp3 inside audio/ folder.");
                 return;
             }
 
@@ -35,6 +36,29 @@ public class MusicManager {
             LOGGER.info("Successfully started background music: " + file.getName());
         } catch (Exception exception) {
             LOGGER.log(Level.SEVERE, "Could not start background music: ", exception);
+        }
+    }
+
+    public static void playSound(String soundFileName) {
+        if (isMuted) {
+            return;
+        }
+        try {
+            File file = new File("audio/" + soundFileName);
+            if (!file.exists()) {
+                file = new File("../audio/" + soundFileName);
+            }
+            if (!file.exists()) {
+                LOGGER.warning("Could not find sound file: " + soundFileName);
+                return;
+            }
+
+            String soundUrl = file.toURI().toString();
+            AudioClip audioClip = new AudioClip(soundUrl);
+            audioClip.play();
+            LOGGER.info("Successfully played sound effect: " + soundFileName);
+        } catch (Exception exception) {
+            LOGGER.log(Level.SEVERE, "Could not play sound effect " + soundFileName + ": ", exception);
         }
     }
 

@@ -83,6 +83,7 @@ public class LoginController {
                 }
             }
         } catch (Exception exception) {
+            com.vbay.ui.util.MusicManager.playSound("login-failed.mp3");
             NotificationManager.show(
                 NotificationManager.NotificationType.ERROR,
                 "Login failed",

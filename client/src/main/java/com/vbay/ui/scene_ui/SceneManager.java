@@ -192,12 +192,7 @@ public class SceneManager {
     private record LoadedView(Parent root, String stylesheetPath) { }
 
     private static void ensureMusicOverlay(StackPane root) {
-        if (floatingMusicPill == null) {
-            createFloatingMusicPill();
-        }
-        if (!root.getChildren().contains(floatingMusicPill)) {
-            root.getChildren().add(floatingMusicPill);
-        }
+        // No-op to completely hide and disable the floating music controller widget
     }
 
     private static void createFloatingMusicPill() {
