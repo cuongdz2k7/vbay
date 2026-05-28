@@ -126,8 +126,7 @@ public class DatabaseInitializer {
                     // Mã lỗi 1061: Duplicate key name (MySQL)
                     // Mã lỗi 42111: Index already exists (H2)
                     int errorCode = e.getErrorCode();
-                    String sqlState = e.getSQLState();
-                    if (errorCode != 1061 && !"42111".equals(sqlState)) {
+                    if (errorCode != 1061 && errorCode != 42111) {
                         LOGGER.log(Level.SEVERE, "Failed to create index: " + e.getMessage(), e);
                     }
                 }
