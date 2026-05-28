@@ -43,3 +43,10 @@ replay_pid*
 server/uploads/
 # Gemini Agents
 .gemini/agents/
+
+# Local H2 Database files
+*.db
+
+# Runtime log and upload folders at root
+/log/
+/uploads/
