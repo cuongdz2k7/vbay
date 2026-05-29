@@ -30,6 +30,7 @@ jobs:
 
     # 3. Biên dịch và đóng gói ứng dụng
     - name: Build and Package with Maven
+      shell: bash
       run: mvn clean package -DskipTests
 
     # 3.5 Tạo cấu trúc thư mục phát hành phẳng và nén lưu trữ (ZIP/TAR)
@@ -56,11 +57,11 @@ jobs:
 
         # Nén thư mục theo từng hệ điều hành
         if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          powershell.exe -Command "Compress-Archive -Path release -DestinationPath vbay-release-windows-latest.zip"
+          cd release && 7z a ../vbay-release-windows-latest.zip . && cd ..
         elif [ "${{ matrix.os }}" = "macos-latest" ]; then
-          zip -r vbay-release-macos-latest.zip release
+          cd release && zip -r ../vbay-release-macos-latest.zip . && cd ..
         else
-          tar -czf vbay-release-ubuntu-latest.tar.gz release
+          cd release && tar -czf ../vbay-release-ubuntu-latest.tar.gz . && cd ..
         fi
 
     # 4. Tự động đính kèm file nén của hệ điều hành vào trang Release
