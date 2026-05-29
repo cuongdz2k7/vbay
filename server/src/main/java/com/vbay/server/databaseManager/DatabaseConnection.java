@@ -14,6 +14,15 @@ nên nghiên cứu dùng connection pool
 public final class DatabaseConnection { 
     private static final Logger LOGGER = LoggingUtils.getLogger(DatabaseConnection.class);
     
+    static {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            Class.forName("org.h2.Driver");
+        } catch (ClassNotFoundException e) {
+            LOGGER.severe("Could not load JDBC drivers: " + e.getMessage());
+        }
+    }
+
     private DatabaseConnection() {}
 
     //Using "DATA" from Config --> get "Connection" to actual DB
