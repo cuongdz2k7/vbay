@@ -50,13 +50,14 @@ public class ServerApplication {
 
             RequestDistributor distributor = appConfig.getRequestDistributor();
             SubscriptionService subscriptionService = appConfig.getSubscriptionService();
+            com.vbay.server.network_connection.ClientConnectionRegistry connectionRegistry = appConfig.getConnectionRegistry();
 
             LOGGER.info(() -> "Server listening on port " + PORT);
             LOGGER.info("Waiting for clients...");
             while (true) {
                 Socket socket = serverSocket.accept();
                 LOGGER.info(() -> "Accepted client connection from " + socket.getInetAddress().getHostAddress());
-                Thread newThread = new Thread(new ClientHandler(socket, distributor, subscriptionService));
+                Thread newThread = new Thread(new ClientHandler(socket, distributor, subscriptionService, connectionRegistry));
                 newThread.start();
             }
         } catch (IOException exception) {

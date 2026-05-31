@@ -9,7 +9,7 @@ class AuthServiceTest {
 
     @Test
     void formatRemainingDuration_variousIntervals_formatsCorrectly() throws Exception {
-        AuthService authService = new AuthService(null, null, null);
+        AuthService authService = new AuthService(null, null, null, null);
         Method formatMethod = AuthService.class.getDeclaredMethod("formatRemainingDuration", LocalDateTime.class, LocalDateTime.class);
         formatMethod.setAccessible(true);
 

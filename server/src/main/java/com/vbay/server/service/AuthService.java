@@ -12,6 +12,7 @@ import com.vbay.server.databaseManager.ConnectionProvider;
 import com.vbay.server.exception.AuthenticationException;
 import com.vbay.server.exception.ValidationException;
 import com.vbay.server.model.User;
+import com.vbay.server.network_connection.ClientConnectionRegistry;
 import com.vbay.server.network_connection.ClientSession;
 import com.vbay.server.repository.RepositoryFactory;
 import com.vbay.server.repository.UserRepository;
@@ -32,11 +33,13 @@ public class AuthService {
     private final ConnectionProvider connectionProvider;
     private final RepositoryFactory repositoryFactory;
     private final PasswordHasher passwordHasher;
+    private final ClientConnectionRegistry connectionRegistry;
 
-    public AuthService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, PasswordHasher passwordHasher) {
+    public AuthService(ConnectionProvider connectionProvider, RepositoryFactory repositoryFactory, PasswordHasher passwordHasher, ClientConnectionRegistry connectionRegistry) {
         this.connectionProvider = connectionProvider;
         this.repositoryFactory = repositoryFactory;
         this.passwordHasher = passwordHasher;
+        this.connectionRegistry = connectionRegistry;
     }
 
     private void validateLoginRequest(LoginRequest request) {
@@ -69,6 +72,9 @@ public class AuthService {
         }
 
         LoginResponse response = login(request);
+        if (connectionRegistry != null && connectionRegistry.findByUserId(response.getUserId()) != null) {
+            throw new AuthenticationException("User is already logged in from another session");
+        }
         session.setSession(response.getUserId(), response.getUsername(), response.getPosition());
         return new Respond<>(requestId, true, "Login successful", response);
     }

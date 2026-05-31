@@ -88,8 +88,17 @@ public class RequestDistributor {
         try {
             return switch (type) {
                 case VERIFY -> new Respond<>(requestId, true, "Server is reachable", payload);
-                case LOGIN -> authService.handleLogin(requestId, payload, session);
+                case LOGIN -> {
+                    Respond<com.vbay.shared.dto.authDTO.LoginResponse> loginRespond = authService.handleLogin(requestId, payload, session);
+                    if (loginRespond.isStatus()) {
+                        connectionRegistry.register(loginRespond.getData().getUserId(), connection);
+                    }
+                    yield loginRespond;
+                }
                 case LOGOUT -> {
+                    if (session.isAuthenticated()) {
+                        connectionRegistry.unregister(session.getUserId());
+                    }
                     subscriptionService.disconnect(connection);
                     yield authService.handleLogout(requestId, session);
                 }

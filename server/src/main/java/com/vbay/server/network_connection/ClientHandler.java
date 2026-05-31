@@ -17,13 +17,15 @@ public class ClientHandler implements Runnable {
     private final Socket socket; 
     private final RequestDistributor distributor;
     private final SubscriptionService subscriptionService;
+    private final ClientConnectionRegistry connectionRegistry;
 
     private final ClientSession session = new ClientSession();
     
-    public ClientHandler(Socket socket, RequestDistributor distributor, SubscriptionService subscriptionService) {
+    public ClientHandler(Socket socket, RequestDistributor distributor, SubscriptionService subscriptionService, ClientConnectionRegistry connectionRegistry) {
         this.socket = socket;
         this.distributor = distributor;
         this.subscriptionService = subscriptionService;
+        this.connectionRegistry = connectionRegistry;
     }
 
     @Override
@@ -58,6 +60,9 @@ public class ClientHandler implements Runnable {
         }
         finally {
             LOGGER.info(() -> "Client disconnected: " + clientAddress);
+            if (session.isAuthenticated()) {
+                connectionRegistry.unregister(session.getUserId());
+            }
             session.clearSession();
         }
     }

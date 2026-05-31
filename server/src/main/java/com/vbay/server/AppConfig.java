@@ -178,7 +178,7 @@ new AppConfig()
         this.connectionRegistry = new ClientConnectionRegistry();
         this.adminService = new AdminService(connectionProvider, repositoryFactory, connectionRegistry, realtimeBroadcaster);
         ///business service
-        this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher);
+        this.authService = new AuthService(connectionProvider, repositoryFactory, passwordHasher, connectionRegistry);
         this.auctionService = new AuctionService(connectionProvider, repositoryFactory, domainEventPublisher);
         AuctionBidEngine auctionBidEngine = new AuctionBidEngine(antiSnipeSettings.toPolicy());
         BidResolutionApplier bidResolutionApplier = new BidResolutionApplier(repositoryFactory);
@@ -247,6 +247,10 @@ new AppConfig()
 
     public RequestDistributor getRequestDistributor() {
         return requestDistributor;
+    }
+
+    public ClientConnectionRegistry getConnectionRegistry() {
+        return connectionRegistry;
     }
 
     public AuthService getAuthService() {
