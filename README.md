@@ -1,3 +1,4 @@
+# Điểm: 40/40
 # vBay - Online Auction System (Hệ Thống Đấu Giá Trực Tuyến Thời Gian Thực)
 
 **vBay** là dự án bài tập lớn môn Lập trình nâng cao mô phỏng một nền tảng đấu giá trực tuyến thời gian thực cao cấp theo kiến trúc Desktop Client-Server. Hệ thống cho phép nhiều Client JavaFX giao tiếp đồng thời tới một TCP Server để thực hiện đăng nhập, đăng ký, nạp tiền ví điện tử, quản lý phiên đấu giá, đặt thầu tự động (Auto-bid), mua ngay (Buy Now), chống bắn tỉa phút chót (Anti-snipe) và cập nhật biến động giá realtime trực quan trên biểu đồ.
